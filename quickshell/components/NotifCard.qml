@@ -17,7 +17,7 @@ Rectangle {
     radius: Theme.m3 ? 24 : 22
     color: popup ? Theme.glass : Theme.m3 ? Theme.surface2 : Theme.glassTile
     border.width: Theme.m3 ? 0 : 1
-    border.color: Theme.glassLine
+    border.color: Theme.glassEdge
     readonly property string age: {
         const s = Math.floor((Time.now - entry.time) / 60000);
         return s < 1 ? "now" : s < 60 ? s + "m ago" : Math.floor(s / 60) + "h ago";

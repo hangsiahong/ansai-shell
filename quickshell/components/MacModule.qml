@@ -5,6 +5,4 @@ import qs
 Rectangle {
     radius: 18
     color: Theme.glassTile
-    border.width: 1
-    border.color: Theme.dark ? Qt.rgba(1, 1, 1, 0.07) : Qt.rgba(1, 1, 1, 0.6)
 }
