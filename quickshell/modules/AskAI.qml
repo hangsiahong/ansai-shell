@@ -1,0 +1,344 @@
+import QtQuick
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Io
+import qs
+import qs.components
+import qs.services
+
+// "Ask AI" sidebar on the right (Mod+I). The conversation lives in services/AI.qml, so closing
+// and reopening keeps it. Attach a screenshot (pick an area) or paste the clipboard into the question.
+Sheet {
+    id: root
+    name: "ai"
+    exclusiveKeys: true
+    enterFrom: 0
+    panelWidth: Math.min(440, width - 24)
+    panelX: width - panelWidth - 10
+    panelY: Theme.barH + 8
+    panelHeight: height - panelY - 10
+    panelRadius: Theme.m3 ? 28 : 22
+
+    onShownChanged: if (shown) {
+        if (AI.draft) { input.text = AI.draft; AI.draft = ""; input.cursorPosition = input.text.length; }
+        input.forceActiveFocus();
+        AI.checkKey();
+    }
+
+    function send() {
+        if (AI.busy) return;
+        AI.send(input.text);
+        if (!AI.busy) return;
+        input.text = "";
+    }
+
+    Process {
+        id: paste
+        command: ["wl-paste", "-n", "-t", "text"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const t = text.trim();
+                if (!t) return;
+                input.text = (input.text ? input.text + "\n\n" : "") + t;
+                input.cursorPosition = input.text.length;
+                input.forceActiveFocus();
+            }
+        }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 12
+        spacing: 10
+
+        // ---- header
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: 6
+            spacing: 8
+            Rectangle {
+                width: 28; height: 28; radius: Theme.m3 ? 14 : 8
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0; color: Theme.m3 ? Theme.accent : "#5e5ce6" }
+                    GradientStop { position: 1; color: Theme.m3 ? Theme.indigo : "#bf5af2" }
+                }
+                Icon { anchors.centerIn: parent; name: "auto_awesome"; size: 17; filled: true; color: Theme.m3 ? Theme.accentInk : "#ffffff" }
+            }
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 0
+                Txt { text: "Ask AI"; font.pixelSize: 15; font.weight: Theme.strong }
+                Txt { text: Settings.aiModel + " · KOOMPI AI"; font.pixelSize: 11; color: Theme.muted }
+            }
+            IconButton {
+                icon: "edit_square"; iconSize: 19; iconColor: Theme.text2
+                visible: AI.chat.length > 0
+                onClicked: { AI.reset(); input.forceActiveFocus(); }
+            }
+            IconButton {
+                icon: "settings"; iconSize: 19; iconColor: Theme.text2
+                onClicked: Shell.openSettings("ai")
+            }
+            IconButton {
+                icon: "close"; iconSize: 19; iconColor: Theme.text2
+                onClicked: Shell.close()
+            }
+        }
+
+        // ---- conversation
+        ListView {
+            id: list
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            spacing: 14
+            model: AI.chat
+            boundsBehavior: Flickable.StopAtBounds
+            onCountChanged: Qt.callLater(positionViewAtEnd)
+            onContentHeightChanged: if (AI.busy) positionViewAtEnd()
+
+            delegate: Item {
+                id: msg
+                required property var modelData
+                required property int index
+                readonly property bool mine: modelData.role === "user"
+                readonly property bool last: index === AI.chat.length - 1
+                width: list.width
+                height: col.implicitHeight
+
+                ColumnLayout {
+                    id: col
+                    width: parent.width
+                    spacing: 6
+
+                    Rectangle {   // attached screenshot
+                        visible: !!msg.modelData.image
+                        Layout.alignment: Qt.AlignRight
+                        Layout.preferredWidth: Math.min(240, img.implicitWidth > 0 ? 240 : 0)
+                        Layout.preferredHeight: img.status === Image.Ready ? Math.min(180, 240 * img.implicitHeight / img.implicitWidth) : 0
+                        radius: 12
+                        color: Theme.surface3
+                        clip: true
+                        Image {
+                            id: img
+                            anchors.fill: parent
+                            source: msg.modelData.image ? "file://" + msg.modelData.image : ""
+                            sourceSize.width: 480
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                        }
+                    }
+
+                    Rectangle {   // bubble (user) or plain text (assistant)
+                        Layout.alignment: msg.mine ? Qt.AlignRight : Qt.AlignLeft
+                        Layout.preferredWidth: msg.mine ? body.width + 28 : list.width
+                        Layout.preferredHeight: body.implicitHeight + (msg.mine ? 18 : 0)
+                        radius: Theme.m3 ? 20 : 18
+                        color: msg.mine ? (Theme.m3 ? Theme.accentSoft : Theme.accent) : "transparent"
+                        TextEdit {
+                            id: body
+                            x: msg.mine ? 14 : 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            // User bubbles shrink to short text.
+                            width: msg.mine ? Math.min(list.width * 0.85 - 28, Math.ceil(metrics.advanceWidth) + 2) : list.width - 12
+                            readOnly: true
+                            selectByMouse: true
+                            wrapMode: TextEdit.Wrap
+                            textFormat: msg.mine ? TextEdit.PlainText : TextEdit.MarkdownText
+                            text: msg.modelData.content || (AI.busy && msg.last ? "…" : "")
+                            color: msg.modelData.error ? Theme.danger : msg.mine ? (Theme.m3 ? Theme.accentSoftInk : "#ffffff") : Theme.text
+                            selectionColor: Theme.accent
+                            selectedTextColor: Theme.accentInk
+                            font.family: Theme.font
+                            font.pixelSize: 14
+                            TextMetrics { id: metrics; font: body.font; text: msg.modelData.content.split("\n").reduce((a, b) => a.length > b.length ? a : b, "") }
+                        }
+                    }
+
+                    Row {   // actions under a finished answer
+                        visible: !msg.mine && !(AI.busy && msg.last) && !msg.modelData.error && !!msg.modelData.content
+                        spacing: 2
+                        Layout.leftMargin: 2
+                        IconButton {
+                            id: copyBtn
+                            property bool done: false
+                            implicitWidth: 28; implicitHeight: 28
+                            icon: done ? "check" : "content_copy"; iconSize: 16; iconColor: Theme.muted
+                            onClicked: { Quickshell.execDetached(["wl-copy", "--", msg.modelData.content]); done = true; doneT.restart(); }
+                            Timer { id: doneT; interval: 1400; onTriggered: copyBtn.done = false }
+                        }
+                        IconButton {
+                            visible: msg.last
+                            implicitWidth: 28; implicitHeight: 28
+                            icon: "refresh"; iconSize: 17; iconColor: Theme.muted
+                            onClicked: {
+                                const q = AI.chat[msg.index - 1];
+                                AI.chat = AI.chat.slice(0, msg.index - 1);
+                                if (q.image) AI.attachment = q.image;
+                                AI.send(q.content);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ---- empty state
+            ColumnLayout {
+                visible: list.count === 0
+                anchors.centerIn: parent
+                width: parent.width - 24
+                spacing: 8
+                Icon { Layout.alignment: Qt.AlignHCenter; name: "auto_awesome"; size: 40; color: Theme.faint }
+                Txt {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: AI.hasKey ? "Ask anything" : "Add your KOOMPI AI key"
+                    font.pixelSize: 17; font.weight: Theme.strong
+                }
+                Txt {
+                    Layout.fillWidth: true
+                    Layout.bottomMargin: 10
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    text: AI.hasKey ? "English or ខ្មែរ. Attach a screenshot or paste what you copied."
+                                    : "Settings → AI. Get one from the KOOMPI AI Gateway in KConsole."
+                    font.pixelSize: 13; color: Theme.muted
+                }
+                Repeater {
+                    model: AI.hasKey ? [
+                        { i: "screenshot_region", t: "Ask about part of the screen", f: () => AI.screenshot() },
+                        { i: "translate", t: "Translate my clipboard", f: () => { input.text = "Translate this (English ↔ " + Settings.aiLang + "):\n\n"; paste.running = true; } },
+                        { i: "summarize", t: "Summarize my clipboard", f: () => { input.text = "Summarize this:\n\n"; paste.running = true; } }
+                    ] : [{ i: "key", t: "Open Settings → AI", f: () => Shell.openSettings("ai") }]
+                    Hover {
+                        required property var modelData
+                        Layout.alignment: Qt.AlignHCenter
+                        implicitWidth: sRow.implicitWidth + 28
+                        implicitHeight: 36
+                        radius: 18
+                        base: Theme.m3 ? Theme.surface3 : Theme.glassTile
+                        onClicked: modelData.f()
+                        Row {
+                            id: sRow
+                            anchors.centerIn: parent
+                            spacing: 8
+                            Icon { name: modelData.i; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                            Txt { text: modelData.t; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ---- composer
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: comp.implicitHeight + 16
+            radius: Theme.m3 ? 26 : 20
+            color: Theme.m3 ? Theme.surface3 : Theme.glassTile
+            border.width: Theme.m3 ? 0 : 1
+            border.color: Theme.glassEdge
+
+            ColumnLayout {
+                id: comp
+                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 8 }
+                spacing: 6
+
+                Item {   // pending attachment
+                    visible: !!AI.attachment
+                    Layout.preferredWidth: 96
+                    Layout.preferredHeight: visible ? 64 : 0
+                    Layout.leftMargin: 4
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 10
+                        color: Theme.surface3
+                        clip: true
+                        Image {
+                            anchors.fill: parent
+                            source: AI.attachment ? "file://" + AI.attachment : ""
+                            sourceSize.width: 192
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                        }
+                    }
+                    IconButton {
+                        anchors { right: parent.right; top: parent.top; margins: -6 }
+                        implicitWidth: 22; implicitHeight: 22
+                        base: Theme.m3 ? Theme.surface : "#3a3a3c"
+                        icon: "close"; iconSize: 14; iconColor: "#ffffff"
+                        onClicked: AI.attachment = ""
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.min(160, Math.max(24, input.contentHeight))
+                    Layout.leftMargin: 8
+                    Layout.rightMargin: 8
+                    Flickable {
+                        id: inFlick
+                        anchors.fill: parent
+                        contentHeight: input.contentHeight
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        TextEdit {
+                            id: input
+                            width: inFlick.width
+                            wrapMode: TextEdit.Wrap
+                            color: Theme.text
+                            selectionColor: Theme.accent
+                            selectedTextColor: Theme.accentInk
+                            font.family: Theme.font
+                            font.pixelSize: 14
+                            focus: true
+                            onCursorRectangleChanged: {
+                                const r = cursorRectangle;
+                                if (r.y < inFlick.contentY) inFlick.contentY = r.y;
+                                else if (r.y + r.height > inFlick.contentY + inFlick.height) inFlick.contentY = r.y + r.height - inFlick.height;
+                            }
+                            Keys.onEscapePressed: Shell.close()
+                            Keys.onReturnPressed: e => { if (e.modifiers & Qt.ShiftModifier) e.accepted = false; else root.send(); }
+                            Keys.onEnterPressed: e => { if (e.modifiers & Qt.ShiftModifier) e.accepted = false; else root.send(); }
+                            Txt {
+                                visible: !input.text
+                                text: AI.attachment ? "Ask about this screenshot…" : "Ask KOOMPI AI…"
+                                color: Theme.faint
+                                font.pixelSize: 14
+                            }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    IconButton {
+                        icon: "screenshot_region"; iconSize: 19; iconColor: Theme.text2
+                        onClicked: AI.screenshot()
+                    }
+                    IconButton {
+                        icon: "content_paste"; iconSize: 18; iconColor: Theme.text2
+                        onClicked: paste.running = true
+                    }
+                    Txt {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 6
+                        text: "↵ send · ⇧↵ new line"
+                        font.pixelSize: 11
+                        color: Theme.faint
+                    }
+                    IconButton {
+                        readonly property bool ready: AI.busy || !!input.text.trim() || !!AI.attachment
+                        base: ready ? Theme.accent : Theme.fill
+                        icon: AI.busy ? "stop" : "arrow_upward"
+                        filled: AI.busy
+                        iconSize: 19
+                        iconColor: ready ? Theme.accentInk : Theme.faint
+                        onClicked: AI.busy ? AI.stop() : root.send()
+                    }
+                }
+            }
+        }
+    }
+}
