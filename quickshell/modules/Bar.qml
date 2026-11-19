@@ -118,7 +118,8 @@ PanelWindow {
         BarClock { visible: !Theme.m3; Layout.rightMargin: 4 }
 
         Repeater {
-            model: Shell.nested ? [] : SystemTray.items
+            // Network and Bluetooth applets duplicate the control center, so they stay hidden.
+            model: Shell.nested ? [] : SystemTray.items.values.filter(t => !/nm-applet|network|blueman|bluetooth/i.test(t.id + " " + t.title))
             IconButton {
                 required property SystemTrayItem modelData
                 implicitWidth: 28; implicitHeight: 28
@@ -135,7 +136,8 @@ PanelWindow {
                 AppIcon {
                     anchors.centerIn: parent
                     size: 16
-                    icon: parent.modelData.icon
+                    // Prefer the app's own colour icon (Telegram's tray glyph is dark on dark).
+                    icon: DesktopEntries.heuristicLookup(parent.modelData.id)?.icon ?? parent.modelData.icon
                     label: parent.modelData.title
                 }
                 QsMenuAnchor {

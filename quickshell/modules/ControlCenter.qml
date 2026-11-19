@@ -17,7 +17,8 @@ Sheet {
 
     readonly property var player: Mpris.players.values.find(p => p.isPlaying) ?? Mpris.players.values[0] ?? null
 
-    onShownChanged: if (shown) Brightness.refresh()
+    property string detail: ""   // "", "wifi", "bt": the list open under the tiles
+    onShownChanged: if (shown) Brightness.refresh(); else detail = ""
 
     Process {
         running: Settings.nightLight
@@ -39,6 +40,9 @@ Sheet {
                 icon: Net.netIcon()
                 title: Net.wired ? "Ethernet" : "Wi-Fi"
                 sub: Net.netLabel()
+                more: !Net.wired
+                expanded: root.detail === "wifi"
+                onExpand: root.detail = root.detail === "wifi" ? "" : "wifi"
                 onClicked: m => m.button === Qt.RightButton ? Quickshell.execDetached(["nm-connection-editor"]) : Net.toggleWifi()
             }
             Tile {
@@ -48,8 +52,27 @@ Sheet {
                 icon: Net.btOn ? "bluetooth" : "bluetooth_disabled"
                 title: "Bluetooth"
                 sub: !Net.bt ? "Unavailable" : !Net.btOn ? "Off" : Net.btConnected.length ? Net.btConnected[0].name : "On"
+                more: !!Net.bt
+                expanded: root.detail === "bt"
+                onExpand: root.detail = root.detail === "bt" ? "" : "bt"
                 onClicked: Net.toggleBt()
             }
+        }
+
+        Rectangle {
+            visible: root.detail !== ""
+            Layout.fillWidth: true
+            implicitHeight: detailLoader.implicitHeight + 12
+            radius: Theme.m3 ? 24 : Theme.r
+            color: Theme.fill2
+            Loader {
+                id: detailLoader
+                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 6 }
+                active: root.detail !== ""
+                sourceComponent: root.detail === "wifi" ? wifiC : btC
+            }
+            Component { id: wifiC; WifiList {} }
+            Component { id: btC; BtList {} }
         }
 
         RowLayout {

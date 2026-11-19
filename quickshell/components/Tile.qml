@@ -9,6 +9,9 @@ Hover {
     property string icon
     property string title
     property string sub
+    property bool more: false       // shows a chevron that opens a list (networks, devices)
+    property bool expanded: false
+    signal expand
     implicitHeight: Theme.m3 ? 64 : 60
     radius: Theme.m3 ? (on ? 20 : height / 2) : Theme.r
     base: Theme.fill2
@@ -33,8 +36,25 @@ Hover {
         Icon { anchors.centerIn: parent; name: root.icon; size: 20; filled: true; color: root.ink }
     }
     Column {
-        anchors { left: dot.right; leftMargin: 10; right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+        anchors { left: dot.right; leftMargin: 10; right: chev.visible ? chev.left : parent.right; rightMargin: chev.visible ? 2 : 12; verticalCenter: parent.verticalCenter }
         Txt { width: parent.width; text: root.title; font.pixelSize: 14; font.weight: Theme.strong; color: root.ink }
         Txt { width: parent.width; text: root.sub; font.pixelSize: 12; color: root.on ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.78) : Theme.muted; visible: text !== "" }
+    }
+
+    Hover {
+        id: chev
+        visible: root.more
+        anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
+        width: 30; height: 40
+        radius: 15
+        onClicked: root.expand()
+        Icon {
+            anchors.centerIn: parent
+            name: "chevron_right"
+            size: 20
+            color: root.ink
+            rotation: root.expanded ? 90 : 0
+            Behavior on rotation { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
+        }
     }
 }
