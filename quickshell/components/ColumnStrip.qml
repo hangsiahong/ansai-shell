@@ -28,9 +28,10 @@ Rectangle {
 
     visible: cols.length > 0
     implicitWidth: row.implicitWidth + 8
-    implicitHeight: Theme.m3 ? 32 : 26
+    // ansai: no capsule, just app icons in the menu bar; the active one sits in a soft pill with its name.
+    implicitHeight: Theme.m3 ? 32 : Theme.barH - 4
     radius: height / 2
-    color: Theme.m3 ? Theme.tonal : Theme.fill2
+    color: Theme.m3 ? Theme.tonal : "transparent"
 
     WheelHandler {
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
@@ -54,10 +55,10 @@ Rectangle {
                 readonly property string name: DesktopEntries.heuristicLookup(win.app_id)?.name ?? (win.app_id ?? "").split(".").pop()
                 readonly property bool dragged: root.dragFrom === index
 
-                height: root.height - 6
+                height: root.height - (Theme.m3 ? 6 : 0)
                 width: on ? Math.min(180, label.implicitWidth + height + 14) : height + (modelData.wins.length > 1 ? 8 : 0)
                 radius: height / 2
-                color: on ? Theme.accent : ma.containsMouse ? Theme.hover : "transparent"
+                color: on ? (Theme.m3 ? Theme.accent : Theme.dark ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(0, 0, 0, 0.08)) : ma.containsMouse ? Theme.hover : "transparent"
                 z: dragged ? 2 : 0
                 opacity: dragged ? 0.85 : 1
                 Behavior on width { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
@@ -77,7 +78,8 @@ Rectangle {
                     id: ic
                     x: (pill.height - size) / 2
                     anchors.verticalCenter: parent.verticalCenter
-                    size: pill.height - 8
+                    size: pill.height - (Theme.m3 ? 8 : 6)
+                    opacity: pill.on || Theme.m3 ? 1 : 0.8
                     icon: DesktopEntries.heuristicLookup(pill.win.app_id)?.icon ?? pill.win.app_id ?? ""
                     label: pill.name
                 }
@@ -97,7 +99,7 @@ Rectangle {
                     text: pill.name
                     font.pixelSize: 12
                     font.weight: Theme.strong
-                    color: Theme.accentInk
+                    color: Theme.m3 ? Theme.accentInk : Theme.text
                 }
 
                 MouseArea {
