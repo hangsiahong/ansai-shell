@@ -18,6 +18,7 @@ FloatingWindow {
 
     readonly property var pages: [
         { id: "appearance", l: "Appearance", icon: "palette", sub: "Style, theme, wallpaper, font" },
+        { id: "wallpaper", l: "Wallpaper", icon: "wallpaper", sub: "Pick a picture" },
         { id: "dock", l: "Dock", icon: "dock_to_left", sub: "Auto-hide, size, pinned apps" },
         { id: "displays", l: "Displays", icon: "desktop_windows", sub: "Resolution, refresh, scale" },
         { id: "graphics", l: "Graphics", icon: "memory", sub: "Integrated, hybrid, dGPU" },
@@ -83,7 +84,7 @@ FloatingWindow {
                             Rectangle {
                                 visible: !Theme.m3
                                 width: 26; height: 26; radius: 7
-                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#8e8e93"][nav.index]
+                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#32ade6", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#8e8e93"][nav.index]
                                 Icon { anchors.centerIn: parent; name: nav.modelData.icon; size: 17; filled: true; color: "#ffffff" }
                             }
                             Icon {
