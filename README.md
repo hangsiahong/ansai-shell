@@ -67,7 +67,7 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+Return | Terminal |
 | Super+E / Super+B | Files / browser |
 | Super+Shift+C (or Super+Shift+V, Alt+Shift+C) | Clipboard history: type to filter, Enter copies, Delete removes |
-| Super+I | Ask AI sidebar |
+| Super+I / Alt+A | Ask AI sidebar |
 | Super+Shift+S / Alt+Shift+S | Pick part of the screen and ask AI about it |
 | Clipboard: Ctrl+T / Ctrl+S / Ctrl+E / Ctrl+J / Tab | Translate / summarize / fix writing / ask in sidebar / AI find |
 | Super+O | Overview |
@@ -96,7 +96,7 @@ Uses the [KOOMPI AI Gateway](https://ai.koompi.cloud) (OpenAI-compatible). Paste
 **Settings → AI**; it is saved to `~/.config/ansai-shell/ai-key` (mode 600) and only `quickshell/scripts/ai.py` reads it.
 The default model is `koompi-luna` (Mekong: Khmer and images); pick another there or set `"aiModel"` in settings.json.
 
-- **Ask AI sidebar** (Super+I, or ✦ in Control Center): streaming chat in English or Khmer; attach a screen area, or paste
+- **Ask AI sidebar** (Super+I or Alt+A, or ✦ in Control Center): streaming chat in English or Khmer; attach a screen area, or paste
   (Ctrl+V or the clipboard button) text or an image such as a screenshot you just took. The conversation stays until you start a new one.
 - **Ask about the screen** (Super+Shift+S or Alt+Shift+S): pick an area; it is saved to `~/Pictures/Screenshots`, copied, and
   opened in the sidebar with the image attached ("what does this error mean?").

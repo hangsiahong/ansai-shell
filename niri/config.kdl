@@ -205,6 +205,7 @@ binds {
     Mod+Shift+V     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
     Alt+Shift+C     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
     Mod+I           hotkey-overlay-title="Ask AI" { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "toggle"; }
+    Alt+A           hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "toggle"; }
     Mod+Shift+S     hotkey-overlay-title="Ask AI about part of the screen" { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "screenshot"; }
     Alt+Shift+S     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "screenshot"; }
 
