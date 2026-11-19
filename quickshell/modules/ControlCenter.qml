@@ -424,40 +424,46 @@ Sheet {
             }
         }
 
+        // Mixed sizes like macOS: two wide toggles, then a row of icon-only buttons (room to add more).
         RowLayout {
             Layout.fillWidth: true
             spacing: 10
             MacToggle {
                 Layout.fillWidth: true; Layout.preferredWidth: 1
-                wide: false
                 on: Settings.nightLight
                 icon: "nightlight"
                 label: "Night Shift"
+                sub: Settings.nightLight ? "On" : "Off"
                 onColor: Theme.warn
                 onClicked: Settings.nightLight = !Settings.nightLight
             }
             MacToggle {
                 Layout.fillWidth: true; Layout.preferredWidth: 1
-                wide: false
                 on: Battery.profile !== "Balanced"
                 icon: Battery.profile === "Performance" ? "bolt" : Battery.profile === "PowerSaver" ? "eco" : "balance"
-                label: Battery.profile === "PowerSaver" ? "Low Power" : Battery.profile === "Performance" ? "Performance" : "Balanced"
+                label: "Power Mode"
+                sub: Battery.profile === "PowerSaver" ? "Low Power" : Battery.profile === "Performance" ? "Performance" : "Balanced"
                 onColor: Battery.profile === "PowerSaver" ? Theme.green : Theme.warn
                 onClicked: Battery.cycleProfile()
             }
-            MacToggle {
-                Layout.fillWidth: true; Layout.preferredWidth: 1
-                wide: false
-                icon: "screenshot_region"
-                label: "Screenshot"
-                onClicked: { Shell.close(); Niri.action("screenshot"); }
-            }
-            MacToggle {
-                Layout.fillWidth: true; Layout.preferredWidth: 1
-                wide: false
-                icon: "palette"
-                label: "Android"
-                onClicked: { Settings.style = "material"; Settings.font = ""; }
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+            Repeater {
+                model: [
+                    { icon: "screenshot_region", run: () => { Shell.close(); Niri.action("screenshot"); } },
+                    { icon: "android", run: () => { Settings.style = "material"; Settings.font = ""; } },
+                    { icon: "lock", run: () => { Shell.close(); Lock.lock(); } },
+                    { icon: "power_settings_new", run: () => { Shell.open = "power"; } }
+                ]
+                MacToggle {
+                    required property var modelData
+                    Layout.fillWidth: true; Layout.preferredWidth: 1
+                    wide: false
+                    icon: modelData.icon
+                    onClicked: modelData.run()
+                }
             }
         }
 

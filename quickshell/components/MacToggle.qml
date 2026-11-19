@@ -11,14 +11,14 @@ MacModule {
     property bool wide: true
     property color onColor: Theme.accent
     signal clicked
-    implicitHeight: wide ? 52 : 74
+    implicitHeight: wide || !label ? 52 : 74
 
     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.clicked() }
 
     Rectangle {
         id: c
         x: root.wide ? 11 : (parent.width - width) / 2
-        y: root.wide ? (parent.height - height) / 2 : 10
+        y: root.wide || !root.label ? (parent.height - height) / 2 : 10
         width: 30; height: 30; radius: 15
         color: root.on ? root.onColor : Theme.dark ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(0, 0, 0, 0.08)
         Behavior on color { ColorAnimation { duration: Theme.fast } }
@@ -31,7 +31,7 @@ MacModule {
         Txt { width: parent.width; text: root.sub; font.pixelSize: 11; color: Theme.muted; visible: text !== "" }
     }
     Txt {
-        visible: !root.wide
+        visible: !root.wide && !!root.label
         anchors { horizontalCenter: parent.horizontalCenter; top: c.bottom; topMargin: 6 }
         width: parent.width - 8
         horizontalAlignment: Text.AlignHCenter
