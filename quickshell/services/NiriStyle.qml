@@ -52,7 +52,9 @@ layer-rule {
 }
 layer-rule {
     match namespace="^ansai-toasts$"
-    geometry-corner-radius 22
+    // niri clips the toast's blur to this radius without antialiasing; rounder than the 22px card
+    // keeps the steps inside the card instead of on its edge.
+    geometry-corner-radius 30
 }
 layer-rule {
     match namespace="^ansai-(appmenu|system|dockmenu)$"
