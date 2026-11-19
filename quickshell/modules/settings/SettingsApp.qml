@@ -85,7 +85,7 @@ FloatingWindow {
                                 visible: !Theme.m3
                                 width: 26; height: 26; radius: 7
                                 color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#32ade6", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#8e8e93"][nav.index]
-                                Icon { anchors.centerIn: parent; name: nav.modelData.icon; size: 17; filled: true; color: "#ffffff" }
+                                Icon { anchors.centerIn: parent; name: nav.modelData.icon; size: 18; filled: true; color: "#ffffff" }
                             }
                             Icon {
                                 visible: Theme.m3
