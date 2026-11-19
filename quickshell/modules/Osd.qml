@@ -5,14 +5,19 @@ import qs
 import qs.components
 import qs.services
 
-// Volume / brightness pill, bottom center, like iOS.
+// Volume / brightness. material: pill at the bottom. ansai: macOS 27.2, a segmented bar that drops
+// down under the menu bar's status icons, one large icon on the left.
 PanelWindow {
     id: root
     screen: Quickshell.screens.find(s => s.name === Niri.focusedOutput) ?? Quickshell.screens[0]
-    anchors.bottom: true
+    anchors.bottom: Theme.m3
+    anchors.top: !Theme.m3
+    anchors.right: !Theme.m3
     margins.bottom: 72
-    implicitWidth: 260
-    implicitHeight: Theme.m3 ? 60 : 52
+    margins.top: Theme.barH + 6
+    margins.right: 150
+    implicitWidth: Theme.m3 ? 260 : 250
+    implicitHeight: Theme.m3 ? 60 : 50
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
     visible: shown || pill.opacity > 0
@@ -41,7 +46,7 @@ PanelWindow {
     Glass {
         id: pill
         anchors.fill: parent
-        radius: height / 2
+        radius: Theme.m3 ? height / 2 : 16
         opacity: root.shown ? 1 : 0
         scale: root.shown ? 1 : 0.92
         Behavior on opacity { NumberAnimation { duration: Theme.med } }
@@ -53,10 +58,28 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             name: root.kind === "volume" ? Audio.icon() : "light_mode"
             filled: true
-            size: 22
+            size: Theme.m3 ? 22 : 26
             color: Theme.m3 ? Theme.accent : Theme.text
         }
+        readonly property real level: root.kind === "volume" ? (Audio.muted ? 0 : Audio.volume) : Brightness.value
+        Row {
+            visible: !Theme.m3
+            anchors { left: ic.right; leftMargin: 12; right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+            spacing: 3
+            Repeater {
+                model: 16
+                Rectangle {
+                    required property int index
+                    width: (parent.width - 15 * 3) / 16
+                    height: 8
+                    radius: 2
+                    color: index < Math.round(pill.level * 16) ? Theme.text : Theme.fill
+                    Behavior on color { ColorAnimation { duration: 90 } }
+                }
+            }
+        }
         Rectangle {
+            visible: Theme.m3
             anchors { left: ic.right; leftMargin: 12; right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
             height: Theme.m3 ? 16 : 6; radius: height / 2
             color: Theme.m3 ? Theme.tonal : Theme.fill

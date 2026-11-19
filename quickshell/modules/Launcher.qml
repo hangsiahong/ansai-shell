@@ -12,10 +12,11 @@ Sheet {
     id: root
     name: "launcher"
     exclusiveKeys: true
-    panelWidth: Math.min(640, width - 32)
-    panelHeight: 64 + Math.min(results.count, 8) * 52 + (results.count > 0 ? 16 : 0)
-    panelY: height * 0.18
-    panelRadius: Theme.m3 ? 28 : 22
+    panelWidth: Math.min(Theme.m3 ? 640 : 680, width - 32)
+    panelHeight: (Theme.m3 ? 64 : 60) + Math.min(results.count, 8) * 52 + (results.count > 0 ? 16 : 0)
+    panelY: height * (Theme.m3 ? 0.18 : 0.24)
+    // ansai: macOS Spotlight, a full pill until results open it into a rounded panel.
+    panelRadius: Theme.m3 ? 28 : results.count > 0 ? 26 : 30
 
     property string query: ""
     property int sel: 0
@@ -37,6 +38,8 @@ Sheet {
             return val ? [{ kind: "calc", title: val, sub: "Copy result", icon: "calculate" }] : [];
         }
 
+        // ansai: like macOS search, nothing below the field until you type.
+        if (!q && !Theme.m3) return [];
         const out = [];
         const score = (name, extra) => {
             if (!q) return 1;
@@ -110,16 +113,16 @@ Sheet {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: Theme.m3 ? 56 : 48
-            radius: Theme.m3 ? height / 2 : 14
-            color: Theme.m3 ? Theme.surface3 : Theme.fill2
+            Layout.preferredHeight: Theme.m3 ? 56 : 44
+            radius: height / 2
+            color: Theme.m3 ? Theme.surface3 : "transparent"
 
             Icon {
                 id: searchIcon
-                x: Theme.m3 ? 18 : 14
+                x: Theme.m3 ? 18 : 10
                 anchors.verticalCenter: parent.verticalCenter
                 name: "search"
-                size: 22
+                size: Theme.m3 ? 22 : 24
                 color: Theme.m3 ? Theme.text2 : Theme.muted
             }
 
@@ -128,7 +131,7 @@ Sheet {
                 anchors { left: searchIcon.right; leftMargin: 10; right: hint.left; rightMargin: 10; verticalCenter: parent.verticalCenter }
                 color: Theme.text
                 font.family: Theme.font
-                font.pixelSize: 19
+                font.pixelSize: Theme.m3 ? 19 : 22
                 selectionColor: Theme.accentSoft
                 selectedTextColor: Theme.text
                 clip: true
@@ -145,9 +148,9 @@ Sheet {
                 Txt {
                     anchors.fill: parent
                     visible: !input.text
-                    text: "Search or run…"
+                    text: Theme.m3 ? "Search or run…" : "Search apps and windows"
                     color: Theme.faint
-                    font.pixelSize: 19
+                    font.pixelSize: Theme.m3 ? 19 : 22
                 }
             }
 
