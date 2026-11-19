@@ -13,6 +13,7 @@ Singleton {
     property alias use24h: adapter.use24h
     property alias dnd: adapter.dnd
     property alias nightLight: adapter.nightLight
+    property alias keepAwake: adapter.keepAwake
     property alias pinned: adapter.pinned
     property alias usage: adapter.usage
 
@@ -36,6 +37,7 @@ Singleton {
             property bool use24h: false
             property bool dnd: false
             property bool nightLight: false
+            property bool keepAwake: true
             property var usage: ({})
             property list<string> pinned: ["org.gnome.Nautilus", "com.mitchellh.ghostty", "zen", "firefox", "code"]
         }

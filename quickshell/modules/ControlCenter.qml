@@ -80,6 +80,14 @@ Sheet {
             }
             RoundToggle {
                 Layout.fillWidth: true
+                on: Settings.keepAwake
+                icon: "coffee"
+                label: "Awake"
+                onColor: Theme.green
+                onClicked: Settings.keepAwake = !Settings.keepAwake
+            }
+            RoundToggle {
+                Layout.fillWidth: true
                 on: Battery.profile !== "Balanced"
                 icon: Battery.profile === "Performance" ? "bolt" : Battery.profile === "PowerSaver" ? "eco" : "balance"
                 label: Battery.profile === "PowerSaver" ? "Saver" : Battery.profile === "Performance" ? "Perf" : "Balanced"

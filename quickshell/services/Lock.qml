@@ -17,6 +17,12 @@ Singleton {
     property string status: ""   // "", "checking", "fail"
     readonly property string user: Quickshell.env("USER")
 
+    // desktop control (ansai src/server/desktop.py) refuses input while this file exists.
+    onLockedChanged: {
+        const dir = (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/ansai-shell";
+        Quickshell.execDetached(["sh", "-c", locked ? `mkdir -p "${dir}" && touch "${dir}/locked"` : `rm -f "${dir}/locked"`]);
+    }
+
     function lock(): void {
         buffer = "";
         status = "";

@@ -20,6 +20,12 @@ PanelWindow {
 
     readonly property var wss: Niri.workspacesOn(modelData.name)
 
+    // Keeps swayidle from locking or blanking while agents may be driving the desktop.
+    IdleInhibitor {
+        window: bar
+        enabled: Settings.keepAwake
+    }
+
     Rectangle {
         anchors.fill: parent
         color: Theme.dark ? Qt.rgba(0, 0, 0, 0.55) : Qt.rgba(242/255, 242/255, 247/255, 0.72)

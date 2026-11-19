@@ -32,6 +32,7 @@ ShellRoot {
     Component.onCompleted: {
         Lock.locked; // instantiate the lock singleton so its IPC handler registers
         Quickshell.execDetached(["mkdir", "-p", Settings.dir]);
+        Quickshell.execDetached(["rm", "-f", (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/ansai-shell/locked"]);
     }
 
     IpcHandler {
