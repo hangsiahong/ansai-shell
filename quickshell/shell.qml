@@ -38,6 +38,7 @@ ShellRoot {
 
     Component.onCompleted: {
         Lock.locked; // instantiate the lock singleton so its IPC handler registers
+        SystemTheme.stamp; // GTK/Qt/Ghostty colours, see services/SystemTheme.qml
         NiriStyle.text; // writes ~/.config/niri/ansai-style.kdl for window borders
         Quickshell.execDetached(["mkdir", "-p", Settings.dir]);
         Quickshell.execDetached(["rm", "-f", (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/ansai-shell/locked"]);

@@ -21,6 +21,7 @@ Singleton {
     property alias dockMode: adapter.dockMode
     property alias dockSize: adapter.dockSize
     property alias dockMagnify: adapter.dockMagnify
+    property alias systemTheme: adapter.systemTheme
 
     readonly property string dir: Quickshell.env("XDG_CONFIG_HOME") ? Quickshell.env("XDG_CONFIG_HOME") + "/ansai-shell" : Quickshell.env("HOME") + "/.config/ansai-shell"
 
@@ -49,6 +50,7 @@ Singleton {
             property string dockMode: "smart"   // "smart": hide when a window covers it | "auto": always hide | "always": never hide
             property int dockSize: 44
             property bool dockMagnify: true
+            property bool systemTheme: true   // theme GTK/Qt apps and Ghostty to match (services/SystemTheme.qml)
             property list<string> pinned: ["org.gnome.Nautilus", "com.mitchellh.ghostty", "zen", "firefox", "code"]
         }
     }

@@ -38,3 +38,11 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 qs -c ansai ipc call shell theme light
 qs -c ansai ipc call shell wallpaper ~/Pictures/wall.jpg
 ```
+
+## System theme
+
+The shell themes apps to match (`quickshell/services/SystemTheme.qml`), live on every style/theme/wallpaper change:
+GTK4/libadwaita and GTK3 (`~/.config/gtk-{3,4}.0/gtk.css`, adw-gtk3), dark/light, accent and UI font via gsettings
+(browsers and Qt follow), and Ghostty (`theme = light:ansai-light,dark:ansai-dark`).
+Already-open GTK apps pick up new colours when reopened. The first run backs up what it replaced to
+`~/.config/ansai-shell/system-theme-backup/`; to undo, set `"systemTheme": false` in settings.json and run `restore.sh` there.
