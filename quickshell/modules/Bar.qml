@@ -18,8 +18,6 @@ PanelWindow {
     WlrLayershell.namespace: "ansai-bar"
     WlrLayershell.layer: WlrLayer.Top
 
-    readonly property var wss: Niri.workspacesOn(modelData.name)
-
     // Keeps swayidle from locking or blanking while agents may be driving the desktop.
     IdleInhibitor {
         window: bar
@@ -78,7 +76,6 @@ PanelWindow {
         }
 
         BarClock { visible: Theme.m3 }
-        BarWorkspaces { visible: !Theme.m3 && wss.length > 0; wss: bar.wss }
 
         Hover {
             id: appName
@@ -110,9 +107,8 @@ PanelWindow {
         }
     }
 
-    // ---- center: clock (workspaces in material)
+    // ---- center: clock (material keeps it on the left); workspaces live in the dock
     BarClock { anchors.centerIn: parent; visible: !Theme.m3 }
-    BarWorkspaces { anchors.centerIn: parent; visible: Theme.m3 && wss.length > 0; wss: bar.wss }
 
     // ---- right: tray, status cluster
     RowLayout {

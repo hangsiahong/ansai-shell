@@ -10,8 +10,8 @@ Singleton {
     property real appMenuX: 0
     // Dock context menu: the item it was opened on (null for the dock's own settings), where, and which screen.
     property var dockItem: null
-    property real dockMenuX: 0
-    property real dockTop: 0
+    property real dockMenuY: 0
+    property real dockEdge: 0   // the dock's right edge, screen x
     // Nested test runs must not take over the host session's D-Bus services.
     readonly property bool nested: Quickshell.env("ANSAI_SHELL_NESTED") === "1"
 

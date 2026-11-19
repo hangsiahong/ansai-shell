@@ -4,7 +4,7 @@ import qs
 import qs.components
 import qs.services
 
-// One app on the dock: icon, hover magnify, tooltip, running dots, urgent badge, drag to reorder.
+// One app on the vertical dock: icon, hover magnify, tooltip, running dots, urgent badge, drag to reorder.
 Item {
     id: root
     required property var dock
@@ -19,21 +19,21 @@ Item {
     readonly property string name: item.entry?.name ?? item.id
     readonly property bool dragging: dock.dragKey === item.key
 
-    width: size + (firstUnpinned ? 13 : 0)
-    height: size
+    width: size
+    height: size + (firstUnpinned ? 13 : 0)
 
     // Divider between pinned and running-only apps.
     Rectangle {
         visible: root.firstUnpinned
-        x: 0
-        width: 1; height: root.size * 0.6
-        anchors.verticalCenter: parent.verticalCenter
+        y: 0
+        width: root.size * 0.6; height: 1
+        anchors.horizontalCenter: parent.horizontalCenter
         color: Theme.line
     }
 
     Item {
         id: slot
-        x: root.firstUnpinned ? 13 : 0
+        y: root.firstUnpinned ? 13 : 0
         width: root.size; height: root.size
 
         // Launch feedback: bounce until a window shows up (or 4s).
@@ -59,10 +59,10 @@ Item {
             icon: root.item.entry?.icon ?? root.item.id
             label: root.name
             opacity: root.dragging ? 0.85 : 1
-            transformOrigin: Item.Bottom
+            transformOrigin: Item.Left
             scale: Settings.dockMagnify && ma.containsMouse && !root.dragging ? 1.18 : 1
             Behavior on scale { NumberAnimation { duration: Theme.fast; easing.type: Theme.spring } }
-            transform: Translate { id: lift; x: drag.dx; y: drag.dy + bounce.off }
+            transform: Translate { x: drag.dx + bounce.off; y: drag.dy }
         }
 
         QtObject {
@@ -73,24 +73,24 @@ Item {
             running: slot.launching || root.urgent
             loops: Animation.Infinite
             alwaysRunToEnd: true
-            NumberAnimation { target: bounce; property: "off"; to: -10; duration: 260; easing.type: Easing.OutQuad }
+            NumberAnimation { target: bounce; property: "off"; to: 10; duration: 260; easing.type: Easing.OutQuad }
             NumberAnimation { target: bounce; property: "off"; to: 0; duration: 340; easing.type: Easing.OutBounce }
             PauseAnimation { duration: root.urgent ? 900 : 120 }
         }
 
-        // Running indicator: a dot per window (max 3), a pill when focused.
-        Row {
-            anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: -root.dock.pad + 2 }
+        // Running indicator on the screen-edge side: a dot per window (max 3), a pill when focused.
+        Column {
+            anchors { verticalCenter: parent.verticalCenter; left: parent.left; leftMargin: -root.dock.pad + 2 }
             spacing: 3
             visible: root.running && !root.dragging
             Repeater {
                 model: root.focused ? 1 : Math.min(3, root.item.windows.length)
                 Rectangle {
-                    width: root.focused ? 14 : 4
-                    height: 4
+                    width: 4
+                    height: root.focused ? 14 : 4
                     radius: 2
                     color: root.focused ? Theme.accent : Theme.text2
-                    Behavior on width { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
+                    Behavior on height { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
                 }
             }
         }
@@ -109,8 +109,8 @@ Item {
         Rectangle {
             id: tip
             readonly property bool show: ma.containsMouse && !ma.pressed && !root.dragging && Shell.open !== "dockmenu"
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: -height - (Settings.dockMagnify ? 18 : 12)
+            anchors.verticalCenter: parent.verticalCenter
+            x: parent.width + (Settings.dockMagnify ? 22 : 16)
             width: tipTxt.implicitWidth + 20
             height: 26
             radius: Theme.m3 ? 13 : 8
@@ -152,19 +152,19 @@ Item {
                 if (!drag.moved && Math.hypot(dx, dy) < 8) return;
                 drag.moved = true;
                 root.dock.dragKey = root.item.key;
-                drag.dx = dx;
-                drag.dy = Math.min(0, dy);
-                root.dock.dragTo(slot.mapToItem(root.dock.contentItem, m.x, 0).x);
+                drag.dx = Math.max(0, dx);
+                drag.dy = dy;
+                root.dock.dragTo(slot.mapToItem(root.dock.contentItem, 0, m.y).y);
             }
             onReleased: m => {
                 if (!drag.moved) return;
-                root.dock.drop(root.item, drag.dy < -root.size * 1.4);
+                root.dock.drop(root.item, drag.dx > root.size * 1.4);
                 drag.dx = 0; drag.dy = 0;
             }
             onClicked: m => {
                 if (drag.moved) { drag.moved = false; return; }
                 if (m.button === Qt.RightButton) {
-                    root.dock.openMenu(root.item, slot.mapToItem(root.dock.contentItem, slot.width / 2, 0).x);
+                    root.dock.openMenu(root.item, slot.mapToItem(root.dock.contentItem, 0, slot.height / 2).y);
                 } else if (m.button === Qt.MiddleButton || (m.modifiers & Qt.ShiftModifier)) {
                     slot.launching = true;
                     root.dock.launch(root.item);
@@ -179,11 +179,11 @@ Item {
         Behavior on opacity { NumberAnimation { duration: Theme.fast } }
     }
 
-    // "Remove" hint when dragged far enough up.
+    // "Unpin" hint when dragged far enough off the dock.
     Rectangle {
-        visible: root.dragging && drag.dy < -root.size * 1.4 && root.item.pinned
-        anchors.horizontalCenter: slot.horizontalCenter
-        y: drag.dy - 30
+        visible: root.dragging && drag.dx > root.size * 1.4 && root.item.pinned
+        x: drag.dx + root.size + 8
+        y: slot.y + drag.dy + (root.size - height) / 2
         width: rmTxt.implicitWidth + 16; height: 22; radius: 11
         color: Theme.danger
         Txt { id: rmTxt; anchors.centerIn: parent; text: "Unpin"; font.pixelSize: 11; font.weight: Theme.strong; color: "#ffffff" }

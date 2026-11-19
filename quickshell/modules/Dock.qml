@@ -5,9 +5,10 @@ import qs
 import qs.components
 import qs.services
 
-// Bottom dock: pinned apps, then running ones. Auto-hides (smart, auto, or never; see Settings.dockMode).
+// Left-edge dock: apps button, workspaces (vertical, like niri stacks them), pinned apps, then running ones.
+// Auto-hides (smart, auto, or never; see Settings.dockMode).
 // Left click focuses / launches / cycles windows, middle opens a new one, wheel cycles,
-// drag reorders (drag up and off to unpin), right click opens DockMenu.
+// drag reorders (drag right and off to unpin), right click opens DockMenu.
 PanelWindow {
     id: root
     required property ShellScreen modelData
@@ -16,21 +17,22 @@ PanelWindow {
     readonly property int size: Settings.dockSize
     readonly property int pad: 8
     readonly property int gap: 8          // dock to screen edge
-    readonly property int boxH: size + pad * 2
-    readonly property int tipRoom: 44     // tooltip and magnify headroom
+    readonly property int boxW: size + pad * 2
+    readonly property int tipRoom: 260    // tooltip and magnify room to the right
 
-    anchors { bottom: true; left: true; right: true }
-    // Grows while dragging so a pulled-up icon is not clipped.
-    implicitHeight: boxH + gap + tipRoom + (dragKey !== "" ? 120 : 0)
+    anchors { left: true; top: true; bottom: true }
+    // Grows while dragging so a pulled-out icon is not clipped.
+    implicitWidth: boxW + gap + tipRoom + (dragKey !== "" ? 120 : 0)
     color: "transparent"
     exclusionMode: Settings.dockMode === "always" ? ExclusionMode.Normal : ExclusionMode.Ignore
-    exclusiveZone: Settings.dockMode === "always" ? boxH + gap : 0
+    exclusiveZone: Settings.dockMode === "always" ? boxW + gap : 0
     WlrLayershell.namespace: "ansai-dock"
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     // ---- what is on the dock
-    readonly property var ws: Niri.workspaces.find(w => (w.output === modelData.name || !w.output) && w.is_active) ?? null
+    readonly property var wss: Niri.workspacesOn(modelData.name)
+    readonly property var ws: wss.find(w => w.is_active) ?? null
     readonly property var items: {
         const wins = Object.values(Niri.windows);
         const byKey = {};
@@ -58,15 +60,15 @@ PanelWindow {
     }
 
     // ---- auto-hide
-    readonly property real boxTop: height - gap - boxH
-    // Tiled windows always span the full height in niri, so any tiled window covers the dock.
+    readonly property real boxRight: gap + boxW
+    // niri lays tiled columns out from the left edge, so any tiled window covers the dock.
     readonly property bool covered: {
         if (!ws) return false;
         return Niri.windowsOn(ws.id).some(w => {
             if (!w.is_floating) return true;
             const p = w.layout?.tile_pos_in_workspace_view, s = w.layout?.tile_size;
             if (!p || !s) return true;
-            return p[1] + s[1] > boxTop && p[0] < box.x + box.width && p[0] + s[0] > box.x;
+            return p[0] < boxRight && p[1] < box.y + box.height && p[1] + s[1] > box.y;
         });
     }
     readonly property bool menuHere: Shell.open === "dockmenu"
@@ -85,32 +87,32 @@ PanelWindow {
     Timer { id: leave; interval: 400; onTriggered: root.hot = false }
 
     mask: Region { item: root.revealed ? hit : edge }
-    Item { id: edge; x: box.x; width: box.width; y: root.height - 2; height: 2 }
-    Item { id: hit; x: box.x; width: box.width; y: root.boxTop; height: root.height - root.boxTop }
+    Item { id: edge; x: 0; width: 2; y: box.y; height: box.height }
+    Item { id: hit; x: 0; width: root.boxRight; y: box.y; height: box.height }
 
     BackgroundEffect.blurRegion: Region { item: box; radius: box.radius }
 
     // ---- the dock
     Glass {
         id: box
-        width: row.width + root.pad * 2
-        height: root.boxH
-        x: (root.width - width) / 2
-        y: root.revealed ? root.boxTop : root.height + 2
-        radius: Theme.m3 ? height / 2 : Theme.rLg + 4
-        Behavior on y { NumberAnimation { duration: Theme.med; easing.type: root.revealed ? Theme.spring : Theme.easing } }
-        Behavior on width { NumberAnimation { duration: Theme.med; easing.type: Theme.easing } }
+        width: root.boxW
+        height: col.height + root.pad * 2
+        x: root.revealed ? root.gap : -width - 2
+        y: Math.max(root.gap, (root.height - height) / 2)
+        radius: Theme.m3 ? width / 2 : Theme.rLg + 4
+        Behavior on x { NumberAnimation { duration: Theme.med; easing.type: root.revealed ? Theme.spring : Theme.easing } }
+        Behavior on height { NumberAnimation { duration: Theme.med; easing.type: Theme.easing } }
 
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.RightButton
-            onClicked: m => root.openMenu(null, box.x + m.x)
+            onClicked: m => root.openMenu(null, box.y + m.y)
         }
 
-        Row {
-            id: row
-            x: root.pad
-            anchors.verticalCenter: parent.verticalCenter
+        Column {
+            id: col
+            y: root.pad
+            anchors.horizontalCenter: parent.horizontalCenter
             spacing: 6
 
             // Apps grid button
@@ -121,7 +123,7 @@ PanelWindow {
                 active: Shell.open === "launcher"
                 activeColor: Theme.accent
                 onClicked: m => {
-                    if (m.button === Qt.RightButton) root.openMenu(null, box.x + row.x + x + width / 2);
+                    if (m.button === Qt.RightButton) root.openMenu(null, box.y + col.y + y + height / 2);
                     else Shell.toggle("launcher");
                 }
                 Icon {
@@ -131,9 +133,81 @@ PanelWindow {
                     color: parent.active ? Theme.accentInk : Theme.m3 ? Theme.accentSoftInk : Theme.text
                 }
             }
+
+            // Workspaces, top to bottom like niri. Wheel moves between them.
             Rectangle {
-                width: 1; height: root.size * 0.6
-                anchors.verticalCenter: parent.verticalCenter
+                visible: root.wss.length > 0
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: root.size * 0.62
+                height: wsCol.height + 14
+                radius: width / 2
+                color: Theme.m3 ? Theme.tonal : Theme.fill2
+
+                MouseArea {
+                    anchors.fill: parent
+                    onWheel: w => Niri.action(w.angleDelta.y > 0 ? "focus-workspace-up" : "focus-workspace-down")
+                }
+
+                Column {
+                    id: wsCol
+                    anchors.centerIn: parent
+                    spacing: 4
+                    Repeater {
+                        model: root.wss
+                        Hover {
+                            id: wsb
+                            required property var modelData
+                            readonly property bool on: modelData.is_active
+                            readonly property int count: Niri.windowsOn(modelData.id).length
+                            width: root.size * 0.62 - 8
+                            height: on ? 34 : 18
+                            radius: width / 2
+                            base: "transparent"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            Behavior on height { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
+                            onClicked: Niri.focusWorkspace(modelData)
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: wsb.on ? parent.width - 6 : 8
+                                height: wsb.on ? parent.height - 6 : 8
+                                radius: width / 2
+                                color: wsb.on ? Theme.accent : wsb.count > 0 ? (Theme.m3 ? Theme.tonalInk : Theme.muted) : Theme.faint
+                                Behavior on height { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
+                                Behavior on color { ColorAnimation { duration: Theme.med } }
+                                Txt {
+                                    anchors.centerIn: parent
+                                    visible: wsb.on
+                                    text: wsb.modelData.idx
+                                    font.pixelSize: 11
+                                    font.weight: Theme.strong
+                                    color: Theme.accentInk
+                                }
+                            }
+                            Rectangle {   // tooltip
+                                visible: wsb.hovered
+                                x: parent.width + 18
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: wsTip.implicitWidth + 20; height: 26
+                                radius: Theme.m3 ? 13 : 8
+                                color: Theme.m3 ? Theme.surface3 : Theme.dark ? "#2c2c2e" : "#ffffff"
+                                border.width: Theme.m3 ? 0 : 1
+                                border.color: Theme.glassLine
+                                Txt {
+                                    id: wsTip
+                                    anchors.centerIn: parent
+                                    text: (wsb.modelData.name || "Workspace " + wsb.modelData.idx) + (wsb.count ? `  ·  ${wsb.count}` : "  ·  empty")
+                                    font.pixelSize: 12
+                                    font.weight: Font.Medium
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                width: root.size * 0.6; height: 1
+                anchors.horizontalCenter: parent.horizontalCenter
                 color: Theme.line
                 visible: root.items.length > 0
             }
@@ -154,18 +228,17 @@ PanelWindow {
 
         // Drop marker while reordering
         Rectangle {
-            id: marker
-            visible: root.dragKey !== "" && root.dropX >= 0
-            x: root.dropX - box.x - 1
-            y: root.pad
-            width: 3; height: root.size
+            visible: root.dragKey !== "" && root.dropY >= 0
+            y: root.dropY - box.y - 1
+            x: root.pad
+            width: root.size; height: 3
             radius: 1.5
             color: Theme.accent
         }
     }
 
     // ---- actions
-    property real dropX: -1
+    property real dropY: -1
     property int dropIdx: -1
 
     function launch(it: var): void {
@@ -188,10 +261,11 @@ PanelWindow {
         else if (ids.length > 1) Niri.focusWindow(ids[(cur + step + ids.length) % ids.length]);
     }
 
-    function openMenu(it: var, x: real): void {
+    // y is in window coordinates; the window may start below the bar when it reserves space.
+    function openMenu(it: var, y: real): void {
         Shell.dockItem = it;
-        Shell.dockMenuX = x;
-        Shell.dockTop = root.screen.height - root.gap - root.boxH;   // screen coordinates, for the menu sheet
+        Shell.dockMenuY = y + root.screen.height - root.height;
+        Shell.dockEdge = root.boxRight;
         Shell.open = "dockmenu";
         root.hot = true;
     }
@@ -209,25 +283,24 @@ PanelWindow {
     }
 
     // Called by a dragged DockItem with its centre in window coordinates.
-    function dragTo(cx: real): void {
-        let best = -1, bestD = 1e9, bx = -1;
-        const n = Settings.pinned.length;
+    function dragTo(cy: real): void {
+        let best = -1, bestD = 1e9, by = -1;
         for (let i = 0; i < rep.count; i++) {
             const d = rep.itemAt(i);
             if (!d || !d.item.pinned) continue;
             const p = d.mapToItem(root.contentItem, 0, 0);
-            for (const [slot, sx] of [[i, p.x - 3], [i + 1, p.x + d.width + 3]]) {
-                const dist = Math.abs(cx - sx);
-                if (dist < bestD) { bestD = dist; best = slot; bx = sx; }
+            for (const [slot, sy] of [[i, p.y - 3], [i + 1, p.y + d.height + 3]]) {
+                const dist = Math.abs(cy - sy);
+                if (dist < bestD) { bestD = dist; best = slot; by = sy; }
             }
         }
-        if (n === 0) {
+        if (best < 0) {
             const first = rep.itemAt(0);
-            bx = first ? first.mapToItem(root.contentItem, 0, 0).x - 3 : box.x + root.pad;
+            by = first ? first.mapToItem(root.contentItem, 0, 0).y - 3 : box.y + root.pad;
             best = 0;
         }
         dropIdx = best;
-        dropX = bx;
+        dropY = by;
     }
     function drop(it: var, offDock: bool): void {
         if (offDock) {
@@ -238,6 +311,6 @@ PanelWindow {
         }
         dragKey = "";
         dropIdx = -1;
-        dropX = -1;
+        dropY = -1;
     }
 }

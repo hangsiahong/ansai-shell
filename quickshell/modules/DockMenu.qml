@@ -12,10 +12,10 @@ Sheet {
     exclusiveKeys: true
     panelWidth: 260
     panelHeight: col.implicitHeight + 12
-    panelX: Math.max(8, Math.min(Shell.dockMenuX - panelWidth / 2, width - panelWidth - 8))
-    panelY: Shell.dockTop - panelHeight - 10
+    panelX: Shell.dockEdge + 10
+    panelY: Math.max(Theme.barH + 8, Math.min(Shell.dockMenuY - 24, height - panelHeight - 8))
     panelRadius: Theme.m3 ? 20 : 12
-    enterFrom: 6
+    enterFrom: 0
 
     // Captured on open so live window changes don't reshuffle the menu under the pointer.
     property var it: null
