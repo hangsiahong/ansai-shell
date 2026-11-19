@@ -12,7 +12,15 @@ Item {
     implicitWidth: size
     implicitHeight: size
 
-    readonly property string src: icon ? Quickshell.iconPath(icon, true) : ""
+    // Tray items hand over ready image URLs (image://icon/…, image://qspixmap/…); only bare names go through the theme.
+    readonly property string src: !icon ? "" : icon.includes("://") ? fixPath(icon) : icon.startsWith("/") ? "file://" + icon : Quickshell.iconPath(icon, true)
+    // Some apps (Telegram, Electron) send "name?path=/dir" for icons outside the theme.
+    function fixPath(u) {
+        const i = u.indexOf("?path=");
+        if (i < 0) return u;
+        const name = u.slice("image://icon/".length, i), dir = u.slice(i + 6);
+        return Quickshell.iconPath(name, true) || "file://" + dir + "/" + name + ".png";
+    }
 
     IconImage {
         id: img

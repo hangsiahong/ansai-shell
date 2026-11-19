@@ -20,6 +20,11 @@ mkdir -p "$cfg/ansai-shell" "$HOME/Pictures/Screenshots" "$HOME/.local/share/app
 # Display settings are machine-specific: seed once, then Settings > Displays owns the file.
 [ -e "$cfg/niri/ansai-outputs.kdl" ] || cp "$here/niri/outputs.default.kdl" "$cfg/niri/ansai-outputs.kdl"
 link "$here/ansai-settings.desktop" "$HOME/.local/share/applications/ansai-settings.desktop"
+# The shell is the polkit agent under niri; keep xfce-polkit's autostart from grabbing the slot first.
+if [ -e /etc/xdg/autostart/xfce-polkit.desktop ] && [ ! -e "$cfg/autostart/xfce-polkit.desktop" ]; then
+    mkdir -p "$cfg/autostart"
+    sed 's/^NotShowIn=.*/NotShowIn=GNOME;KDE;niri;/' /etc/xdg/autostart/xfce-polkit.desktop > "$cfg/autostart/xfce-polkit.desktop"
+fi
 
 missing=()
 for b in niri qs xwayland-satellite brightnessctl wpctl playerctl swayidle wl-paste cliphist fuzzel wlsunset ghostty; do
