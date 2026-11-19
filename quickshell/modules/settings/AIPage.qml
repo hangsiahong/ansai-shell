@@ -71,13 +71,13 @@ ColumnLayout {
 
     SGroup {
         title: "Connectors (MCP)"
-        note: "Connected services give Ask AI tools to look things up and act for you. Anything that changes something asks you first. Sign-in happens in your browser; tokens stay on this computer."
+        note: "Ask AI can already work on this computer (files, commands, apps, windows). Connected services add their own tools. Anything that changes something asks you first. Sign-in happens in your browser; tokens stay on this computer."
         SRow {
             first: true
             icon: Settings.aiAllowAll ? "lock_open" : "verified_user"
             title: "Ask before actions"
-            sub: Settings.aiAllowAll ? "Off: Ask AI runs every connector action (deploy, delete, change settings) without asking"
-                                     : "Anything that changes something waits for Allow; looking things up never asks"
+            sub: Settings.aiAllowAll ? "Off: Ask AI runs commands, edits files and does connector actions (deploy, delete) without asking"
+                                     : "Commands, file changes and connector actions wait for Allow; looking things up never asks"
             Switch { checked: !Settings.aiAllowAll; onToggled: Settings.aiAllowAll = !Settings.aiAllowAll }
         }
         Repeater {

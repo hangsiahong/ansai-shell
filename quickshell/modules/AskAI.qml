@@ -186,7 +186,7 @@ Sheet {
                         spacing: 0
                         Txt { text: "Ask AI"; font.pixelSize: 15; font.weight: Theme.strong }
                         Txt {
-                            text: Settings.aiModel + (AI.mcpLive.length ? " · " + AI.mcpServers.filter(s => AI.mcpLive.includes(s.url)).map(s => s.name).join(", ") : " · KOOMPI AI")
+                            text: Settings.aiModel + " · this computer" + (AI.mcpLive.length ? ", " + AI.mcpServers.filter(s => AI.mcpLive.includes(s.url)).map(s => s.name).join(", ") : "")
                             font.pixelSize: 11; color: Theme.muted
                         }
                     }
@@ -233,7 +233,7 @@ Sheet {
                         readonly property bool mine: modelData.role === "user"
                         readonly property bool last: index === AI.chat.length - 1
                         readonly property var tools: modelData.tools ?? []
-                        readonly property var running: tools.find(t => t.status === "run")
+                        readonly property var running: tools.find(t => t.status === "run" || t.status === "wait")
                         property bool toolsOpen: false
                         width: list.width
                         height: col.implicitHeight
@@ -275,18 +275,19 @@ Sheet {
                                     readonly property bool bad: msg.tools.some(t => t.status === "fail")
                                     Icon {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        name: msg.running ? "progress_activity" : sumRow.bad ? "error" : "check_circle"
+                                        name: msg.running?.status === "wait" ? "front_hand" : msg.running ? "progress_activity" : sumRow.bad ? "error" : "check_circle"
                                         filled: !msg.running
                                         size: 16
-                                        color: msg.running ? Theme.accent : sumRow.bad ? Theme.warn : Theme.green
-                                        RotationAnimation on rotation { running: !!msg.running; from: 0; to: 360; duration: 900; loops: Animation.Infinite }
+                                        color: msg.running?.status === "wait" ? Theme.warn : msg.running ? Theme.accent : sumRow.bad ? Theme.warn : Theme.green
+                                        RotationAnimation on rotation { running: msg.running?.status === "run"; from: 0; to: 360; duration: 900; loops: Animation.Infinite }
                                     }
                                     Txt {
                                         anchors.verticalCenter: parent.verticalCenter
                                         width: Math.min(implicitWidth, col.width - 80)
                                         font.pixelSize: 12
                                         color: Theme.text2
-                                        text: msg.running ? (msg.running.title || msg.running.name.replace(/_/g, " ")) + "…"
+                                        text: msg.running?.status === "wait" ? "Needs your OK: " + (msg.running.title || msg.running.name.replace(/_/g, " "))
+                                            : msg.running ? (msg.running.title || msg.running.name.replace(/_/g, " ")) + "…"
                                             : msg.tools.length + (msg.tools.length > 1 ? " steps · " : " step · ")
                                               + msg.tools.map(t => t.title || t.name.replace(/_/g, " ")).filter((v, i, a) => a.indexOf(v) === i).join(", ")
                                     }
@@ -294,7 +295,7 @@ Sheet {
                                 }
                             }
 
-                            Repeater {   // tool calls (MCP connectors): shown when opened, or while one waits for approval
+                            Repeater {   // tool calls (desktop + MCP connectors): shown when opened, or while one waits for approval
                                 model: msg.tools
                                 Rectangle {
                                     id: tc
@@ -338,11 +339,16 @@ Sheet {
                                         Txt {
                                             visible: tc.waiting || tc.open
                                             Layout.fillWidth: true
-                                            text: (tc.waiting ? "Allow this? " : "") + JSON.stringify(tc.modelData.args)
+                                            readonly property var a: tc.modelData.args ?? {}
+                                            // What will happen, the way a person reads it: the command, the file, else key: value lines.
+                                            text: a.command ? "$ " + a.command + (a.cwd ? "\n  in " + a.cwd : "")
+                                                : a.path && "content" in a ? a.path + "\n" + a.content.split("\n").length + " lines:\n" + a.content
+                                                : a.path && "old_text" in a ? a.path + "\n− " + a.old_text + "\n+ " + a.new_text
+                                                : Object.keys(a).map(k => k + ": " + (typeof a[k] === "string" ? a[k] : JSON.stringify(a[k]))).join("\n") || "(no details)"
                                             wrapMode: Text.WrapAnywhere
                                             elide: Text.ElideNone
-                                            maximumLineCount: tc.open ? 30 : 4
-                                            font.family: tc.waiting ? Theme.font : Theme.mono
+                                            maximumLineCount: tc.open ? 30 : 6
+                                            font.family: Theme.mono
                                             font.pixelSize: 12
                                             color: Theme.text2
                                         }

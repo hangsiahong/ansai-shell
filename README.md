@@ -36,7 +36,8 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 - **Search** (Super+Space or Alt+Space): apps and windows; an app that is already open is switched to
   (Shift+Enter starts a new one). `>cmd` runs in the terminal, `=1+2` calculates.
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
-- **AI** on the [KOOMPI AI Gateway](#ai): an Ask AI sidebar (Super+I), ask about part of the screen
+- **AI** on the [KOOMPI AI Gateway](#ai): Ask AI (Super+I), an agent that works on your computer (files, commands,
+  apps, windows) and on KOOMPI Cloud, with your OK before it changes anything; ask about part of the screen
   (Super+Shift+S or Alt+Shift+S), and translate / summarize / fix / find-by-description in the clipboard panel.
 - **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
@@ -49,7 +50,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 ## Install
 
 ```sh
-sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp python
+sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp python nodejs fd ripgrep
 ./install.sh
 ```
 
@@ -93,10 +94,15 @@ qs -c ansai ipc call shell wallpaper ~/Pictures/wall.jpg
 ## AI
 
 Uses the [KOOMPI AI Gateway](https://ai.koompi.cloud) (OpenAI-compatible). Paste your `kpi_…` key in
-**Settings → AI**; it is saved to `~/.config/ansai-shell/ai-key` (mode 600) and only `quickshell/scripts/ai.py` reads it.
+**Settings → AI**; it is saved to `~/.config/ansai-shell/ai-key` (mode 600) and only the agent reads it.
 The default model is `koompi-luna` (Mekong: Khmer and images); pick another there or set `"aiModel"` in settings.json.
 
-- **Ask AI sidebar** (Super+I or Alt+A, or ✦ in Control Center): streaming chat in English or Khmer; attach a screen area, or paste
+- **Ask AI** (Super+I or Alt+A, or ✦ in Control Center): an agent built on [pi-mono](https://github.com/badlogic/pi-mono)
+  (`pi-agent-core` loop, `pi-ai` streaming), in English or Khmer. It can run commands, read, write, edit and search files,
+  open files, URLs and apps, list, focus and arrange windows, read or copy the clipboard, look at the screen and read web pages
+  ("free up space in Downloads", "move Telegram to workspace 2", "what's using my CPU?"). Looking things up runs
+  right away; commands, file changes and other actions show what they will do with **Allow / Always allow / Deny**.
+  Attach a screen area, or paste
   (Ctrl+V or the clipboard button) text or an image such as a screenshot you just took. The conversation stays until you start a new one.
   Every chat is saved (Chats list, `~/.local/share/ansai-shell/ai-chats.json`, private to you) and survives restarts.
   The ⤢ button switches between the right-side panel and a big centred view with the chat list beside it.
@@ -110,7 +116,10 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
   any MCP server URL. Sign-in opens in your browser (OAuth with PKCE); tokens stay in
   `~/.config/ansai-shell/mcp-tokens.json` (mode 600). Ask AI can then use the server's tools ("what's running on my
   KOOMPI Cloud?"). Read-only tools run directly; anything that may change something shows **Allow / Always allow / Deny** first.
-  **Always allow** (or turning off "Ask before actions" in Settings → AI) lets every action run without asking.
+- **Always allow** (or turning off "Ask before actions" in Settings → AI) lets every action run without asking, including
+  commands and file changes on this computer.
+- The agent is `quickshell/agent/ansai-agent.mjs`, bundled into `ansai-agent.js` so nothing needs installing besides
+  Node. After changing it: `cd quickshell/agent && npm install && npm run build` (needs bun).
 
 ```sh
 qs -c ansai ipc call ai toggle

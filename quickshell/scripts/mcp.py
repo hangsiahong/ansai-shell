@@ -4,6 +4,9 @@
 #   mcp.py login URL     opens the browser to sign in, waits for the redirect, saves the token
 #   mcp.py logout URL    forgets the token
 #   mcp.py status URL... {"url", "connected", "tools"} per server (tools from cache when fresh)
+#   mcp.py serve         bridge for agent/ansai-agent.mjs: one JSON request per stdin line,
+#                        {"id", "op": "tools", "url"} or {"id", "op": "call", "url", "name", "args"},
+#                        answered with {"id", "ok": result} or {"id", "e": message}
 # Tokens live in ~/.config/ansai-shell/mcp-tokens.json (mode 600) and are never printed.
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import base64, hashlib, json, os, secrets, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
@@ -269,8 +272,37 @@ def tools_cached(url, max_age=600):
     return tools
 
 
+def serve():
+    sessions = {}
+    for line in sys.stdin:
+        try:
+            req = json.loads(line)
+        except ValueError:
+            continue
+        rid, url = req.get("id"), req.get("url")
+        try:
+            if req.get("op") == "tools":
+                out(id=rid, ok=tools_cached(url))
+                continue
+            if url not in sessions:
+                sessions[url] = Session(url)
+            try:
+                out(id=rid, ok=sessions[url].call(req["name"], req.get("args") or {}))
+            except urllib.error.HTTPError as err:
+                if err.code != 404:
+                    raise
+                sessions[url] = Session(url)  # session expired on the server
+                out(id=rid, ok=sessions[url].call(req["name"], req.get("args") or {}))
+        except PermissionError as err:
+            out(id=rid, e=str(err), auth=True)
+        except Exception as err:
+            out(id=rid, e=str(err))
+
+
 def main():
     cmd, urls = sys.argv[1], sys.argv[2:]
+    if cmd == "serve":
+        return serve()
     if cmd == "login":
         try:
             login(urls[0])

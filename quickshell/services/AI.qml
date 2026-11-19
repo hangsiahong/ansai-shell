@@ -5,13 +5,13 @@ import Quickshell
 import Quickshell.Io
 import qs
 
-// KOOMPI AI Gateway (OpenAI-compatible) via scripts/ai.py, which holds the key and streams the reply.
+// KOOMPI AI Gateway via agent/ansai-agent.js (pi-mono agent loop: desktop tools + MCP connectors), which holds the key.
 // ask() runs one request; the Ask AI sidebar's conversation lives here so it survives closing it.
 Singleton {
     id: root
 
     readonly property string keyFile: Settings.dir + "/ai-key"
-    readonly property string script: Quickshell.shellDir + "/scripts/ai.py"
+    readonly property string script: Quickshell.shellDir + "/agent/ansai-agent.js"
     readonly property var models: ["koompi-luna", "koompi-smart", "koompi-fast", "koompi-lite", "koompi-balance"]
     property bool hasKey: false
     function checkKey(): void { keyCheck.running = false; keyCheck.running = true; }
@@ -31,10 +31,11 @@ How to answer:
 - Reply in the language the user writes in (often Khmer or English). Code goes in fenced blocks.`
 
     // ask([{ role, content, image? }], onDelta(text), onDone(fullText, error), opts) → handle with .stop()
-    // opts.mcp: server urls whose tools the model may use; opts.onEvent(ev) gets tool / tool_done events.
+    // opts.tools: let it use the desktop tools; opts.mcp: server urls whose tools it may use;
+    // opts.onEvent(ev) gets tool / tool_done events.
     function ask(messages, onDelta, onDone, opts) {
         const p = req.createObject(root, {
-            body: JSON.stringify({ model: Settings.aiModel, messages: messages, mcp: opts?.mcp ?? [] }),
+            body: JSON.stringify({ model: Settings.aiModel, messages: messages, mcp: opts?.mcp ?? [], tools: !!opts?.tools }),
             onDelta: onDelta ?? null,
             onDone: onDone ?? null,
             onEvent: opts?.onEvent ?? null
@@ -107,6 +108,7 @@ How to answer:
     // [{ role: "user"|"assistant", content, image?, error?, tools?: [{ id, name, title, server, args, ask, status, preview }] }]
     property var chat: []
     property bool busy: false
+    property int gen: 0   // bumped by reset(): a stopped request must not write into the new chat
     property var current: null
     property string draft: ""      // text waiting in the sidebar's input
     property string attachment: "" // image path to send with the next message
@@ -165,7 +167,14 @@ How to answer:
         if (attachment) user.image = attachment;
         attachment = "";
         const names = mcpServers.filter(s => mcpLive.includes(s.url)).map(s => s.name).join(", ");
-        const history = [{ role: "system", content: system + (names ? `
+        const history = [{ role: "system", content: system + `
+
+You can act on this computer with tools: run commands, read/write/edit files, search files, open files and URLs,
+start apps, list/focus/arrange windows (niri), read/copy the clipboard, look at the screen, read web pages.
+- Use them instead of telling the user how to do something they asked you to do. Look first (read, list, search), then act.
+- Prefer the dedicated tools; use run_command for the rest (system info, packages, git, network). Keep commands safe and specific.
+- Anything that changes something waits for the user's approval in the app; if declined, don't retry it.
+- After acting, say in one line what you did and the result.` + (names ? `
 
 Tools from the user's connected services (${names}):
 - Use them for anything about the user's account, services, usage, billing or data there. Don't guess what a tool would tell you.
@@ -178,18 +187,20 @@ Tools from the user's connected services (${names}):
         chat = [...chat, user, { role: "assistant", content: "" }];
         save();
         busy = true;
-        const i = chat.length - 1;
-        const edit = f => { const c = Array.from(chat); c[i] = Object.assign({}, c[i]); f(c[i]); chat = c; };
+        const i = chat.length - 1, g = gen;
+        const edit = f => { if (g !== gen) return; const c = Array.from(chat); c[i] = Object.assign({}, c[i]); f(c[i]); chat = c; };
         current = ask([...history, ...prior, user], d => edit(m => m.content += d), (full, err) => {
             edit(m => {
                 (m.tools ?? []).forEach((t, k) => { if (t.status === "wait" || t.status === "run") m.tools[k] = Object.assign({}, t, { status: "fail", preview: "Stopped" }); });
                 if (err) { m.content = m.content ? m.content + "\n\n" + err : err; m.error = !full && !(m.tools ?? []).length; }
             });
+            if (g !== gen) return;
             busy = false;
             current = null;
             save();
         }, {
             mcp: mcpLive,
+            tools: true,
             onEvent: ev => edit(m => {
                 const tools = Array.from(m.tools ?? []);
                 const auto = ev.tool?.ask && Settings.aiAllowAll;
@@ -217,7 +228,7 @@ Tools from the user's connected services (${names}):
         current.write(yes ? "y\n" : "n\n");
     }
     function stop(): void { if (current) current.stop(); }
-    function reset(): void { stop(); chat = []; chatId = ""; attachment = ""; }
+    function reset(): void { stop(); gen++; busy = false; current = null; chat = []; chatId = ""; attachment = ""; }
     // Open the sidebar with something to ask about.
     function askAbout(image: string, text: string): void {
         if (image) attachment = image;
@@ -249,7 +260,7 @@ Tools from the user's connected services (${names}):
             property string err: ""
             property bool stopped: false
             function stop() { stopped = true; running = false; }
-            command: ["python3", root.script]
+            command: ["node", root.script]
             stdinEnabled: true
             // stdin stays open: tool approvals are answered on it ("y" / "n").
             onStarted: write(body + "\n")
