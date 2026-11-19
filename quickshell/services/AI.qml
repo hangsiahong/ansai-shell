@@ -192,7 +192,9 @@ Tools from the user's connected services (${names}):
             mcp: mcpLive,
             onEvent: ev => edit(m => {
                 const tools = Array.from(m.tools ?? []);
-                if (ev.tool) tools.push(Object.assign({}, ev.tool, { status: ev.tool.ask ? "wait" : "run" }));
+                const auto = ev.tool?.ask && Settings.aiAllowAll;
+                if (auto) current.write("y\n");
+                if (ev.tool) tools.push(Object.assign({}, ev.tool, { status: ev.tool.ask && !auto ? "wait" : "run", auto: !!auto }));
                 else if (ev.tool_done) {
                     const k = tools.findIndex(t => t.id === ev.tool_done.id);
                     if (k >= 0) tools[k] = Object.assign({}, tools[k], { status: ev.tool_done.preview === "Declined" ? "declined" : ev.tool_done.ok ? "ok" : "fail", preview: ev.tool_done.preview });
@@ -202,6 +204,11 @@ Tools from the user's connected services (${names}):
         });
     }
     // Answer a tool that waits for approval (the newest assistant message's).
+    // "Always allow": from now on every action runs without asking (Settings → AI turns it back off).
+    function allowAll(id: string): void {
+        Settings.aiAllowAll = true;
+        approve(id, true);
+    }
     function approve(id: string, yes: bool): void {
         if (!current) return;
         const i = chat.length - 1, c = Array.from(chat);

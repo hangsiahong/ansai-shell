@@ -367,6 +367,12 @@ Sheet {
                                                 Txt { anchors.centerIn: parent; text: "Allow"; font.pixelSize: 12; font.weight: Theme.strong; color: Theme.accentInk }
                                             }
                                             Hover {
+                                                implicitWidth: alwaysLbl.implicitWidth + 24; implicitHeight: 28; radius: 14
+                                                base: Theme.m3 ? Theme.accentSoft : Theme.fill
+                                                onClicked: AI.allowAll(tc.modelData.id)
+                                                Txt { id: alwaysLbl; anchors.centerIn: parent; text: "Always allow"; font.pixelSize: 12; color: Theme.m3 ? Theme.accentSoftInk : Theme.accent }
+                                            }
+                                            Hover {
                                                 implicitWidth: 76; implicitHeight: 28; radius: 14
                                                 base: Theme.fill
                                                 onClicked: AI.approve(tc.modelData.id, false)

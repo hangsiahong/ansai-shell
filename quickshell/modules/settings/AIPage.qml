@@ -72,6 +72,14 @@ ColumnLayout {
     SGroup {
         title: "Connectors (MCP)"
         note: "Connected services give Ask AI tools to look things up and act for you. Anything that changes something asks you first. Sign-in happens in your browser; tokens stay on this computer."
+        SRow {
+            first: true
+            icon: Settings.aiAllowAll ? "lock_open" : "verified_user"
+            title: "Ask before actions"
+            sub: Settings.aiAllowAll ? "Off: Ask AI runs every connector action (deploy, delete, change settings) without asking"
+                                     : "Anything that changes something waits for Allow; looking things up never asks"
+            Switch { checked: !Settings.aiAllowAll; onToggled: Settings.aiAllowAll = !Settings.aiAllowAll }
+        }
         Repeater {
             model: AI.mcpServers
             SRow {
@@ -79,7 +87,6 @@ ColumnLayout {
                 required property var modelData
                 required property int index
                 readonly property var st: AI.mcp[modelData.url] ?? {}
-                first: index === 0
                 icon: modelData.url.includes("koompi") ? "cloud" : "hub"
                 title: modelData.name
                 sub: st.waiting ? "Finish signing in in your browser…" : st.busy ? "Working…"

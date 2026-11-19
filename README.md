@@ -109,7 +109,8 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
 - **Connectors (MCP):** in Settings → AI, **Connect** KOOMPI Cloud (`mcp.koompi.cloud`, listed by default) or add
   any MCP server URL. Sign-in opens in your browser (OAuth with PKCE); tokens stay in
   `~/.config/ansai-shell/mcp-tokens.json` (mode 600). Ask AI can then use the server's tools ("what's running on my
-  KOOMPI Cloud?"). Read-only tools run directly; anything that may change something shows **Allow / Deny** first.
+  KOOMPI Cloud?"). Read-only tools run directly; anything that may change something shows **Allow / Always allow / Deny** first.
+  **Always allow** (or turning off "Ask before actions" in Settings → AI) lets every action run without asking.
 
 ```sh
 qs -c ansai ipc call ai toggle
