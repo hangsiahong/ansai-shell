@@ -1,0 +1,294 @@
+// ansai desktop — niri compositor config. Shell UI lives in ../quickshell (run as `qs -c ansai`).
+// Reference: https://github.com/YaLTeR/niri/wiki/Configuration:-Introduction
+
+input {
+    keyboard {
+        xkb {
+            layout "us"
+        }
+        repeat-delay 500
+        repeat-rate 33
+        numlock
+    }
+    touchpad {
+        tap
+        natural-scroll
+        dwt
+        accel-speed 0.2
+        scroll-factor 0.6
+    }
+    mouse {
+        accel-profile "flat"
+    }
+    focus-follows-mouse max-scroll-amount="0%"
+    warp-mouse-to-focus
+}
+
+output "eDP-1" {
+    mode "2880x1800@120.000"
+    scale 2
+    variable-refresh-rate on-demand=true
+}
+
+output "HDMI-A-1" {
+    scale 1
+}
+
+cursor {
+    xcursor-theme "Pop"
+    xcursor-size 24
+    hide-when-typing
+}
+
+prefer-no-csd
+
+layout {
+    gaps 10
+    center-focused-column "on-overflow"
+    always-center-single-column
+    background-color "transparent"
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+        proportion 1.0
+    }
+    default-column-width { proportion 0.5; }
+
+    focus-ring {
+        width 2
+        active-color "#0a84ffcc"
+        inactive-color "#00000000"
+    }
+    border { off; }
+
+    shadow {
+        on
+        softness 40
+        spread 2
+        offset x=0 y=12
+        color "#00000080"
+        inactive-color "#00000050"
+    }
+
+    tab-indicator {
+        hide-when-single-tab
+        place-within-column
+        width 4
+        gap 6
+        corner-radius 2
+        active-color "#0a84ff"
+        inactive-color "#636366"
+    }
+
+    insert-hint {
+        color "#0a84ff40"
+    }
+
+    struts { }
+}
+
+overview {
+    zoom 0.5
+    backdrop-color "#000000"
+}
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+screenshot-path "~/Pictures/Screenshots/Screenshot %Y-%m-%d %H-%M-%S.png"
+
+environment {
+    QT_QPA_PLATFORM "wayland;xcb"
+    QT_QPA_PLATFORMTHEME "gtk3"
+    ELECTRON_OZONE_PLATFORM_HINT "auto"
+    MOZ_ENABLE_WAYLAND "1"
+    XDG_CURRENT_DESKTOP "niri"
+}
+
+spawn-at-startup "qs" "-c" "ansai"
+spawn-sh-at-startup "swayidle -w timeout 300 'qs -c ansai ipc call lock lock' timeout 360 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'qs -c ansai ipc call lock lock'"
+spawn-sh-at-startup "wl-paste --watch cliphist store"
+
+animations {
+    workspace-switch {
+        spring damping-ratio=1.0 stiffness=900 epsilon=0.0001
+    }
+    window-open {
+        duration-ms 180
+        curve "ease-out-cubic"
+    }
+    window-close {
+        duration-ms 140
+        curve "ease-out-quad"
+    }
+    horizontal-view-movement {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+    window-movement {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+    window-resize {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+}
+
+// ---- windows: rounded like the web app's cards
+window-rule {
+    geometry-corner-radius 14
+    clip-to-geometry true
+    draw-border-with-background false
+}
+
+window-rule {
+    match is-active=false
+    opacity 0.97
+}
+
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    match title="^Picture in picture$"
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^org\.gnome\.(Calculator|Settings|FileRoller)$"#
+    match app-id="^pavucontrol$"
+    match app-id="^nm-connection-editor$"
+    match app-id="^blueman-manager$"
+    match title="^(Open|Save) (File|Folder|As)"
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^(org\.keepassxc\.KeePassXC|org\.gnome\.World\.Secrets|1password)$"#
+    block-out-from "screen-capture"
+}
+
+// ---- shell layers
+layer-rule {
+    match namespace="^ansai-wallpaper$"
+    place-within-backdrop true
+}
+
+layer-rule {
+    match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd)$"
+    shadow {
+        on
+        softness 50
+        spread 0
+        offset x=0 y=20
+        color "#00000099"
+    }
+    geometry-corner-radius 18
+}
+
+binds {
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
+    // Shell
+    Mod+Space       hotkey-overlay-title="Search apps and windows" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "launcher"; }
+    Mod+D           { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "launcher"; }
+    Mod+A           hotkey-overlay-title="Control center" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "control"; }
+    Mod+N           hotkey-overlay-title="Notifications and calendar" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "calendar"; }
+    Mod+Escape      hotkey-overlay-title="Power menu" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "power"; }
+    Ctrl+Alt+Delete { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "power"; }
+    Mod+L           hotkey-overlay-title="Lock screen" { spawn "qs" "-c" "ansai" "ipc" "call" "lock" "lock"; }
+    Mod+Shift+V     hotkey-overlay-title="Clipboard history" { spawn-sh "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"; }
+
+    // Apps
+    Mod+Return hotkey-overlay-title="Terminal" { spawn "ghostty"; }
+    Mod+T      { spawn "ghostty"; }
+    Mod+E      hotkey-overlay-title="Files" { spawn "nautilus" "--new-window"; }
+    Mod+B      hotkey-overlay-title="Browser" { spawn "xdg-open" "https://"; }
+
+    // Media keys (allowed on the lock screen)
+    XF86AudioRaiseVolume  allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.05+ -l 1.0"; }
+    XF86AudioLowerVolume  allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.05-"; }
+    XF86AudioMute         allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute      allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+    XF86AudioPlay         allow-when-locked=true { spawn "playerctl" "play-pause"; }
+    XF86AudioNext         allow-when-locked=true { spawn "playerctl" "next"; }
+    XF86AudioPrev         allow-when-locked=true { spawn "playerctl" "previous"; }
+    XF86MonBrightnessUp   allow-when-locked=true { spawn "qs" "-c" "ansai" "ipc" "call" "brightness" "up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "qs" "-c" "ansai" "ipc" "call" "brightness" "down"; }
+
+    // Screenshots
+    Print       { screenshot; }
+    Mod+Shift+S { screenshot; }
+    Ctrl+Print  { screenshot-screen; }
+    Alt+Print   { screenshot-window; }
+
+    // Windows
+    Mod+Q repeat=false { close-window; }
+    Mod+O repeat=false { toggle-overview; }
+    Mod+Left  { focus-column-left; }
+    Mod+Right { focus-column-right; }
+    Mod+Up    { focus-window-or-workspace-up; }
+    Mod+Down  { focus-window-or-workspace-down; }
+    Mod+Shift+Left  { move-column-left; }
+    Mod+Shift+Right { move-column-right; }
+    Mod+Shift+Up    { move-window-up-or-to-workspace-up; }
+    Mod+Shift+Down  { move-window-down-or-to-workspace-down; }
+    Mod+Home { focus-column-first; }
+    Mod+End  { focus-column-last; }
+    Mod+Ctrl+Left  { focus-monitor-left; }
+    Mod+Ctrl+Right { focus-monitor-right; }
+    Mod+Shift+Ctrl+Left  { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
+
+    Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp   cooldown-ms=150 { focus-workspace-up; }
+    Mod+WheelScrollRight { focus-column-right; }
+    Mod+WheelScrollLeft  { focus-column-left; }
+    Mod+Shift+WheelScrollDown { focus-column-right; }
+    Mod+Shift+WheelScrollUp   { focus-column-left; }
+
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+2 { move-column-to-workspace 2; }
+    Mod+Shift+3 { move-column-to-workspace 3; }
+    Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+6 { move-column-to-workspace 6; }
+    Mod+Shift+7 { move-column-to-workspace 7; }
+    Mod+Shift+8 { move-column-to-workspace 8; }
+    Mod+Shift+9 { move-column-to-workspace 9; }
+    Mod+Page_Down { focus-workspace-down; }
+    Mod+Page_Up   { focus-workspace-up; }
+
+    Mod+BracketLeft  { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+    Mod+Comma  { consume-window-into-column; }
+    Mod+Period { expel-window-from-column; }
+
+    Mod+R       { switch-preset-column-width; }
+    Mod+Shift+R { switch-preset-window-height; }
+    Mod+Ctrl+R  { reset-window-height; }
+    Mod+F       { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+Ctrl+F  { expand-column-to-available-width; }
+    Mod+C       { center-column; }
+    Mod+W       { toggle-column-tabbed-display; }
+    Mod+Minus       { set-column-width "-10%"; }
+    Mod+Equal       { set-column-width "+10%"; }
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+
+    Mod+V       { toggle-window-floating; }
+    Mod+Shift+T { switch-focus-between-floating-and-tiling; }
+
+    Mod+Shift+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+    Mod+Shift+E { quit; }
+    Mod+Shift+P { power-off-monitors; }
+}
