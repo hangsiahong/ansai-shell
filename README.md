@@ -27,7 +27,7 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+E / Super+B | Files / browser |
 | Super+Shift+V | Clipboard history |
 | Super+O | Overview |
-| Super+Q | Close window |
+| Super+Backspace | Close window (Caps Lock works as Super) |
 | Super+Shift+/ | All shortcuts |
 
 ## Settings

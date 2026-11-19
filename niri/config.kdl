@@ -5,6 +5,8 @@ input {
     keyboard {
         xkb {
             layout "us"
+            // Caps Lock acts as Super.
+            options "caps:super"
         }
         repeat-delay 500
         repeat-rate 33
@@ -223,7 +225,7 @@ binds {
     Alt+Print   { screenshot-window; }
 
     // Windows
-    Mod+Q repeat=false { close-window; }
+    Mod+BackSpace repeat=false hotkey-overlay-title="Close window" { close-window; }
     Mod+O repeat=false { toggle-overview; }
     Mod+Left  { focus-column-left; }
     Mod+Right { focus-column-right; }

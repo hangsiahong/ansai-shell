@@ -138,7 +138,7 @@ PanelWindow {
                 }
                 QsMenuAnchor {
                     id: menuAnchor
-                    menu: parent.modelData.menu
+                    menu: parent.modelData?.menu ?? null
                     anchor.window: bar
                     anchor.rect.x: parent.mapToItem(bar.contentItem, 0, 0).x
                     anchor.rect.y: bar.height

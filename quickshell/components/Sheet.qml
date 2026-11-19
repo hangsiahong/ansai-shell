@@ -34,8 +34,10 @@ PanelWindow {
     WlrLayershell.namespace: "ansai-" + name
     WlrLayershell.keyboardFocus: shown ? (exclusiveKeys ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand) : WlrKeyboardFocus.None
 
+    // Blur only once the panel is fully in: a blur region under a fading panel shows as a flash of
+    // blurred wallpaper on open and lingers as a coloured smudge on close.
     BackgroundEffect.blurRegion: Region {
-        item: panel
+        item: root.shown && panel.opacity > 0.95 ? panel : null
         radius: root.panelRadius
     }
 
