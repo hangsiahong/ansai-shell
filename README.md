@@ -95,6 +95,12 @@ Already-open GTK apps pick up new colours when reopened. The first run backs up 
 
 ## Notes
 
+- Closing the lid sleeps the laptop (systemd-logind). For travel, `tools/setup-hibernate.sh` (run it yourself, it
+  uses sudo) adds a disk swapfile and makes the lid sleep first, then hibernate after 30 minutes, so a closed laptop
+  in a bag ends up fully off. Reboot once afterwards and try `systemctl hibernate`.
+- Screen recording: OBS Studio works on niri through the GNOME portal (`sudo pacman -S obs-studio`, add a
+  "Screen Capture (PipeWire)" source and pick the screen in the dialog).
+
 - Hybrid laptops: niri renders on the integrated GPU (`debug { render-drm-device }` in `niri/config.kdl`); change
   the device if yours differs (`ls -l /dev/dri/by-path`).
 - The ansai glass draws its own blurred wallpaper (`components/GlassBackdrop.qml`) so corners stay smooth;
