@@ -194,6 +194,7 @@ binds {
 
     // Shell
     Mod+Space       hotkey-overlay-title="Search apps and windows" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "launcher"; }
+    Alt+Space       hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "launcher"; }
     Mod+D           { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "launcher"; }
     Mod+A           hotkey-overlay-title="Control center" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "control"; }
     Mod+N           hotkey-overlay-title="Notifications and calendar" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "calendar"; }
