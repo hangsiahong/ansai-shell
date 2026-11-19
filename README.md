@@ -64,7 +64,7 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+L | Lock |
 | Super+Return | Terminal |
 | Super+E / Super+B | Files / browser |
-| Super+Shift+C (or Super+Shift+V) | Clipboard history: type to filter, Enter copies, Delete removes |
+| Super+Shift+C (or Super+Shift+V, Alt+Shift+C) | Clipboard history: type to filter, Enter copies, Delete removes |
 | Super+O | Overview |
 | Super+Backspace | Close window (Caps Lock works as Super) |
 | Print / Super+Shift+S / Super+Shift+A | Screenshot an area |

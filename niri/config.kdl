@@ -203,6 +203,7 @@ binds {
     Mod+L           hotkey-overlay-title="Lock screen" { spawn "qs" "-c" "ansai" "ipc" "call" "lock" "lock"; }
     Mod+Shift+C     hotkey-overlay-title="Clipboard history" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
     Mod+Shift+V     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
+    Alt+Shift+C     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
 
     // Apps
     Mod+Return hotkey-overlay-title="Terminal" { spawn "ghostty"; }
