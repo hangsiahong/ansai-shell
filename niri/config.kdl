@@ -293,3 +293,6 @@ binds {
     Mod+Shift+E { quit; }
     Mod+Shift+P { power-off-monitors; }
 }
+
+// Style-dependent borders and radii, written by the shell (quickshell/services/NiriStyle.qml). Keep this last.
+include optional=true "ansai-style.kdl"
