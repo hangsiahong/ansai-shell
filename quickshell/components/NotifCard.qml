@@ -15,7 +15,12 @@ Rectangle {
     implicitHeight: col.implicitHeight + (Theme.m3 ? 32 : 24)
     // ansai: macOS 27 notification, glass bubble with a big app icon, bold title and the age at the right.
     radius: Theme.m3 ? 24 : 22
-    color: popup ? Theme.glass : Theme.m3 ? Theme.surface2 : Theme.glassTile
+    property real screenX: NaN
+    property real screenY: NaN
+    readonly property bool ownBlur: popup && !Theme.m3 && !isNaN(screenX)
+    color: ownBlur ? "transparent" : popup ? Theme.glass : Theme.m3 ? Theme.surface2 : Theme.glassTile
+    GlassBackdrop { visible: root.ownBlur; anchors.fill: parent; radius: root.radius; screenX: root.screenX; screenY: root.screenY; z: -2 }
+    Rectangle { visible: root.ownBlur; anchors.fill: parent; radius: root.radius; color: Theme.glass; z: -1 }
     border.width: 0
     GlassRim { anchors.fill: parent; radius: root.radius; z: 1000; visible: !Theme.m3 && root.popup }
     readonly property string age: {

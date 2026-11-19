@@ -29,7 +29,7 @@ PanelWindow {
     property string kind: "volume"
     property bool ready: false
 
-    BackgroundEffect.blurRegion: Region { item: root.shown && pill.opacity > 0.95 ? pill : null; radius: pill.radius + (Theme.m3 ? 0 : 8) }
+    BackgroundEffect.blurRegion: Region { item: Theme.m3 && root.shown && pill.opacity > 0.95 ? pill : null; radius: pill.radius + (Theme.m3 ? 0 : 8) }
 
     function pop(k: string): void {
         if (!ready) return;
@@ -45,6 +45,9 @@ PanelWindow {
 
     Glass {
         id: pill
+        // Where the window sits (top-right, under the status icons), for the drawn blur.
+        screenX: Theme.m3 ? NaN : root.screen.width - root.width - 150
+        screenY: Theme.m3 ? NaN : Theme.barH + 6
         anchors.fill: parent
         radius: Theme.m3 ? height / 2 : 16
         opacity: root.shown ? 1 : 0

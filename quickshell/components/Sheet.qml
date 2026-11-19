@@ -37,7 +37,8 @@ PanelWindow {
     // Blur only once the panel is fully in: a blur region under a fading panel shows as a flash of
     // blurred wallpaper on open and lingers as a coloured smudge on close.
     BackgroundEffect.blurRegion: Region {
-        item: root.shown && panel.opacity > 0.95 ? panel : null
+        // ansai draws its own blur in the panel (Glass.ownBlur), so niri only blurs for material.
+        item: Theme.m3 && root.shown && panel.opacity > 0.95 ? panel : null
         // Rounder than the panel: wl_region corners are pixel steps, and a larger radius keeps them
         // inside the panel's antialiased corner instead of poking out as jaggies.
         radius: root.panelRadius + (Theme.m3 ? 0 : 8)
@@ -57,6 +58,8 @@ PanelWindow {
 
     Glass {
         id: panel
+        screenX: x
+        screenY: y
         x: root.panelX
         y: root.panelY + (root.shown ? 0 : root.enterFrom)
         width: root.panelWidth
