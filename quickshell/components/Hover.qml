@@ -9,6 +9,8 @@ Rectangle {
     property color base: "transparent"
     property bool active: false
     property color activeColor: Theme.fill
+    // Only a Hover that acts on the wheel keeps it; others pass it on so lists behind them scroll.
+    property bool takesWheel: false
     signal clicked(var mouse)
     signal wheel(var wheel)
 
@@ -23,6 +25,6 @@ Rectangle {
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
         onClicked: m => root.clicked(m)
-        onWheel: w => root.wheel(w)
+        onWheel: w => { w.accepted = root.takesWheel; root.wheel(w); }
     }
 }

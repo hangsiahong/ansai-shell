@@ -169,6 +169,7 @@ PanelWindow {
             active: Shell.open === "control"
             activeColor: Theme.m3 ? Theme.accent : Theme.fill
             onClicked: Shell.toggle("control")
+            takesWheel: true
             onWheel: w => Audio.setVolume(Audio.volume + (w.angleDelta.y > 0 ? 0.05 : -0.05))
 
             Row {
