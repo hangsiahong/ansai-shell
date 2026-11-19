@@ -39,7 +39,7 @@ Singleton {
     readonly property color seg: dark ? "#636366" : "#ffffff"
     // Panels sit on compositor blur, so glass is a little denser than the web's 0.72.
     // ansai is macOS 27 Liquid Glass: a thin tint over heavy blur, a bright specular rim, a darker edge.
-    readonly property color glass: m3 ? pal.tone(pal.hue, 5, dark ? 12 : 95, 0.9) : dark ? Qt.rgba(28/255, 28/255, 32/255, 0.56) : Qt.rgba(1, 1, 1, 0.58)
+    readonly property color glass: m3 ? pal.tone(pal.hue, 5, dark ? 12 : 95, 0.9) : dark ? Qt.rgba(24/255, 24/255, 28/255, 0.40) : Qt.rgba(1, 1, 1, 0.42)
     readonly property color glassLine: m3 ? "transparent" : dark ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(1, 1, 1, 0.7)
     readonly property color glassEdge: dark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.08)
     // Module/tile fill inside glass panels (Control Center modules, menu hover).

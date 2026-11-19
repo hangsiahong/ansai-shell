@@ -90,7 +90,7 @@ PanelWindow {
     Item { id: edge; x: 0; width: 2; y: box.y; height: box.height }
     Item { id: hit; x: 0; width: root.boxRight; y: box.y; height: box.height }
 
-    BackgroundEffect.blurRegion: Region { item: box; radius: box.radius }
+    BackgroundEffect.blurRegion: Region { item: box; radius: box.radius + (Theme.m3 ? 0 : 8) }
 
     // ---- the dock
     Glass {

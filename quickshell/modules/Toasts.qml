@@ -19,10 +19,10 @@ PanelWindow {
     WlrLayershell.namespace: "ansai-toasts"
 
     BackgroundEffect.blurRegion: Region {
-        Region { item: rep.count > 0 ? rep.itemAt(0) : null; radius: Theme.r }
-        Region { item: rep.count > 1 ? rep.itemAt(1) : null; radius: Theme.r }
-        Region { item: rep.count > 2 ? rep.itemAt(2) : null; radius: Theme.r }
-        Region { item: rep.count > 3 ? rep.itemAt(3) : null; radius: Theme.r }
+        Region { item: rep.count > 0 ? rep.itemAt(0) : null; radius: Theme.m3 ? Theme.r : 30 }
+        Region { item: rep.count > 1 ? rep.itemAt(1) : null; radius: Theme.m3 ? Theme.r : 30 }
+        Region { item: rep.count > 2 ? rep.itemAt(2) : null; radius: Theme.m3 ? Theme.r : 30 }
+        Region { item: rep.count > 3 ? rep.itemAt(3) : null; radius: Theme.m3 ? Theme.r : 30 }
     }
 
     Column {

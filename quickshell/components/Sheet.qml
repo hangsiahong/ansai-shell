@@ -38,7 +38,9 @@ PanelWindow {
     // blurred wallpaper on open and lingers as a coloured smudge on close.
     BackgroundEffect.blurRegion: Region {
         item: root.shown && panel.opacity > 0.95 ? panel : null
-        radius: root.panelRadius
+        // Rounder than the panel: wl_region corners are pixel steps, and a larger radius keeps them
+        // inside the panel's antialiased corner instead of poking out as jaggies.
+        radius: root.panelRadius + (Theme.m3 ? 0 : 8)
     }
 
     Rectangle {
@@ -59,7 +61,9 @@ PanelWindow {
         y: root.panelY + (root.shown ? 0 : root.enterFrom)
         width: root.panelWidth
         height: root.panelHeight
-        radius: root.panelRadius
+        // Rounder than the panel: wl_region corners are pixel steps, and a larger radius keeps them
+        // inside the panel's antialiased corner instead of poking out as jaggies.
+        radius: root.panelRadius + (Theme.m3 ? 0 : 8)
         opacity: root.shown ? 1 : 0
         scale: root.shown ? 1 : 0.98
         focus: true

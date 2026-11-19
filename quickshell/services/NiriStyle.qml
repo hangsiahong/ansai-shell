@@ -37,7 +37,37 @@ layer-rule {
     match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu)$"
     geometry-corner-radius ${m3 ? 28 : 24}
 }
-`;
+${m3 ? "" : `
+// ansai Liquid Glass: soft, light shadows whose corners match each surface (a mismatched radius
+// shows as a dark outline), and a light, saturated blur so the backdrop stays recognisable.
+layer-rule {
+    match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu|system|dockmenu)$"
+    shadow {
+        on
+        softness 40
+        spread 0
+        offset x=0 y=10
+        color "#00000038"
+    }
+}
+layer-rule {
+    match namespace="^ansai-toasts$"
+    geometry-corner-radius 22
+}
+layer-rule {
+    match namespace="^ansai-(appmenu|system|dockmenu)$"
+    geometry-corner-radius 12
+}
+layer-rule {
+    match namespace="^ansai-osd$"
+    geometry-corner-radius 16
+}
+blur {
+    passes 2
+    offset 2.5
+    saturation 1.6
+}
+`}`;
     }
     onTextChanged: write.restart()
 

@@ -29,7 +29,7 @@ PanelWindow {
     property string kind: "volume"
     property bool ready: false
 
-    BackgroundEffect.blurRegion: Region { item: root.shown && pill.opacity > 0.95 ? pill : null; radius: pill.radius }
+    BackgroundEffect.blurRegion: Region { item: root.shown && pill.opacity > 0.95 ? pill : null; radius: pill.radius + (Theme.m3 ? 0 : 8) }
 
     function pop(k: string): void {
         if (!ready) return;
