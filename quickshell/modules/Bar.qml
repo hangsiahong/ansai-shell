@@ -26,9 +26,12 @@ PanelWindow {
         enabled: Settings.keepAwake
     }
 
+    BackgroundEffect.blurRegion: Region { item: barBg }
+
     Rectangle {
+        id: barBg
         anchors.fill: parent
-        color: Theme.dark ? Qt.rgba(0, 0, 0, 0.55) : Qt.rgba(242/255, 242/255, 247/255, 0.72)
+        color: Theme.dark ? Qt.rgba(0, 0, 0, 0.28) : Qt.rgba(1, 1, 1, 0.45)
         Rectangle {
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
             height: 1
@@ -101,11 +104,17 @@ PanelWindow {
 
         Txt {
             Layout.leftMargin: 6
-            Layout.maximumWidth: bar.width * 0.28
-            text: Niri.focusedWindow?.title ?? ""
-            color: Theme.text2
+            readonly property string appId: Niri.focusedWindow?.app_id ?? ""
+            text: appId ? (DesktopEntries.heuristicLookup(appId)?.name ?? appId.split(".").pop()) : ""
+            color: Theme.text
             font.pixelSize: 13
-            font.weight: Font.Medium
+            font.weight: Font.DemiBold
+        }
+        Txt {
+            Layout.maximumWidth: bar.width * 0.22
+            text: Niri.focusedWindow?.title ?? ""
+            color: Theme.muted
+            font.pixelSize: 13
         }
     }
 

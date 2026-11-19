@@ -54,14 +54,15 @@ layout {
         proportion 0.66667
         proportion 1.0
     }
-    default-column-width { proportion 0.5; }
+    default-column-width { proportion 0.66667; }
 
-    focus-ring {
-        width 2
-        active-color "#0a84ffcc"
-        inactive-color "#00000000"
+    focus-ring { off; }
+    // Hairline edge like macOS windows; the active one is a touch brighter.
+    border {
+        width 1
+        active-color "#ffffff2e"
+        inactive-color "#ffffff12"
     }
-    border { off; }
 
     shadow {
         on
