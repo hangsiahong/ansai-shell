@@ -12,20 +12,34 @@ ColumnLayout {
     id: root
     spacing: 22
     property int shown: 12
+    // Same key for both files of a pair.
+    function key(f) { return f.replace(/-(light|dark|l|d)(\.[^.]+)$/, "-*$2"); }
+    // The file of a pair that matches the current theme (or the file itself).
+    function themed(f) {
+        const dark = Settings.theme !== "light";
+        const g = f.replace(/-(light|dark)(\.[^.]+)$/, (m, t, e) => "-" + (dark ? "dark" : "light") + e);
+        const h = g !== f ? g : f.replace(/-(l|d)(\.[^.]+)$/, (m, t, e) => "-" + (dark ? "d" : "l") + e);
+        return h;   // only pairs that exist reach here (see the filter below)
+    }
     property var walls: []
     Process {
         running: true
         command: ["sh", "-c", `
+find -L "${Scheme.builtinDir}" -maxdepth 1 -type f | sort
 for d in "$HOME/Pictures/Wallpapers" "$HOME/Pictures/wallpapers" "$HOME/.local/share/backgrounds"; do
   [ -d "$d" ] && find -L "$d" -maxdepth 2 -type f; done
 [ -d "$HOME/Pictures" ] && find "$HOME/Pictures" -maxdepth 1 -type f
 [ -d /usr/share/backgrounds ] && find -L /usr/share/backgrounds -maxdepth 2 -type f
 true`]
         stdout: StdioCollector {
-            onStreamFinished: root.walls = text.split("\n")
-                .filter(f => /\.(jpe?g|png|webp|jxl|avif|svg)$/i.test(f) && !/screenshot/i.test(f))
-                .filter((f, i, a) => a.indexOf(f) === i)
-                .slice(0, 80)
+            onStreamFinished: {
+                const all = text.split("\n")
+                    .filter(f => /\.(jpe?g|png|webp|jxl|avif|svg)$/i.test(f) && !/screenshot/i.test(f))
+                    .filter((f, i, a) => a.indexOf(f) === i);
+                // A light/dark pair shows once (by its dark file); picking it follows the theme.
+                root.walls = all.filter(f => !(root.key(f) !== f && /-(light|l)\.[^.]+$/.test(f)
+                    && all.some(g => g !== f && root.key(g) === root.key(f)))).slice(0, 80);
+            }
         }
     }
 
@@ -48,7 +62,7 @@ true`]
                     Item {
                         id: t
                         required property string modelData
-                        readonly property bool on: Settings.wallpaper === modelData
+                        readonly property bool on: !!modelData ? root.key(Settings.wallpaper) === root.key(modelData) : Settings.wallpaper === ""
                         width: grid.tw
                         height: grid.tw * 0.625
                         ClippingRectangle {
@@ -60,7 +74,7 @@ true`]
                             Image {
                                 anchors.fill: parent
                                 visible: !!t.modelData
-                                source: t.modelData ? "file://" + t.modelData : ""
+                                source: t.modelData ? "file://" + root.themed(t.modelData) : ""
                                 sourceSize.width: 320
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true

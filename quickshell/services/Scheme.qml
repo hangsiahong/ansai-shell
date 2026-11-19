@@ -12,7 +12,23 @@ Singleton {
 
     property string gnomeDark: ""
     property string gnomeLight: ""
-    readonly property string wallpaper: Settings.wallpaper || (Settings.theme !== "light" ? gnomeDark : gnomeLight) || gnomeDark
+    // A wallpaper that comes as a light/dark pair (name-light.jpg / name-dark.jpg, or GNOME's -l / -d)
+    // follows the theme: the partner is used when it exists.
+    readonly property string pair: {
+        const w = Settings.wallpaper, dark = Settings.theme !== "light";
+        if (!w) return "";
+        const a = w.replace(/-(light|dark)(\.[A-Za-z0-9]+)$/, (m, t, e) => "-" + (dark ? "dark" : "light") + e);
+        return a !== w ? a : w.replace(/-(l|d)(\.[A-Za-z0-9]+)$/, (m, t, e) => "-" + (dark ? "d" : "l") + e);
+    }
+    property string pairFound: ""
+    onPairChanged: { pairCheck.running = false; pairCheck.running = pair !== "" && pair !== Settings.wallpaper; }
+    Process {
+        id: pairCheck
+        command: ["test", "-e", root.pair]
+        onExited: code => root.pairFound = code === 0 ? root.pair : ""
+    }
+    readonly property string wallpaper: (pair && pairFound === pair ? pair : Settings.wallpaper) || (Settings.theme !== "light" ? gnomeDark : gnomeLight) || gnomeDark
+    readonly property string builtinDir: Quickshell.shellDir + "/assets/wallpapers"
     readonly property string wallpaperUrl: wallpaper ? (wallpaper.startsWith("/") ? "file://" + wallpaper : wallpaper) : ""
 
     // Hue of the most colourful wallpaper cluster; blue when the wallpaper is grey.
