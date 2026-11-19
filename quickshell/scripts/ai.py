@@ -48,10 +48,22 @@ def load_tools(urls):
         for t in tools:
             name = re.sub(r"[^a-zA-Z0-9_-]", "_", t["name"] if len(urls) == 1 else f"s{i}_{t['name']}")[:64]
             table[name] = (url, t)
+            title = (t.get("annotations") or {}).get("title") or t.get("title") or ""
+            desc = (t.get("description") or "")[:300]
             specs.append({"type": "function", "function": {
-                "name": name, "description": (t.get("description") or "")[:1024],
-                "parameters": t.get("inputSchema") or {"type": "object", "properties": {}}}})
+                "name": name, "description": (title + ": " if title and title.lower() not in desc.lower() else "") + desc,
+                "parameters": slim(t.get("inputSchema") or {"type": "object", "properties": {}})}})
     return specs, table
+
+
+def slim(schema):
+    """Tool schemas are sent on every step; drop what the model doesn't need (89 tools ≈ 120 KB → ~70 KB)."""
+    if isinstance(schema, dict):
+        return {k: (v[:120] if k == "description" and isinstance(v, str) else slim(v))
+                for k, v in schema.items() if k not in ("examples", "$schema", "title", "additionalProperties")}
+    if isinstance(schema, list):
+        return [slim(v) for v in schema]
+    return schema
 
 
 def stream(key, model, msgs, tools):

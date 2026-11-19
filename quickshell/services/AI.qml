@@ -21,8 +21,14 @@ Singleton {
     }
 
     readonly property string system: `You are the assistant built into ansai, the user's Linux desktop (niri + Quickshell). ` +
-        `Be concise and practical. Reply in the language the user writes in (often Khmer or English). ` +
-        `Use Markdown sparingly: short paragraphs, lists and code blocks when they help.`
+        `Today is ${Qt.formatDate(new Date(), "dddd d MMMM yyyy")}.
+
+How to answer:
+- First line: the direct answer (the number, yes/no, the fix, the result). No preamble, don't restate the question.
+- Then only the details that matter: a few short bullets or a small table. Bold the key numbers and names.
+- Aim for under 100 words unless the user asks for more. No closing offers or filler.
+- Get facts right before writing: count lists carefully, never write "Correction:"; if unsure, say what you'd check.
+- Reply in the language the user writes in (often Khmer or English). Code goes in fenced blocks.`
 
     // ask([{ role, content, image? }], onDelta(text), onDone(fullText, error), opts) → handle with .stop()
     // opts.mcp: server urls whose tools the model may use; opts.onEvent(ev) gets tool / tool_done events.
@@ -63,6 +69,7 @@ Singleton {
     Component.onCompleted: {
         // Chats can hold anything the user pasted: keep them private to the user.
         Quickshell.execDetached(["sh", "-c", `mkdir -p "$1/ai-images" && chmod 700 "$1" && chmod -f 600 "$1/ai-chats.json"; true`, "sh", dataDir]);
+        readChats();
         refreshMcp();
     }
     Process {
@@ -108,8 +115,21 @@ Singleton {
     readonly property string dataDir: (Quickshell.env("XDG_DATA_HOME") || Quickshell.env("HOME") + "/.local/share") + "/ansai-shell"
     property var chats: []         // [{ id, title, updated, messages }]
     property string chatId: ""
+    property bool chatsRead: false
+    // Read the saved chats before anything writes them, so a save can't replace history it hasn't seen.
+    function readChats(): void {
+        if (chatsRead) return;
+        const t = histFile.text();
+        if (t) {
+            try { chats = JSON.parse(t); }
+            catch (e) { console.warn("ai-chats.json unreadable; not overwriting it"); return; }
+        }
+        chatsRead = true;
+    }
     function save(): void {
         if (!chat.length) return;
+        readChats();
+        if (!chatsRead) return;
         if (!chatId) chatId = Date.now().toString(36);
         const first = chat.find(m => m.role === "user");
         const title = (first?.content || "Image").replace(/\s+/g, " ").trim().slice(0, 90);
@@ -124,6 +144,8 @@ Singleton {
         attachment = "";
     }
     function deleteChat(id: string): void {
+        readChats();
+        if (!chatsRead) return;
         chats = chats.filter(c => c.id !== id);
         histFile.setText(JSON.stringify(chats));
         if (id === chatId) { stop(); chat = []; chatId = ""; }
@@ -133,7 +155,7 @@ Singleton {
         path: root.dataDir + "/ai-chats.json"
         printErrors: false
         atomicWrites: true
-        onLoaded: { try { root.chats = JSON.parse(text()); } catch (e) { root.chats = []; } }
+        blockLoading: true   // text() is the file's content as soon as it's asked for
     }
 
     function send(text: string): void {
@@ -143,8 +165,14 @@ Singleton {
         if (attachment) user.image = attachment;
         attachment = "";
         const names = mcpServers.filter(s => mcpLive.includes(s.url)).map(s => s.name).join(", ");
-        const history = [{ role: "system", content: system + (names ? `\nYou can use tools from the user's connected services (${names}). ` +
-            `Use them when the question is about the user's account or data there; say briefly what you did.` : "") }];
+        const history = [{ role: "system", content: system + (names ? `
+
+Tools from the user's connected services (${names}):
+- Use them for anything about the user's account, services, usage, billing or data there. Don't guess what a tool would tell you.
+- Call independent tools together in one step. If the first tool lacks the data, look for a more specific one
+  (per-service metrics, traffic, usage, logs) before saying it isn't available.
+- If it truly isn't available, say so in one line and give the closest numbers you did find.
+- Only say you did something if the tool succeeded. Actions that change things need the user's approval, which the app asks for.` : "") }];
         // Older images are dropped from the context: only the newest one is sent.
         const prior = chat.filter(m => !m.error).map(m => ({ role: m.role, content: m.content }));
         chat = [...chat, user, { role: "assistant", content: "" }];

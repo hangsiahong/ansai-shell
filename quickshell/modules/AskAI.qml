@@ -30,6 +30,23 @@ Sheet {
         AI.refreshMcp();
     }
 
+    // Qt's Markdown lists indent 40 px per level, which wastes a narrow panel: render bullets and
+    // numbered items as tight lines instead (code blocks left alone).
+    function tight(md) {
+        if (!md) return "";
+        let fence = false;
+        return md.split("\n").map(l => {
+            if (/^\s*```/.test(l)) { fence = !fence; return l; }
+            if (fence) return l;
+            const b = l.match(/^(\s*)[-*+]\s+(.*)$/);
+            // Trailing double space = hard line break, so items don't merge into the line above.
+            if (b) return "\u2003".repeat(Math.floor(b[1].length / 2)) + (b[1].length >= 2 ? "◦ " : "• ") + b[2] + "  ";
+            const n = l.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
+            if (n) return "\u2003".repeat(Math.floor(n[1].length / 2)) + n[2] + "\\. " + n[3] + "  ";
+            return l.trim() && !/^\s*\|/.test(l) ? l + "  " : l;
+        }).join("\n");
+    }
+
     function send() {
         if (AI.busy) return;
         AI.send(input.text);
@@ -215,6 +232,9 @@ Sheet {
                         required property int index
                         readonly property bool mine: modelData.role === "user"
                         readonly property bool last: index === AI.chat.length - 1
+                        readonly property var tools: modelData.tools ?? []
+                        readonly property var running: tools.find(t => t.status === "run")
+                        property bool toolsOpen: false
                         width: list.width
                         height: col.implicitHeight
 
@@ -241,13 +261,47 @@ Sheet {
                                 }
                             }
 
-                            Repeater {   // tool calls (MCP connectors)
-                                model: msg.modelData.tools ?? []
+                            Hover {   // one line for the tools used; click for the details
+                                visible: msg.tools.length > 0
+                                Layout.preferredWidth: Math.min(sumRow.implicitWidth + 24, col.width)
+                                Layout.preferredHeight: 30
+                                radius: 15
+                                base: Theme.m3 ? Theme.surface3 : Theme.glassTile
+                                onClicked: msg.toolsOpen = !msg.toolsOpen
+                                Row {
+                                    id: sumRow
+                                    anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
+                                    spacing: 6
+                                    readonly property bool bad: msg.tools.some(t => t.status === "fail")
+                                    Icon {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        name: msg.running ? "progress_activity" : sumRow.bad ? "error" : "check_circle"
+                                        filled: !msg.running
+                                        size: 16
+                                        color: msg.running ? Theme.accent : sumRow.bad ? Theme.warn : Theme.green
+                                        RotationAnimation on rotation { running: !!msg.running; from: 0; to: 360; duration: 900; loops: Animation.Infinite }
+                                    }
+                                    Txt {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: Math.min(implicitWidth, col.width - 80)
+                                        font.pixelSize: 12
+                                        color: Theme.text2
+                                        text: msg.running ? (msg.running.title || msg.running.name.replace(/_/g, " ")) + "…"
+                                            : msg.tools.length + (msg.tools.length > 1 ? " steps · " : " step · ")
+                                              + msg.tools.map(t => t.title || t.name.replace(/_/g, " ")).filter((v, i, a) => a.indexOf(v) === i).join(", ")
+                                    }
+                                    Icon { anchors.verticalCenter: parent.verticalCenter; name: msg.toolsOpen ? "expand_less" : "expand_more"; size: 16; color: Theme.muted }
+                                }
+                            }
+
+                            Repeater {   // tool calls (MCP connectors): shown when opened, or while one waits for approval
+                                model: msg.tools
                                 Rectangle {
                                     id: tc
                                     required property var modelData
                                     readonly property bool waiting: modelData.status === "wait"
                                     property bool open: false
+                                    visible: msg.toolsOpen || waiting
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: tcCol.implicitHeight + 16
                                     radius: 12
@@ -340,7 +394,7 @@ Sheet {
                                     selectByMouse: true
                                     wrapMode: TextEdit.Wrap
                                     textFormat: msg.mine ? TextEdit.PlainText : TextEdit.MarkdownText
-                                    text: msg.modelData.content || (AI.busy && msg.last && !(msg.modelData.tools ?? []).length ? "…" : "")
+                                    text: msg.mine ? msg.modelData.content : root.tight(msg.modelData.content) || (AI.busy && msg.last && !msg.tools.length ? "…" : "")
                                     color: msg.modelData.error ? Theme.danger : msg.mine ? (Theme.m3 ? Theme.accentSoftInk : "#ffffff") : Theme.text
                                     selectionColor: Theme.accent
                                     selectedTextColor: Theme.accentInk
