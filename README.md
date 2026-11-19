@@ -38,9 +38,3 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 qs -c ansai ipc call shell theme light
 qs -c ansai ipc call shell wallpaper ~/Pictures/wall.jpg
 ```
-
-## Try it without logging out
-
-```sh
-niri -c niri/config.kdl   # opens a nested window inside your current session
-```
