@@ -178,7 +178,7 @@ layer-rule {
 }
 
 layer-rule {
-    match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu)$"
+    match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu|clipboard)$"
     shadow {
         on
         softness 50
@@ -201,7 +201,8 @@ binds {
     Mod+Escape      hotkey-overlay-title="Power menu" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "power"; }
     Ctrl+Alt+Delete { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "power"; }
     Mod+L           hotkey-overlay-title="Lock screen" { spawn "qs" "-c" "ansai" "ipc" "call" "lock" "lock"; }
-    Mod+Shift+V     hotkey-overlay-title="Clipboard history" { spawn-sh "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"; }
+    Mod+Shift+C     hotkey-overlay-title="Clipboard history" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
+    Mod+Shift+V     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
 
     // Apps
     Mod+Return hotkey-overlay-title="Terminal" { spawn "ghostty"; }
@@ -223,7 +224,7 @@ binds {
     // Screenshots
     Print       { screenshot; }
     Mod+Shift+S { screenshot; }
-    Alt+Shift+C hotkey-overlay-title="Screenshot (pick area)" { screenshot; }
+    Mod+Shift+A hotkey-overlay-title="Screenshot (pick area)" { screenshot; }
     Ctrl+Print  { screenshot-screen; }
     Alt+Print   { screenshot-window; }
 

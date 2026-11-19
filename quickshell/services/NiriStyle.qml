@@ -34,14 +34,14 @@ window-rule {
     geometry-corner-radius ${r}
 }
 layer-rule {
-    match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu)$"
+    match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu|clipboard)$"
     geometry-corner-radius ${m3 ? 28 : 24}
 }
 ${m3 ? "" : `
 // ansai Liquid Glass: soft, light shadows whose corners match each surface (a mismatched radius
 // shows as a dark outline), and a light, saturated blur so the backdrop stays recognisable.
 layer-rule {
-    match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu|system|dockmenu)$"
+    match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu|system|dockmenu|clipboard)$"
     shadow {
         on
         softness 40

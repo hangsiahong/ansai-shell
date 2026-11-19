@@ -33,6 +33,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   brightness, volume, now playing.
 - **Search** (Super+Space or Alt+Space): apps and windows; an app that is already open is switched to
   (Shift+Enter starts a new one). `>cmd` runs in the terminal, `=1+2` calculates.
+- **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
 - **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
   15 s "keep changes?"), graphics (supergfxctl: integrated / hybrid / dGPU), power and battery (profile, charge
@@ -61,10 +62,10 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+L | Lock |
 | Super+Return | Terminal |
 | Super+E / Super+B | Files / browser |
-| Super+Shift+V | Clipboard history |
+| Super+Shift+C (or Super+Shift+V) | Clipboard history: type to filter, Enter copies, Delete removes |
 | Super+O | Overview |
 | Super+Backspace | Close window (Caps Lock works as Super) |
-| Print / Super+Shift+S / Alt+Shift+C | Screenshot an area |
+| Print / Super+Shift+S / Super+Shift+A | Screenshot an area |
 | Super+Shift+←/→ | Move the current window left/right |
 | Super+Shift+/ | All shortcuts |
 

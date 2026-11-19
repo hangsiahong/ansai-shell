@@ -24,6 +24,7 @@ ShellRoot {
     }
 
     Launcher {}
+    Clipboard {}
     DockMenu {}
     ControlCenter {}
     Calendar {}
