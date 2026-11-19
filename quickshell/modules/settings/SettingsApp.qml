@@ -24,6 +24,7 @@ FloatingWindow {
         { id: "graphics", l: "Graphics", icon: "memory", sub: "Integrated, hybrid, dGPU" },
         { id: "power", l: "Power & Battery", icon: "battery_charging_full", sub: "Profile, charge limit, keyboard" },
         { id: "sound", l: "Sound", icon: "volume_up", sub: "Output and input devices" },
+        { id: "ai", l: "AI", icon: "auto_awesome", sub: "KOOMPI AI: model, key, languages" },
         { id: "about", l: "About", icon: "info", sub: "This device, advanced" }
     ]
     readonly property var page: pages.find(p => p.id === Shell.settingsPage) ?? pages[0]
@@ -84,7 +85,7 @@ FloatingWindow {
                             Rectangle {
                                 visible: !Theme.m3
                                 width: 26; height: 26; radius: 7
-                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#32ade6", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#8e8e93"][nav.index]
+                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#32ade6", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#5e5ce6", "#8e8e93"][nav.index]
                                 Icon { anchors.centerIn: parent; name: nav.modelData.icon; size: 18; filled: true; color: "#ffffff" }
                             }
                             Icon {
@@ -137,7 +138,7 @@ FloatingWindow {
                     Loader {
                         id: pageLoader
                         Layout.fillWidth: true
-                        source: win.page.id[0].toUpperCase() + win.page.id.slice(1) + "Page.qml"
+                        source: (win.page.id === "ai" ? "AI" : win.page.id[0].toUpperCase() + win.page.id.slice(1)) + "Page.qml"
                         onLoaded: flick.contentY = 0
                     }
                 }

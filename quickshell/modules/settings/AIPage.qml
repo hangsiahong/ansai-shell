@@ -1,0 +1,104 @@
+import QtQuick
+import QtQuick.Layouts
+import Quickshell
+import qs
+import qs.components
+import qs.services
+
+ColumnLayout {
+    id: page
+    spacing: 22
+    property string test: ""      // result of the Test button
+    property bool testing: false
+    Component.onCompleted: AI.checkKey()
+
+    SGroup {
+        title: "KOOMPI AI Gateway"
+        note: "The key is stored only on this computer, readable by you alone (" + AI.keyFile.replace(Quickshell.env("HOME"), "~") + "). Create one in KConsole → AI Gateway."
+        SRow {
+            first: true
+            icon: AI.hasKey ? "key" : "key_off"
+            title: AI.hasKey ? "Key saved" : "No key yet"
+            sub: page.testing ? "Testing…" : page.test || (AI.hasKey ? "Paste a new key below to replace it" : "Paste your kpi_… key below")
+            Btn {
+                visible: AI.hasKey
+                text: "Test"
+                onClicked: {
+                    page.testing = true;
+                    page.test = "";
+                    AI.task("Reply with exactly: OK", "ping", (full, err) => {
+                        page.testing = false;
+                        page.test = err ? "✕ " + err : "✓ Connected · " + Settings.aiModel + " answered";
+                    });
+                }
+            }
+        }
+        SRow {
+            icon: "password"
+            title: ""
+            Rectangle {
+                width: 330
+                height: Theme.m3 ? 40 : 30
+                radius: Theme.m3 ? 20 : 8
+                color: Theme.m3 ? Theme.surface3 : Theme.fill2
+                TextInput {
+                    id: keyIn
+                    anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                    verticalAlignment: TextInput.AlignVCenter
+                    echoMode: TextInput.Password
+                    color: Theme.text
+                    font.family: Theme.font
+                    font.pixelSize: 13
+                    clip: true
+                    onAccepted: save.clicked(null)
+                    Txt { visible: !keyIn.text; anchors.verticalCenter: parent.verticalCenter; text: "kpi_…"; color: Theme.faint; font.pixelSize: 13 }
+                }
+            }
+            Btn {
+                id: save
+                text: "Save"
+                kind: "filled"
+                opacity: keyIn.text.trim() ? 1 : 0.4
+                onClicked: {
+                    if (!keyIn.text.trim()) return;
+                    AI.setKey(keyIn.text);
+                    keyIn.text = "";
+                    page.test = "";
+                }
+            }
+        }
+    }
+
+    SGroup {
+        title: "Model"
+        note: "koompi-luna (Mekong) understands Khmer and reads screenshots. Any other gateway model works too: set \"aiModel\" in ~/.config/ansai-shell/settings.json."
+        SRow {
+            first: true
+            icon: "neurology"
+            title: "Model"
+            sub: Settings.aiModel
+            below: Chips {
+                model: AI.models.map(m => ({ v: m, l: m.replace("koompi-", "") }))
+                value: Settings.aiModel
+                onPicked: v => { Settings.aiModel = v; page.test = ""; }
+            }
+        }
+        SRow {
+            icon: "translate"
+            title: "Translate between English and"
+            sub: "Used by Translate in the clipboard panel"
+            below: Chips {
+                model: ["Khmer", "Thai", "Vietnamese", "Lao", "Chinese", "Japanese", "Korean", "French"].map(l => ({ v: l, l: l }))
+                value: Settings.aiLang
+                onPicked: v => Settings.aiLang = v
+            }
+        }
+    }
+
+    SGroup {
+        title: "Where to find it"
+        SRow { first: true; icon: "auto_awesome"; title: "Ask AI sidebar"; sub: "Super+I, or the ✦ button in Control Center" }
+        SRow { icon: "screenshot_region"; title: "Ask about part of the screen"; sub: "Super+Shift+I: pick an area, then ask about it" }
+        SRow { icon: "content_paste"; title: "Clipboard"; sub: "Super+Shift+C, then Ctrl+T translate · Ctrl+S summarize · Ctrl+E fix writing · Ctrl+J ask · Tab: describe what you copied and let AI find it" }
+    }
+}

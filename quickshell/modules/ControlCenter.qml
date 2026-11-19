@@ -263,6 +263,10 @@ Sheet {
                 icon: "tune"
                 onClicked: Shell.openSettings("")
             }
+            IconButton {
+                icon: "auto_awesome"
+                onClicked: Shell.open = "ai"
+            }
             Item { Layout.fillWidth: true }
             Txt {
                 visible: Battery.present
@@ -453,6 +457,7 @@ Sheet {
             Repeater {
                 model: [
                     { icon: "screenshot_region", run: () => { Shell.close(); Niri.action("screenshot"); } },
+                    { icon: "auto_awesome", run: () => { Shell.open = "ai"; } },
                     { icon: "android", run: () => { Settings.style = "material"; Settings.font = ""; } },
                     { icon: "lock", run: () => { Shell.close(); Lock.lock(); } },
                     { icon: "power_settings_new", run: () => { Shell.open = "power"; } }

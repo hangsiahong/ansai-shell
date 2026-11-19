@@ -36,6 +36,8 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 - **Search** (Super+Space or Alt+Space): apps and windows; an app that is already open is switched to
   (Shift+Enter starts a new one). `>cmd` runs in the terminal, `=1+2` calculates.
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
+- **AI** on the [KOOMPI AI Gateway](#ai): an Ask AI sidebar (Super+I), ask about part of the screen
+  (Super+Shift+I), and translate / summarize / fix / find-by-description in the clipboard panel.
 - **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
   15 s "keep changes?"), graphics (supergfxctl: integrated / hybrid / dGPU), power and battery (profile, charge
@@ -47,7 +49,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 ## Install
 
 ```sh
-sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset
+sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp python
 ./install.sh
 ```
 
@@ -65,6 +67,9 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+Return | Terminal |
 | Super+E / Super+B | Files / browser |
 | Super+Shift+C (or Super+Shift+V, Alt+Shift+C) | Clipboard history: type to filter, Enter copies, Delete removes |
+| Super+I | Ask AI sidebar |
+| Super+Shift+I | Pick part of the screen and ask AI about it |
+| Clipboard: Ctrl+T / Ctrl+S / Ctrl+E / Ctrl+J / Tab | Translate / summarize / fix writing / ask in sidebar / AI find |
 | Super+O | Overview |
 | Super+Backspace | Close window (Caps Lock works as Super) |
 | Print / Super+Shift+S / Super+Shift+A / Alt+Shift+A | Screenshot an area |
@@ -74,7 +79,7 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 ## Settings
 
 The Settings app (control center gear, "ansai Settings" in the launcher, or `qs -c ansai ipc call shell settings <page>`) covers
-appearance, wallpaper, dock, displays, graphics (supergfxctl), power and battery (asusctl, power-profiles-daemon), sound and about.
+appearance, wallpaper, dock, displays, graphics (supergfxctl), power and battery (asusctl, power-profiles-daemon), sound, AI and about.
 Display changes apply live and revert after 15 s unless kept; kept ones go to `~/.config/niri/ansai-outputs.kdl`.
 GPU mode switches only ask supergfxd; you log out or reboot yourself.
 
@@ -83,6 +88,26 @@ Everything else is saved in `~/.config/ansai-shell/settings.json` (theme, wallpa
 ```sh
 qs -c ansai ipc call shell theme light
 qs -c ansai ipc call shell wallpaper ~/Pictures/wall.jpg
+```
+
+## AI
+
+Uses the [KOOMPI AI Gateway](https://ai.koompi.cloud) (OpenAI-compatible). Paste your `kpi_…` key in
+**Settings → AI**; it is saved to `~/.config/ansai-shell/ai-key` (mode 600) and only `quickshell/scripts/ai.py` reads it.
+The default model is `koompi-luna` (Mekong: Khmer and images); pick another there or set `"aiModel"` in settings.json.
+
+- **Ask AI sidebar** (Super+I, or ✦ in Control Center): streaming chat in English or Khmer; attach a screen area or
+  paste the clipboard. The conversation stays until you start a new one.
+- **Ask about the screen** (Super+Shift+I): pick an area; it is saved to `~/Pictures/Screenshots`, copied, and
+  opened in the sidebar with the image attached ("what does this error mean?").
+- **Clipboard panel:** Ctrl+T translates English ↔ Khmer (language in Settings), Ctrl+S summarizes, Ctrl+E fixes
+  spelling and grammar; Enter copies the result. Type a description and press Tab to have AI find it
+  ("the wifi password", "that ssh command"). Ctrl+J sends the entry (or image) to the sidebar.
+
+```sh
+qs -c ansai ipc call ai toggle
+qs -c ansai ipc call ai send "ស្វាគមន៍! what can you do?"
+qs -c ansai ipc call ai image ~/Pictures/diagram.png
 ```
 
 ## System theme
