@@ -34,4 +34,4 @@ else
   sid=$(echo "$res" | json 'd["data"].get("_id") or d["data"].get("id")')
   echo "{\"serviceId\": \"$sid\", \"orgId\": \"$org\"}" > "$state"
 fi
-echo "deployed; the site comes up at https://$name.tunnel.koompi.cloud once the build finishes"
+echo "deployed; the site comes up at https://$name.public.koompi.cloud once the build finishes"

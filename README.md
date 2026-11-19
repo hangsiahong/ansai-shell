@@ -19,9 +19,9 @@ Both come in light and dark, and the built-in wallpapers switch with them.
 | ![ansai light](docs/screenshots/ansai-light-control.jpg) | ![Android light](docs/screenshots/android-light-control.jpg) |
 
 A 40-second recording of both looks, light and dark, and wallpaper changes: [`docs/showcase.mp4`](docs/showcase.mp4).
-The website is `docs/index.html` (one file, no build step). Deploy it to KOOMPI Cloud with
-`KCONSOLE_API_TOKEN=kp_... tools/deploy-site.sh` (token from KConsole → Settings → API Tokens); it is served by nginx
-at `https://ansai-shell.tunnel.koompi.cloud`, and later runs upload a new version of the same service.
+The website is `docs/index.html` (one file, no build step), live at **https://ansai-shell.public.koompi.cloud**
+(KOOMPI Cloud service `ansai-shell`, nginx via `docs/Dockerfile`). To update it, zip `docs/` and deploy it to that
+service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools/deploy-site.sh`.
 
 ## What's in it
 
