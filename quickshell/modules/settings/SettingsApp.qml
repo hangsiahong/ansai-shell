@@ -69,6 +69,7 @@ FloatingWindow {
                     Hover {
                         id: nav
                         required property var modelData
+                        required property int index
                         readonly property bool on: win.page.id === modelData.id
                         Layout.fillWidth: true
                         Layout.preferredHeight: Theme.m3 ? 52 : 40
@@ -82,7 +83,7 @@ FloatingWindow {
                             Rectangle {
                                 visible: !Theme.m3
                                 width: 26; height: 26; radius: 7
-                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#8e8e93"][win.pages.indexOf(nav.modelData)]
+                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#8e8e93"][nav.index]
                                 Icon { anchors.centerIn: parent; name: nav.modelData.icon; size: 17; filled: true; color: "#ffffff" }
                             }
                             Icon {
