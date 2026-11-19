@@ -49,6 +49,7 @@ Singleton {
     readonly property int r: m3 ? 22 : 14
     readonly property int rLg: m3 ? 28 : 18
     readonly property int rGroup: m3 ? 28 : 16
+    readonly property int barH: m3 ? 40 : 36
 
     readonly property var fonts: ["Noto Sans", "Roboto", "Inter", "Cantarell"]
     readonly property string fontName: Settings.font || (m3 ? "Roboto" : "Noto Sans")

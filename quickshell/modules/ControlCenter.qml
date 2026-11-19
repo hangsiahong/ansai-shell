@@ -13,7 +13,7 @@ Sheet {
     panelWidth: 360
     panelHeight: col.implicitHeight + 24
     panelX: width - panelWidth - 8
-    panelY: 44
+    panelY: Theme.barH + 8
 
     readonly property var player: Mpris.players.values.find(p => p.isPlaying) ?? Mpris.players.values[0] ?? null
 

@@ -15,7 +15,7 @@ Sheet {
     panelWidth: Math.min(640, width - 32)
     panelHeight: 64 + Math.min(results.count, 8) * 52 + (results.count > 0 ? 16 : 0)
     panelY: height * 0.18
-    panelRadius: 22
+    panelRadius: Theme.m3 ? 28 : 22
 
     property string query: ""
     property int sel: 0
@@ -90,17 +90,17 @@ Sheet {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 48
-            radius: 14
-            color: Theme.fill2
+            Layout.preferredHeight: Theme.m3 ? 56 : 48
+            radius: Theme.m3 ? height / 2 : 14
+            color: Theme.m3 ? Theme.surface3 : Theme.fill2
 
             Icon {
                 id: searchIcon
-                x: 14
+                x: Theme.m3 ? 18 : 14
                 anchors.verticalCenter: parent.verticalCenter
                 name: "search"
                 size: 22
-                color: Theme.muted
+                color: Theme.m3 ? Theme.text2 : Theme.muted
             }
 
             TextInput {
@@ -136,9 +136,9 @@ Sheet {
                 anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
                 width: hintTxt.implicitWidth + 12
                 height: 22
-                radius: 6
+                radius: Theme.m3 ? 11 : 6
                 color: "transparent"
-                border.width: 1
+                border.width: Theme.m3 ? 0 : 1
                 border.color: Theme.line
                 Txt { id: hintTxt; anchors.centerIn: parent; text: "esc"; font.pixelSize: 11; color: Theme.muted }
             }
@@ -161,16 +161,17 @@ Sheet {
                 required property var modelData
                 required property int index
                 width: results.width
-                height: 50
-                radius: 12
+                height: Theme.m3 ? 52 : 50
+                radius: Theme.m3 ? height / 2 : 12
                 active: index === root.sel
-                activeColor: Theme.accent
+                activeColor: Theme.m3 ? Theme.accentSoft : Theme.accent
+                readonly property color ink: Theme.m3 ? Theme.accentSoftInk : Theme.accentInk
                 onClicked: root.activate(index)
                 onHoveredChanged: if (hovered) root.sel = index
 
                 Item {
                     id: ic
-                    x: 10
+                    x: Theme.m3 ? 12 : 10
                     width: 32; height: 32
                     anchors.verticalCenter: parent.verticalCenter
                     AppIcon {
@@ -182,8 +183,8 @@ Sheet {
                     Rectangle {
                         anchors.fill: parent
                         visible: !(row.modelData.kind === "app" || row.modelData.kind === "win")
-                        radius: 8
-                        color: Theme.surface3
+                        radius: Theme.m3 ? 16 : 8
+                        color: Theme.m3 ? Theme.tonal : Theme.surface3
                         Icon { anchors.centerIn: parent; name: row.modelData.icon ?? ""; size: 20 }
                     }
                 }
@@ -196,14 +197,14 @@ Sheet {
                         text: row.modelData.title
                         font.pixelSize: 15
                         font.weight: Font.Medium
-                        color: row.active ? Theme.accentInk : Theme.text
+                        color: row.active ? row.ink : Theme.text
                     }
                     Txt {
                         width: parent.width
                         visible: text !== ""
                         text: row.modelData.sub
                         font.pixelSize: 12
-                        color: row.active ? Qt.rgba(1, 1, 1, 0.75) : Theme.muted
+                        color: row.active ? Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.75) : Theme.muted
                     }
                 }
 
@@ -213,7 +214,7 @@ Sheet {
                     visible: row.active
                     text: "↵"
                     font.pixelSize: 15
-                    color: Theme.accentInk
+                    color: row.ink
                 }
             }
         }

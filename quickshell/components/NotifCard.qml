@@ -12,10 +12,10 @@ Rectangle {
     property bool popup: false
     readonly property var n: entry.n
 
-    implicitHeight: col.implicitHeight + 24
-    radius: Theme.r
-    color: popup ? Theme.glass : Theme.fill2
-    border.width: popup ? 1 : 0
+    implicitHeight: col.implicitHeight + (Theme.m3 ? 32 : 24)
+    radius: Theme.m3 ? 24 : Theme.r
+    color: popup ? Theme.glass : Theme.m3 ? Theme.surface2 : Theme.fill2
+    border.width: popup && !Theme.m3 ? 1 : 0
     border.color: Theme.glassLine
 
     MouseArea {
@@ -40,7 +40,7 @@ Rectangle {
 
     ColumnLayout {
         id: col
-        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
+        anchors { left: parent.left; right: parent.right; top: parent.top; margins: Theme.m3 ? 16 : 12 }
         spacing: 4
 
         RowLayout {
@@ -52,10 +52,10 @@ Rectangle {
             }
             Txt {
                 Layout.fillWidth: true
-                text: (root.n?.appName || "Notification").toUpperCase()
-                font.pixelSize: 11
+                text: Theme.m3 ? (root.n?.appName || "Notification") : (root.n?.appName || "Notification").toUpperCase()
+                font.pixelSize: Theme.m3 ? 12 : 11
                 font.weight: Theme.strong
-                font.letterSpacing: 0.4
+                font.letterSpacing: Theme.m3 ? 0.1 : 0.4
                 color: Theme.muted
             }
             Txt {
@@ -116,10 +116,11 @@ Rectangle {
                 Hover {
                     required property var modelData
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 30
-                    base: Theme.fill
+                    Layout.preferredHeight: Theme.m3 ? 36 : 30
+                    radius: Theme.m3 ? height / 2 : Theme.rSm
+                    base: Theme.m3 ? Theme.tonal : Theme.fill
                     onClicked: { modelData.invoke(); Notifs.hidePopup(root.entry); }
-                    Txt { anchors.centerIn: parent; text: parent.modelData.text; font.pixelSize: 13; font.weight: Font.Medium; color: Theme.accent }
+                    Txt { anchors.centerIn: parent; text: parent.modelData.text; font.pixelSize: 13; font.weight: Font.Medium; color: Theme.m3 ? Theme.tonalInk : Theme.accent }
                 }
             }
         }

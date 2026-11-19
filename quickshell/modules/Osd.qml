@@ -12,7 +12,7 @@ PanelWindow {
     anchors.bottom: true
     margins.bottom: 72
     implicitWidth: 260
-    implicitHeight: 52
+    implicitHeight: Theme.m3 ? 60 : 52
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
     visible: shown || pill.opacity > 0
@@ -54,15 +54,16 @@ PanelWindow {
             name: root.kind === "volume" ? Audio.icon() : "light_mode"
             filled: true
             size: 22
+            color: Theme.m3 ? Theme.accent : Theme.text
         }
         Rectangle {
             anchors { left: ic.right; leftMargin: 12; right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-            height: 6; radius: 3
-            color: Theme.fill
+            height: Theme.m3 ? 16 : 6; radius: height / 2
+            color: Theme.m3 ? Theme.tonal : Theme.fill
             Rectangle {
-                width: parent.width * (root.kind === "volume" ? (Audio.muted ? 0 : Audio.volume) : Brightness.value)
-                height: parent.height; radius: 3
-                color: Theme.text
+                width: Math.max(Theme.m3 ? parent.height : 0, parent.width * (root.kind === "volume" ? (Audio.muted ? 0 : Audio.volume) : Brightness.value))
+                height: parent.height; radius: height / 2
+                color: Theme.m3 ? Theme.accent : Theme.text
                 Behavior on width { NumberAnimation { duration: Theme.fast } }
             }
         }

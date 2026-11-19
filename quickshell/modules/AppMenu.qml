@@ -12,7 +12,7 @@ Sheet {
     name: "appmenu"
     exclusiveKeys: true
     panelX: Math.min(Shell.appMenuX, width - panelWidth - 8)
-    panelY: 40
+    panelY: Theme.barH + 4
     panelWidth: 248
     panelHeight: col.implicitHeight + 12
     panelRadius: 12

@@ -13,7 +13,7 @@ PanelWindow {
     screen: modelData
 
     anchors { top: true; left: true; right: true }
-    implicitHeight: 36
+    implicitHeight: Theme.barH
     color: "transparent"
     WlrLayershell.namespace: "ansai-bar"
     WlrLayershell.layer: WlrLayer.Top
@@ -31,7 +31,8 @@ PanelWindow {
     Rectangle {
         id: barBg
         anchors.fill: parent
-        color: Theme.dark ? Qt.rgba(0, 0, 0, 0.28) : Qt.rgba(1, 1, 1, 0.45)
+        color: Theme.m3 ? Theme.bg : Theme.dark ? Qt.rgba(0, 0, 0, 0.28) : Qt.rgba(1, 1, 1, 0.45)
+        Behavior on color { ColorAnimation { duration: Theme.med } }
         Rectangle {
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
             height: 1
@@ -39,18 +40,30 @@ PanelWindow {
         }
     }
 
-    // ---- left: mark, workspaces, focused app
+    // ---- left: mark, workspaces (clock in material), focused app
     RowLayout {
-        anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
+        anchors { left: parent.left; leftMargin: Theme.m3 ? 6 : 10; verticalCenter: parent.verticalCenter }
         spacing: 6
 
         Hover {
-            Layout.preferredWidth: 28
-            Layout.preferredHeight: 28
-            radius: 8
+            Layout.preferredWidth: Theme.m3 ? 32 : 28
+            Layout.preferredHeight: Theme.m3 ? 32 : 28
+            radius: Theme.m3 ? (Shell.open === "launcher" ? 10 : 16) : 8
+            base: Theme.m3 ? Theme.accentSoft : "transparent"
+            active: Theme.m3 && Shell.open === "launcher"
+            activeColor: Theme.accent
+            Behavior on radius { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
             onClicked: Shell.toggle("launcher")
+            Icon {
+                anchors.centerIn: parent
+                visible: Theme.m3
+                name: "apps"
+                size: 20
+                color: Shell.open === "launcher" ? Theme.accentInk : Theme.accentSoftInk
+            }
             Rectangle {
                 anchors.centerIn: parent
+                visible: !Theme.m3
                 width: 20; height: 20; radius: 5.2
                 color: Theme.dark ? "#ffffff" : "#000000"
                 Txt {
@@ -64,52 +77,18 @@ PanelWindow {
             }
         }
 
-        Rectangle {
-            Layout.preferredHeight: 26
-            Layout.preferredWidth: wsRow.implicitWidth + 12
-            radius: 13
-            color: Theme.fill2
-            visible: bar.wss.length > 0
-
-            Row {
-                id: wsRow
-                anchors.centerIn: parent
-                spacing: 4
-                Repeater {
-                    model: bar.wss
-                    Hover {
-                        required property var modelData
-                        readonly property bool on: modelData.is_active
-                        readonly property bool busy: modelData.active_window_id !== null && modelData.active_window_id !== undefined
-                        width: on ? 26 : 18
-                        height: 18
-                        radius: 9
-                        base: "transparent"
-                        anchors.verticalCenter: parent.verticalCenter
-                        Behavior on width { NumberAnimation { duration: Theme.med; easing.type: Theme.easing } }
-                        onClicked: Niri.focusWorkspace(modelData)
-                        Rectangle {
-                            anchors.centerIn: parent
-                            width: parent.on ? 18 : 7
-                            height: 7
-                            radius: 3.5
-                            color: parent.on ? Theme.accent : parent.busy ? Theme.muted : Theme.faint
-                            Behavior on width { NumberAnimation { duration: Theme.med; easing.type: Theme.easing } }
-                            Behavior on color { ColorAnimation { duration: Theme.med } }
-                        }
-                    }
-                }
-            }
-        }
+        BarClock { visible: Theme.m3 }
+        BarWorkspaces { visible: !Theme.m3 && wss.length > 0; wss: bar.wss }
 
         Hover {
             id: appName
             readonly property string appId: Niri.barWindow?.app_id ?? ""
             visible: appId !== ""
-            Layout.preferredHeight: 26
-            Layout.preferredWidth: appLabel.implicitWidth + 16
-            radius: 7
+            Layout.preferredHeight: Theme.m3 ? 32 : 26
+            Layout.preferredWidth: appLabel.implicitWidth + (Theme.m3 ? 24 : 16)
+            radius: Theme.m3 ? height / 2 : 7
             active: Shell.open === "appmenu"
+            activeColor: Theme.m3 ? Theme.accentSoft : Theme.fill
             onClicked: {
                 Shell.appMenuX = appName.mapToItem(null, 0, 0).x;
                 Shell.toggle("appmenu");
@@ -118,7 +97,7 @@ PanelWindow {
                 id: appLabel
                 anchors.centerIn: parent
                 text: appName.appId ? (DesktopEntries.heuristicLookup(appName.appId)?.name ?? appName.appId.split(".").pop()) : ""
-                color: Theme.text
+                color: Theme.m3 && appName.active ? Theme.accentSoftInk : Theme.text
                 font.pixelSize: 13
                 font.weight: Theme.strong
             }
@@ -131,28 +110,9 @@ PanelWindow {
         }
     }
 
-    // ---- center: clock
-    Hover {
-        anchors.centerIn: parent
-        height: 28
-        width: clockRow.implicitWidth + 20
-        radius: 14
-        active: Shell.open === "calendar"
-        onClicked: Shell.toggle("calendar")
-        Row {
-            id: clockRow
-            anchors.centerIn: parent
-            spacing: 8
-            Txt { text: Time.date; color: Theme.text2; font.pixelSize: 13; font.weight: Font.Medium }
-            Txt { text: Time.time; font.pixelSize: 13; font.weight: Theme.strong; font.features: { "tnum": 1 } }
-            Rectangle {
-                visible: Notifs.list.length > 0
-                width: 6; height: 6; radius: 3
-                color: Theme.accent
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
-    }
+    // ---- center: clock (workspaces in material)
+    BarClock { anchors.centerIn: parent; visible: !Theme.m3 }
+    BarWorkspaces { anchors.centerIn: parent; visible: Theme.m3 && wss.length > 0; wss: bar.wss }
 
     // ---- right: tray, status cluster
     RowLayout {
@@ -201,22 +161,26 @@ PanelWindow {
         }
 
         Hover {
-            Layout.preferredHeight: 28
-            Layout.preferredWidth: status.implicitWidth + 20
-            radius: 14
+            Layout.preferredHeight: Theme.m3 ? 32 : 28
+            Layout.preferredWidth: status.implicitWidth + (Theme.m3 ? 24 : 20)
+            radius: height / 2
+            base: Theme.m3 ? Theme.tonal : "transparent"
             active: Shell.open === "control"
+            activeColor: Theme.m3 ? Theme.accent : Theme.fill
             onClicked: Shell.toggle("control")
             onWheel: w => Audio.setVolume(Audio.volume + (w.angleDelta.y > 0 ? 0.05 : -0.05))
 
             Row {
                 id: status
                 anchors.centerIn: parent
-                spacing: 10
-                Icon { name: Net.netIcon(); size: 17; filled: true; color: Theme.text }
-                Icon { visible: Net.btConnected.length > 0; name: "bluetooth_connected"; size: 16; color: Theme.text }
-                Icon { name: Audio.icon(); size: 17; filled: true; color: Theme.text }
+                spacing: Theme.m3 ? 8 : 10
+                readonly property color ink: Theme.m3 ? (Shell.open === "control" ? Theme.accentInk : Theme.tonalInk) : Theme.text
+                Icon { name: Net.netIcon(); size: 17; filled: true; color: status.ink }
+                Icon { visible: Net.btConnected.length > 0; name: "bluetooth_connected"; size: 16; color: status.ink }
+                Icon { name: Audio.icon(); size: 17; filled: true; color: status.ink }
+                BatteryGlyph { visible: Theme.m3 && Battery.present; ink: status.ink; anchors.verticalCenter: parent.verticalCenter }
                 Row {
-                    visible: Battery.present
+                    visible: Battery.present && !Theme.m3
                     spacing: 3
                     anchors.verticalCenter: parent.verticalCenter
                     Txt {
@@ -234,7 +198,9 @@ PanelWindow {
         IconButton {
             icon: "power_settings_new"
             iconSize: 17
-            implicitWidth: 28; implicitHeight: 28
+            implicitWidth: Theme.m3 ? 32 : 28; implicitHeight: implicitWidth
+            base: Theme.m3 ? Theme.tonal : "transparent"
+            iconColor: Theme.m3 ? Theme.tonalInk : Theme.text
             active: Shell.open === "power"
             onClicked: Shell.toggle("power")
         }

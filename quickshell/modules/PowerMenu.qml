@@ -13,7 +13,7 @@ Sheet {
     panelWidth: row.implicitWidth + 32
     panelHeight: 150
     panelY: (height - panelHeight) / 2
-    panelRadius: 24
+    panelRadius: Theme.m3 ? 28 : 24
 
     property int sel: 0
     readonly property var actions: [
@@ -48,17 +48,21 @@ Sheet {
                     required property int index
                     spacing: 10
                     Hover {
-                        width: 72; height: 72; radius: 22
-                        base: Theme.fill2
+                        width: 72; height: 72
+                        radius: Theme.m3 ? (root.sel === index ? 22 : 36) : 22
+                        base: Theme.m3 ? Theme.tonal : Theme.fill2
                         active: root.sel === index
                         activeColor: index >= 3 ? Theme.danger : Theme.accent
+                        scale: Theme.m3 && pressed ? 0.92 : 1
+                        Behavior on radius { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
+                        Behavior on scale { NumberAnimation { duration: Theme.fast; easing.type: Theme.spring } }
                         onClicked: root.go(index)
                         onHoveredChanged: if (hovered) root.sel = index
                         Icon {
                             anchors.centerIn: parent
                             name: modelData.icon
                             size: 30
-                            color: root.sel === index ? (index >= 3 ? "#ffffff" : Theme.accentInk) : Theme.text
+                            color: root.sel === index ? (index >= 3 ? (Theme.m3 && Theme.dark ? "#690005" : "#ffffff") : Theme.accentInk) : Theme.m3 ? Theme.tonalInk : Theme.text
                         }
                     }
                     Txt {

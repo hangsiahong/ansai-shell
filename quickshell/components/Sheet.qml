@@ -15,7 +15,7 @@ PanelWindow {
     property alias panel: panel
     // Panel geometry, set by the user of the sheet.
     property real panelX: (width - panelWidth) / 2
-    property real panelY: 44
+    property real panelY: Theme.barH + 8
     property real panelWidth: 360
     property real panelHeight: 400
     property real panelRadius: Theme.rLg
