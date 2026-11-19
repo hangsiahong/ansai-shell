@@ -17,7 +17,13 @@ ShellRoot {
         Bar {}
     }
 
+    Variants {
+        model: Quickshell.screens
+        Dock {}
+    }
+
     Launcher {}
+    DockMenu {}
     ControlCenter {}
     Calendar {}
     PowerMenu {}

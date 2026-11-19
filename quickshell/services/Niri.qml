@@ -40,6 +40,22 @@ Singleton {
         action("focus-workspace", String(ws.idx));
     }
 
+    function closeWindow(id: int): void {
+        action("close-window", "--id", String(id));
+    }
+
+    // Desktop-entry id for an app_id or a pinned id, so windows and pins match.
+    function appKey(id: string): string {
+        if (!id) return "";
+        const e = DesktopEntries.heuristicLookup(id);
+        return (e?.id ?? id).toLowerCase();
+    }
+
+    function stamp(w: var): real {
+        const t = w.focus_timestamp;
+        return t ? t.secs * 1e3 + t.nanos / 1e6 : 0;
+    }
+
     function focusWindow(id: int): void {
         action("focus-window", "--id", String(id));
     }
@@ -77,6 +93,27 @@ Singleton {
             const m = Object.assign({}, windows);
             delete m[ev.WindowClosed.id];
             windows = m;
+        } else if (ev.WindowLayoutsChanged) {
+            const m = Object.assign({}, windows);
+            for (const [id, layout] of ev.WindowLayoutsChanged.changes) {
+                if (m[id])
+                    m[id] = Object.assign({}, m[id], { layout: layout });
+            }
+            windows = m;
+        } else if (ev.WindowFocusTimestampChanged) {
+            const e = ev.WindowFocusTimestampChanged;
+            if (windows[e.id]) {
+                const m = Object.assign({}, windows);
+                m[e.id] = Object.assign({}, m[e.id], { focus_timestamp: e.focus_timestamp });
+                windows = m;
+            }
+        } else if (ev.WindowUrgencyChanged) {
+            const e = ev.WindowUrgencyChanged;
+            if (windows[e.id]) {
+                const m = Object.assign({}, windows);
+                m[e.id] = Object.assign({}, m[e.id], { is_urgent: e.urgent });
+                windows = m;
+            }
         } else if (ev.WindowFocusChanged) {
             focusedWindowId = ev.WindowFocusChanged.id ?? -1;
         } else if (ev.OverviewOpenedOrClosed) {

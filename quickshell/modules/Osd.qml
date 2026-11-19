@@ -10,7 +10,7 @@ PanelWindow {
     id: root
     screen: Quickshell.screens.find(s => s.name === Niri.focusedOutput) ?? Quickshell.screens[0]
     anchors.bottom: true
-    margins.bottom: 72
+    margins.bottom: Settings.dockSize + 44
     implicitWidth: 260
     implicitHeight: Theme.m3 ? 60 : 52
     exclusionMode: ExclusionMode.Ignore

@@ -18,6 +18,9 @@ Singleton {
     property alias keepAwake: adapter.keepAwake
     property alias pinned: adapter.pinned
     property alias usage: adapter.usage
+    property alias dockMode: adapter.dockMode
+    property alias dockSize: adapter.dockSize
+    property alias dockMagnify: adapter.dockMagnify
 
     readonly property string dir: Quickshell.env("XDG_CONFIG_HOME") ? Quickshell.env("XDG_CONFIG_HOME") + "/ansai-shell" : Quickshell.env("HOME") + "/.config/ansai-shell"
 
@@ -43,6 +46,9 @@ Singleton {
             property bool nightLight: false
             property bool keepAwake: true
             property var usage: ({})
+            property string dockMode: "smart"   // "smart": hide when a window covers it | "auto": always hide | "always": never hide
+            property int dockSize: 44
+            property bool dockMagnify: true
             property list<string> pinned: ["org.gnome.Nautilus", "com.mitchellh.ghostty", "zen", "firefox", "code"]
         }
     }
