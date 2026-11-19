@@ -1,5 +1,7 @@
 # ansai-shell
 
+**[Website](https://ansai-shell.public.koompi.cloud)** · [Showcase video](docs/showcase.mp4) · [Install](#install) · [Keys](#keys)
+
 A Wayland desktop for [niri](https://github.com/YaLTeR/niri), written in [Quickshell](https://quickshell.org) (QML).
 It comes in two looks you can switch between at any time:
 
