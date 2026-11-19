@@ -24,17 +24,20 @@ PanelWindow {
         enabled: Settings.keepAwake
     }
 
-    BackgroundEffect.blurRegion: Region { item: barBg }
+    // ansai: macOS 27 menu bar is fully transparent, so only material blurs behind the bar.
+    BackgroundEffect.blurRegion: Region { item: Theme.m3 ? barBg : null }
 
     Rectangle {
         id: barBg
         anchors.fill: parent
-        color: Theme.m3 ? Theme.bg : Theme.dark ? Qt.rgba(0, 0, 0, 0.28) : Qt.rgba(1, 1, 1, 0.45)
+        color: Theme.m3 ? Theme.bg : "transparent"
         Behavior on color { ColorAnimation { duration: Theme.med } }
-        Rectangle {
-            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-            height: 1
-            color: Theme.glassLine
+        // A faint wash from the top edge keeps text readable over busy wallpapers.
+        gradient: Theme.m3 ? null : wash
+        Gradient {
+            id: wash
+            GradientStop { position: 0; color: Theme.dark ? Qt.rgba(0, 0, 0, 0.32) : Qt.rgba(1, 1, 1, 0.38) }
+            GradientStop { position: 1; color: "transparent" }
         }
     }
 
@@ -44,14 +47,14 @@ PanelWindow {
         spacing: 6
 
         Hover {
-            Layout.preferredWidth: Theme.m3 ? 32 : 28
-            Layout.preferredHeight: Theme.m3 ? 32 : 28
-            radius: Theme.m3 ? (Shell.open === "launcher" ? 10 : 16) : 8
+            Layout.preferredWidth: Theme.m3 ? 32 : 30
+            Layout.preferredHeight: Theme.m3 ? 32 : 24
+            radius: Theme.m3 ? (Shell.open === "launcher" ? 10 : 16) : 6
             base: Theme.m3 ? Theme.accentSoft : "transparent"
-            active: Theme.m3 && Shell.open === "launcher"
-            activeColor: Theme.accent
+            active: Theme.m3 ? Shell.open === "launcher" : Shell.open === "system"
+            activeColor: Theme.m3 ? Theme.accent : Theme.fill
             Behavior on radius { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
-            onClicked: Shell.toggle("launcher")
+            onClicked: Shell.toggle(Theme.m3 ? "launcher" : "system")
             Icon {
                 anchors.centerIn: parent
                 visible: Theme.m3
@@ -62,13 +65,13 @@ PanelWindow {
             Rectangle {
                 anchors.centerIn: parent
                 visible: !Theme.m3
-                width: 20; height: 20; radius: 5.2
+                width: 17; height: 17; radius: 4.4
                 color: Theme.dark ? "#ffffff" : "#000000"
                 Txt {
                     anchors.centerIn: parent
                     text: ">_"
                     font.family: Theme.mono
-                    font.pixelSize: 10
+                    font.pixelSize: 9
                     font.weight: Font.Bold
                     color: Theme.dark ? "#000000" : "#ffffff"
                 }
@@ -114,8 +117,6 @@ PanelWindow {
     RowLayout {
         anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
         spacing: 4
-
-        BarClock { visible: !Theme.m3; Layout.rightMargin: 4 }
 
         Repeater {
             // Network and Bluetooth applets duplicate the control center, so they stay hidden.
@@ -195,7 +196,10 @@ PanelWindow {
             }
         }
 
+        BarClock { visible: !Theme.m3 }
+
         IconButton {
+            visible: Theme.m3
             icon: "power_settings_new"
             iconSize: 17
             implicitWidth: Theme.m3 ? 32 : 28; implicitHeight: implicitWidth

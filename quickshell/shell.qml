@@ -28,6 +28,7 @@ ShellRoot {
     ControlCenter {}
     Calendar {}
     PowerMenu {}
+    SystemMenu {}
     AppMenu {}
     Toasts {}
     Osd {}

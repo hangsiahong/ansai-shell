@@ -27,7 +27,7 @@ Sheet {
         Shell.close();
         actions[i].run();
     }
-    onShownChanged: if (shown) { sel = 0; panel.forceActiveFocus(); }
+    onShownChanged: if (shown) { sel = Shell.powerPick; Shell.powerPick = 0; panel.forceActiveFocus(); }
 
     Item {
         anchors.fill: parent

@@ -10,8 +10,8 @@ import qs.services
 Sheet {
     id: root
     name: "control"
-    panelWidth: 360
-    panelHeight: col.implicitHeight + 24
+    panelWidth: Theme.m3 ? 360 : 330
+    panelHeight: (Theme.m3 ? col : mac).implicitHeight + 24
     panelX: width - panelWidth - 8
     panelY: Theme.barH + 8
 
@@ -27,6 +27,7 @@ Sheet {
 
     ColumnLayout {
         id: col
+        visible: Theme.m3
         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
         spacing: 12
 
@@ -276,6 +277,206 @@ Sheet {
             IconButton {
                 icon: "power_settings_new"
                 onClicked: Shell.open = "power"
+            }
+        }
+    }
+
+    // ---- ansai: macOS 27 Control Center, modules of lighter glass on the glass panel.
+    ColumnLayout {
+        id: mac
+        visible: !Theme.m3
+        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
+        spacing: 10
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+            MacModule {
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1
+                implicitHeight: conn.implicitHeight + 16
+                Column {
+                    id: conn
+                    anchors { left: parent.left; right: parent.right; top: parent.top; margins: 8; leftMargin: 10 }
+                    spacing: 2
+                    MacConnRow {
+                        width: parent.width
+                        on: Net.wifiOn || !!Net.wired
+                        icon: Net.netIcon()
+                        title: Net.wired ? "Ethernet" : "Wi-Fi"
+                        sub: Net.netLabel()
+                        expanded: root.detail === "wifi"
+                        onToggle: Net.toggleWifi()
+                        onExpand: root.detail = root.detail === "wifi" ? "" : "wifi"
+                    }
+                    MacConnRow {
+                        width: parent.width
+                        on: Net.btOn
+                        icon: "bluetooth"
+                        title: "Bluetooth"
+                        sub: !Net.bt ? "Unavailable" : !Net.btOn ? "Off" : Net.btConnected.length ? Net.btConnected[0].name : "On"
+                        expanded: root.detail === "bt"
+                        onToggle: Net.toggleBt()
+                        onExpand: root.detail = root.detail === "bt" ? "" : "bt"
+                    }
+                    MacConnRow {
+                        width: parent.width
+                        on: Settings.keepAwake
+                        icon: "coffee"
+                        title: "Keep Awake"
+                        sub: Settings.keepAwake ? "On" : "Off"
+                        onToggle: Settings.keepAwake = !Settings.keepAwake
+                        onExpand: Settings.keepAwake = !Settings.keepAwake
+                    }
+                }
+            }
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1
+                spacing: 10
+                MacToggle {
+                    Layout.fillWidth: true
+                    on: Settings.dnd
+                    icon: "do_not_disturb_on"
+                    label: "Focus"
+                    sub: Settings.dnd ? "Do Not Disturb" : ""
+                    onColor: Theme.indigo
+                    onClicked: Settings.dnd = !Settings.dnd
+                }
+                MacToggle {
+                    Layout.fillWidth: true
+                    on: Theme.dark
+                    icon: "dark_mode"
+                    label: "Dark Mode"
+                    onClicked: Settings.theme = Theme.dark ? "light" : "dark"
+                }
+            }
+        }
+
+        MacModule {
+            visible: root.detail !== ""
+            Layout.fillWidth: true
+            implicitHeight: macDetail.implicitHeight + 12
+            Loader {
+                id: macDetail
+                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 6 }
+                active: root.detail !== "" && !Theme.m3
+                sourceComponent: root.detail === "wifi" ? wifiC : btC
+            }
+        }
+
+        MacModule {
+            visible: Brightness.available
+            Layout.fillWidth: true
+            implicitHeight: 70
+            Txt { x: 14; y: 10; text: "Display"; font.pixelSize: 13; font.weight: Font.DemiBold }
+            MacSlider {
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 12 }
+                value: Brightness.value
+                icon: "light_mode"
+                onMoved: v => Brightness.set(v)
+            }
+        }
+        MacModule {
+            Layout.fillWidth: true
+            implicitHeight: 70
+            Txt { x: 14; y: 10; text: "Sound"; font.pixelSize: 13; font.weight: Font.DemiBold }
+            Txt {
+                anchors { right: parent.right; rightMargin: 14; top: parent.top; topMargin: 11 }
+                width: Math.min(implicitWidth, 170)
+                text: Audio.sink?.description ?? ""
+                font.pixelSize: 11
+                color: Theme.muted
+            }
+            MacSlider {
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 12 }
+                value: Audio.muted ? 0 : Audio.volume
+                icon: Audio.icon()
+                onMoved: v => Audio.setVolume(v)
+            }
+        }
+
+        MacModule {
+            visible: root.player !== null
+            Layout.fillWidth: true
+            implicitHeight: 64
+            Rectangle {
+                id: macArt
+                x: 10
+                anchors.verticalCenter: parent.verticalCenter
+                width: 44; height: 44; radius: 9
+                color: Theme.surface3
+                clip: true
+                Image { anchors.fill: parent; source: root.player?.trackArtUrl ?? ""; fillMode: Image.PreserveAspectCrop; asynchronous: true }
+                Icon { anchors.centerIn: parent; name: "music_note"; visible: !root.player?.trackArtUrl; color: Theme.muted }
+            }
+            Column {
+                anchors { left: macArt.right; leftMargin: 10; right: macCtrls.left; rightMargin: 6; verticalCenter: parent.verticalCenter }
+                Txt { width: parent.width; text: root.player?.trackTitle || root.player?.identity || ""; font.pixelSize: 13; font.weight: Font.DemiBold }
+                Txt { width: parent.width; text: root.player?.trackArtist ?? ""; font.pixelSize: 11; color: Theme.muted }
+            }
+            Row {
+                id: macCtrls
+                anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
+                IconButton { icon: "skip_previous"; filled: true; iconSize: 20; onClicked: root.player?.previous() }
+                IconButton { icon: root.player?.isPlaying ? "pause" : "play_arrow"; iconSize: 24; filled: true; onClicked: root.player?.togglePlaying() }
+                IconButton { icon: "skip_next"; filled: true; iconSize: 20; onClicked: root.player?.next() }
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+            MacToggle {
+                Layout.fillWidth: true; Layout.preferredWidth: 1
+                wide: false
+                on: Settings.nightLight
+                icon: "nightlight"
+                label: "Night Shift"
+                onColor: Theme.warn
+                onClicked: Settings.nightLight = !Settings.nightLight
+            }
+            MacToggle {
+                Layout.fillWidth: true; Layout.preferredWidth: 1
+                wide: false
+                on: Battery.profile !== "Balanced"
+                icon: Battery.profile === "Performance" ? "bolt" : Battery.profile === "PowerSaver" ? "eco" : "balance"
+                label: Battery.profile === "PowerSaver" ? "Low Power" : Battery.profile === "Performance" ? "Performance" : "Balanced"
+                onColor: Battery.profile === "PowerSaver" ? Theme.green : Theme.warn
+                onClicked: Battery.cycleProfile()
+            }
+            MacToggle {
+                Layout.fillWidth: true; Layout.preferredWidth: 1
+                wide: false
+                icon: "screenshot_region"
+                label: "Screenshot"
+                onClicked: { Shell.close(); Niri.action("screenshot"); }
+            }
+            MacToggle {
+                Layout.fillWidth: true; Layout.preferredWidth: 1
+                wide: false
+                icon: "palette"
+                label: "Android"
+                onClicked: { Settings.style = "material"; Settings.font = ""; }
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: 4
+            spacing: 2
+            Txt {
+                Layout.fillWidth: true
+                visible: Battery.present
+                text: Math.round(Battery.pct * 100) + "%" + (Battery.charging ? " · Charging" : "")
+                font.pixelSize: 12
+                color: Theme.muted
+            }
+            Hover {
+                implicitWidth: editLbl.implicitWidth + 20; implicitHeight: 26
+                radius: 13
+                onClicked: Shell.openSettings("")
+                Txt { id: editLbl; anchors.centerIn: parent; text: "Settings…"; font.pixelSize: 12; color: Theme.text2 }
             }
         }
     }

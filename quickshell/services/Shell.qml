@@ -8,6 +8,7 @@ import Quickshell
 Singleton {
     property string open: ""   // "", "launcher", "control", "power", "calendar", "appmenu"
     property real appMenuX: 0
+    property int powerPick: 0   // which power action the power sheet preselects
     // Dock context menu: the item it was opened on (null for the dock's own settings), where, and which screen.
     property var dockItem: null
     property real dockMenuY: 0

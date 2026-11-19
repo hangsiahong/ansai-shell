@@ -38,18 +38,23 @@ Singleton {
     readonly property color indigo: m3 ? pal.tr(dark ? 80 : 40) : dark ? "#5e5ce6" : "#5856d6"
     readonly property color seg: dark ? "#636366" : "#ffffff"
     // Panels sit on compositor blur, so glass is a little denser than the web's 0.72.
-    readonly property color glass: m3 ? pal.tone(pal.hue, 5, dark ? 12 : 95, 0.9) : dark ? Qt.rgba(30/255, 30/255, 32/255, 0.78) : Qt.rgba(1, 1, 1, 0.78)
-    readonly property color glassLine: m3 ? "transparent" : dark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.06)
+    // ansai is macOS 27 Liquid Glass: a thin tint over heavy blur, a bright specular rim, a darker edge.
+    readonly property color glass: m3 ? pal.tone(pal.hue, 5, dark ? 12 : 95, 0.9) : dark ? Qt.rgba(28/255, 28/255, 32/255, 0.56) : Qt.rgba(1, 1, 1, 0.58)
+    readonly property color glassLine: m3 ? "transparent" : dark ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(1, 1, 1, 0.7)
+    readonly property color glassEdge: dark ? Qt.rgba(0, 0, 0, 0.35) : Qt.rgba(0, 0, 0, 0.10)
+    // Module/tile fill inside glass panels (Control Center modules, menu hover).
+    readonly property color glassTile: dark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.45)
     readonly property color scrim: dark ? Qt.rgba(0, 0, 0, 0.55) : Qt.rgba(0, 0, 0, 0.3)
     // Colour to put on a toggle that is on; M3 uses primary for every toggle.
     function on(c: color): color { return m3 ? accent : c; }
     function onInk(c: color): color { return m3 ? accentInk : "#ffffff"; }
 
     readonly property int rSm: m3 ? 12 : 8
-    readonly property int r: m3 ? 22 : 14
-    readonly property int rLg: m3 ? 28 : 18
+    readonly property int r: m3 ? 22 : 16
+    readonly property int rLg: m3 ? 28 : 24
+    readonly property int rMenu: m3 ? 20 : 12
     readonly property int rGroup: m3 ? 28 : 16
-    readonly property int barH: m3 ? 40 : 36
+    readonly property int barH: m3 ? 40 : 30
 
     readonly property var fonts: ["Noto Sans", "Roboto", "Inter", "Cantarell"]
     readonly property string fontName: Settings.font || (m3 ? "Roboto" : "Noto Sans")
