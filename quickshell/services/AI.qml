@@ -81,7 +81,14 @@ Singleton {
                     else if (r.e) root.setMcp(url, { e: r.e });
                 }
             }
-            onExited: { root.setMcp(url, { busy: false, waiting: false }); root.refreshMcp(); destroy(); }
+            stderr: StdioCollector { id: mcpErr }
+            onExited: code => {
+                const tail = mcpErr.text.trim().split("\n").pop();
+                if (code !== 0) console.warn("mcp.py failed:", mcpErr.text);
+                root.setMcp(url, Object.assign({ busy: false, waiting: false }, code !== 0 && tail ? { e: tail } : {}));
+                root.refreshMcp();
+                destroy();
+            }
         }
     }
 
@@ -215,5 +222,6 @@ Singleton {
         function ask(text: string): void { root.askAbout("", text); }
         function send(text: string): void { Shell.open = "ai"; root.send(text); }
         function reset(): void { root.reset(); }
+        function connect(url: string): void { root.connect(url || "https://mcp.koompi.cloud"); }
     }
 }

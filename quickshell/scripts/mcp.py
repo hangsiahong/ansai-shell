@@ -5,7 +5,8 @@
 #   mcp.py logout URL    forgets the token
 #   mcp.py status URL... {"url", "connected", "tools"} per server (tools from cache when fresh)
 # Tokens live in ~/.config/ansai-shell/mcp-tokens.json (mode 600) and are never printed.
-import base64, hashlib, http.server, json, os, secrets, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import base64, hashlib, json, os, secrets, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 
 CFG = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "ansai-shell")
 TOKENS = os.path.join(CFG, "mcp-tokens.json")
@@ -34,7 +35,7 @@ def save_tokens(t):
     os.replace(TOKENS + ".tmp", TOKENS)
 
 
-def http(url, data=None, headers=None, form=False, timeout=30):
+def fetch(url, data=None, headers=None, form=False, timeout=30):
     h = dict(UA, **(headers or {}))
     body = None
     if data is not None:
@@ -48,7 +49,7 @@ def http(url, data=None, headers=None, form=False, timeout=30):
 
 
 def get_json(url):
-    with http(url) as r:
+    with fetch(url) as r:
         return json.load(r)
 
 
@@ -80,7 +81,7 @@ def login(url):
     meta, resource, scopes = discover(url)
     code_box = {}
 
-    class H(http.server.BaseHTTPRequestHandler):
+    class H(BaseHTTPRequestHandler):
         def do_GET(self):
             q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             if "code" not in q and "error" not in q:
@@ -97,13 +98,13 @@ def login(url):
         def log_message(self, *a):
             pass
 
-    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    srv = HTTPServer(("127.0.0.1", 0), H)
     redirect = f"http://127.0.0.1:{srv.server_port}/callback"
 
     reg = meta.get("registration_endpoint")
     if not reg:
         raise RuntimeError("This server needs a pre-registered client; dynamic registration isn't offered")
-    with http(reg, {"client_name": "ansai shell", "redirect_uris": [redirect], "grant_types": ["authorization_code", "refresh_token"],
+    with fetch(reg, {"client_name": "ansai shell", "redirect_uris": [redirect], "grant_types": ["authorization_code", "refresh_token"],
                     "response_types": ["code"], "token_endpoint_auth_method": "none",
                     **({"scope": " ".join(scopes)} if scopes else {})}) as r:
         client = json.load(r)
@@ -133,7 +134,7 @@ def login(url):
             "client_id": client["client_id"], "code_verifier": verifier, "resource": resource}
     if client.get("client_secret"):
         data["client_secret"] = client["client_secret"]
-    with http(meta["token_endpoint"], data, form=True) as r:
+    with fetch(meta["token_endpoint"], data, form=True) as r:
         tok = json.load(r)
     t = load_tokens()
     t[url] = {"client_id": client["client_id"], "client_secret": client.get("client_secret"),
@@ -156,7 +157,7 @@ def access_token(url, force_refresh=False):
         if e.get("client_secret"):
             data["client_secret"] = e["client_secret"]
         try:
-            with http(e["token_endpoint"], data, form=True) as r:
+            with fetch(e["token_endpoint"], data, form=True) as r:
                 tok = json.load(r)
         except urllib.error.HTTPError:
             return None
@@ -192,7 +193,7 @@ class Session:
         if self.sid:
             h["Mcp-Session-Id"] = self.sid
         try:
-            r = http(self.url, msg, h, timeout=120)
+            r = fetch(self.url, msg, h, timeout=120)
         except urllib.error.HTTPError as err:
             if err.code == 401 and not retried:
                 self.token = access_token(self.url, force_refresh=True)
@@ -277,6 +278,13 @@ def main():
                 if os.path.exists(f):
                     os.remove(f)
             out(ok=True, tools=len(tools_cached(urls[0])))
+        except urllib.error.HTTPError as err:
+            try:
+                body = json.loads(err.read())
+                msg = body.get("error_description") or body.get("error") or body.get("message")
+            except Exception:
+                msg = None
+            out(e=f"Sign-in failed ({err.code}{': ' + str(msg) if msg else ''})")
         except Exception as err:
             out(e=str(err))
     elif cmd == "logout":
