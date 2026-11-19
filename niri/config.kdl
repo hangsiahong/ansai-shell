@@ -226,6 +226,7 @@ binds {
     Print       { screenshot; }
     Mod+Shift+S { screenshot; }
     Mod+Shift+A hotkey-overlay-title="Screenshot (pick area)" { screenshot; }
+    Alt+Shift+A hotkey-overlay-title=null { screenshot; }
     Ctrl+Print  { screenshot-screen; }
     Alt+Print   { screenshot-window; }
 
