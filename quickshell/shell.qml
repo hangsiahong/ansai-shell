@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.modules
+import qs.modules.settings
 import qs.services
 
 ShellRoot {
@@ -32,6 +33,11 @@ ShellRoot {
     Osd {}
 
     LazyLoader {
+        active: Shell.settings
+        SettingsApp {}
+    }
+
+    LazyLoader {
         active: !Shell.nested
         Polkit {}
     }
@@ -48,6 +54,7 @@ ShellRoot {
         target: "shell"
         function toggle(name: string): void { Shell.toggle(name); }
         function close(): void { Shell.close(); }
+        function settings(page: string): void { Shell.openSettings(page); }
         function theme(mode: string): void { Settings.theme = mode; }
         function wallpaper(path: string): void { Settings.wallpaper = path; }
         function testNotify(): void {

@@ -237,7 +237,7 @@ Sheet {
             }
             IconButton {
                 icon: "tune"
-                onClicked: { Shell.close(); Quickshell.execDetached(["xdg-open", Settings.dir + "/settings.json"]); }
+                onClicked: Shell.openSettings("")
             }
             Item { Layout.fillWidth: true }
             Txt {

@@ -16,7 +16,10 @@ link() { # src dst
 
 link "$here/niri/config.kdl" "$cfg/niri/config.kdl"
 link "$here/quickshell" "$cfg/quickshell/ansai"
-mkdir -p "$cfg/ansai-shell" "$HOME/Pictures/Screenshots"
+mkdir -p "$cfg/ansai-shell" "$HOME/Pictures/Screenshots" "$HOME/.local/share/applications"
+# Display settings are machine-specific: seed once, then Settings > Displays owns the file.
+[ -e "$cfg/niri/ansai-outputs.kdl" ] || cp "$here/niri/outputs.default.kdl" "$cfg/niri/ansai-outputs.kdl"
+link "$here/ansai-settings.desktop" "$HOME/.local/share/applications/ansai-settings.desktop"
 
 missing=()
 for b in niri qs xwayland-satellite brightnessctl wpctl playerctl swayidle wl-paste cliphist fuzzel wlsunset ghostty; do

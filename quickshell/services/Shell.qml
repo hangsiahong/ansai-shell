@@ -12,10 +12,19 @@ Singleton {
     property var dockItem: null
     property real dockMenuY: 0
     property real dockEdge: 0   // the dock's right edge, screen x
+    // Settings is a real window, not a sheet, so it stays open alongside them.
+    property bool settings: false
+    property string settingsPage: "appearance"
+    function openSettings(page: string): void {
+        if (page) settingsPage = page;
+        settings = true;
+        open = "";
+    }
     // Nested test runs must not take over the host session's D-Bus services.
     readonly property bool nested: Quickshell.env("ANSAI_SHELL_NESTED") === "1"
 
     function toggle(name: string): void {
+        if (name === "settings") { settings ? (settings = false) : openSettings(""); return; }
         open = open === name ? "" : name;
     }
     function close(): void {

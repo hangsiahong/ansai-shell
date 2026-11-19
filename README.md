@@ -32,7 +32,12 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 
 ## Settings
 
-`~/.config/ansai-shell/settings.json` (theme, wallpaper, terminal, use24h, …) — edits apply live.
+The Settings app (control center gear, "ansai Settings" in the launcher, or `qs -c ansai ipc call shell settings <page>`) covers
+appearance, dock, displays, graphics (supergfxctl), power and battery (asusctl, power-profiles-daemon), sound and about.
+Display changes apply live and revert after 15 s unless kept; kept ones go to `~/.config/niri/ansai-outputs.kdl`.
+GPU mode switches only ask supergfxd; you log out or reboot yourself.
+
+Everything else is saved in `~/.config/ansai-shell/settings.json` (theme, wallpaper, terminal, use24h, …); hand edits apply live.
 
 ```sh
 qs -c ansai ipc call shell theme light

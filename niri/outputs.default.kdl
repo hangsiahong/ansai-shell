@@ -1,0 +1,10 @@
+// Display settings. ansai Settings > Displays rewrites this file when you keep a change.
+output "eDP-1" {
+    mode "2880x1800@120.000"
+    scale 2
+    variable-refresh-rate on-demand=true
+}
+
+output "HDMI-A-1" {
+    scale 1
+}

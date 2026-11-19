@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ansai Settings
+Comment=Appearance, dock, displays, graphics, power and sound
+Exec=qs -c ansai ipc call shell toggle settings
+Icon=preferences-system
+Categories=Settings;System;
+Keywords=display;monitor;gpu;graphics;battery;dock;theme;wallpaper;sound;
