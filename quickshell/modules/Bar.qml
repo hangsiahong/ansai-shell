@@ -107,13 +107,15 @@ PanelWindow {
         }
     }
 
-    // ---- center: clock (material keeps it on the left); workspaces live in the dock
-    BarClock { anchors.centerIn: parent; visible: !Theme.m3 }
+    // ---- center: this workspace's columns left to right (workspaces themselves are in the dock)
+    ColumnStrip { anchors.centerIn: parent; output: bar.modelData.name }
 
     // ---- right: tray, status cluster
     RowLayout {
         anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
         spacing: 4
+
+        BarClock { visible: !Theme.m3; Layout.rightMargin: 4 }
 
         Repeater {
             model: Shell.nested ? [] : SystemTray.items
