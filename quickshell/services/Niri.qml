@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import qs
+import qs.services
 import Quickshell
 import Quickshell.Io
 
@@ -18,6 +19,10 @@ Singleton {
     readonly property string keyboardLayout: layoutNames[layoutIdx] ?? ""
     readonly property string focusedOutput: workspaces.find(w => w.is_focused)?.output ?? ""
     readonly property var focusedWindow: windows[focusedWindowId] ?? null
+    // Survives shell overlays taking keyboard focus (niri then reports no focused window).
+    property int lastWindowId: -1
+    onFocusedWindowIdChanged: if (focusedWindowId >= 0) lastWindowId = focusedWindowId
+    readonly property var barWindow: Shell.open !== "" ? (windows[lastWindowId] ?? null) : focusedWindow
 
     function workspacesOn(output: string): var {
         return workspaces.filter(w => w.output === output || !w.output).sort((a, b) => a.idx - b.idx);

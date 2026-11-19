@@ -102,17 +102,30 @@ PanelWindow {
             }
         }
 
-        Txt {
-            Layout.leftMargin: 6
-            readonly property string appId: Niri.focusedWindow?.app_id ?? ""
-            text: appId ? (DesktopEntries.heuristicLookup(appId)?.name ?? appId.split(".").pop()) : ""
-            color: Theme.text
-            font.pixelSize: 13
-            font.weight: Font.DemiBold
+        Hover {
+            id: appName
+            readonly property string appId: Niri.barWindow?.app_id ?? ""
+            visible: appId !== ""
+            Layout.preferredHeight: 26
+            Layout.preferredWidth: appLabel.implicitWidth + 16
+            radius: 7
+            active: Shell.open === "appmenu"
+            onClicked: {
+                Shell.appMenuX = appName.mapToItem(null, 0, 0).x;
+                Shell.toggle("appmenu");
+            }
+            Txt {
+                id: appLabel
+                anchors.centerIn: parent
+                text: appName.appId ? (DesktopEntries.heuristicLookup(appName.appId)?.name ?? appName.appId.split(".").pop()) : ""
+                color: Theme.text
+                font.pixelSize: 13
+                font.weight: Font.DemiBold
+            }
         }
         Txt {
             Layout.maximumWidth: bar.width * 0.22
-            text: Niri.focusedWindow?.title ?? ""
+            text: Niri.barWindow?.title ?? ""
             color: Theme.muted
             font.pixelSize: 13
         }
