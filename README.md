@@ -96,8 +96,8 @@ Uses the [KOOMPI AI Gateway](https://ai.koompi.cloud) (OpenAI-compatible). Paste
 **Settings → AI**; it is saved to `~/.config/ansai-shell/ai-key` (mode 600) and only `quickshell/scripts/ai.py` reads it.
 The default model is `koompi-luna` (Mekong: Khmer and images); pick another there or set `"aiModel"` in settings.json.
 
-- **Ask AI sidebar** (Super+I, or ✦ in Control Center): streaming chat in English or Khmer; attach a screen area or
-  paste the clipboard. The conversation stays until you start a new one.
+- **Ask AI sidebar** (Super+I, or ✦ in Control Center): streaming chat in English or Khmer; attach a screen area, or paste
+  (Ctrl+V or the clipboard button) text or an image such as a screenshot you just took. The conversation stays until you start a new one.
 - **Ask about the screen** (Super+Shift+I): pick an area; it is saved to `~/Pictures/Screenshots`, copied, and
   opened in the sidebar with the image attached ("what does this error mean?").
 - **Clipboard panel:** Ctrl+T translates English ↔ Khmer (language in Settings), Ctrl+S summarizes, Ctrl+E fixes
