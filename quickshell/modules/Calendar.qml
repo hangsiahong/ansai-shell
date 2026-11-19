@@ -55,7 +55,7 @@ Sheet {
                             width: parent.cell; height: 22
                             horizontalAlignment: Text.AlignHCenter
                             text: modelData
-                            font.pixelSize: 11; font.weight: Font.DemiBold
+                            font.pixelSize: 11; font.weight: Theme.strong
                             color: Theme.faint
                         }
                     }
@@ -77,7 +77,7 @@ Sheet {
                             Rectangle {
                                 anchors.centerIn: parent
                                 width: 30; height: 30; radius: 15
-                                color: modelData.today ? Theme.danger : "transparent"
+                                color: modelData.today ? (Theme.m3 ? Theme.accent : Theme.danger) : "transparent"
                             }
                             Txt {
                                 anchors.centerIn: parent
@@ -85,7 +85,7 @@ Sheet {
                                 font.pixelSize: 14
                                 font.weight: modelData.today ? Font.Bold : Font.Normal
                                 font.features: { "tnum": 1 }
-                                color: modelData.today ? "#ffffff" : modelData.inMonth ? Theme.text : Theme.faint
+                                color: modelData.today ? Theme.accentInk : modelData.inMonth ? Theme.text : Theme.faint
                             }
                         }
                     }
@@ -98,7 +98,7 @@ Sheet {
             Txt {
                 Layout.fillWidth: true
                 text: "NOTIFICATIONS"
-                font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 0.4
+                font.pixelSize: 12; font.weight: Theme.strong; font.letterSpacing: 0.4
                 color: Theme.muted
             }
             Hover {

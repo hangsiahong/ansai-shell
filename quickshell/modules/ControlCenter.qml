@@ -110,7 +110,7 @@ Sheet {
                 ColumnLayout {
                     visible: Brightness.available
                     spacing: 6
-                    Txt { text: "Display"; font.pixelSize: 12; font.weight: Font.DemiBold; color: Theme.muted }
+                    Txt { text: "Display"; font.pixelSize: 12; font.weight: Theme.strong; color: Theme.muted }
                     Slider {
                         Layout.fillWidth: true
                         value: Brightness.value
@@ -121,7 +121,7 @@ Sheet {
                 ColumnLayout {
                     spacing: 6
                     RowLayout {
-                        Txt { text: "Sound"; font.pixelSize: 12; font.weight: Font.DemiBold; color: Theme.muted }
+                        Txt { text: "Sound"; font.pixelSize: 12; font.weight: Theme.strong; color: Theme.muted }
                         Item { Layout.fillWidth: true }
                         Txt {
                             Layout.maximumWidth: 200
@@ -136,6 +136,56 @@ Sheet {
                         value: Audio.muted ? 0 : Audio.volume
                         icon: Audio.icon()
                         onMoved: v => Audio.setVolume(v)
+                    }
+                }
+            }
+        }
+
+        // Look: style and font. Both persist in settings.json.
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 52
+            radius: Theme.r
+            color: Theme.fill2
+
+            RowLayout {
+                anchors { fill: parent; leftMargin: 6; rightMargin: 6 }
+                spacing: 4
+                Repeater {
+                    model: [{ id: "ansai", label: "ansai", icon: "terminal" }, { id: "material", label: "Android", icon: "android" }]
+                    Hover {
+                        required property var modelData
+                        readonly property bool sel: Settings.style === modelData.id
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        radius: Theme.m3 ? (sel ? 12 : 20) : 10
+                        base: "transparent"
+                        active: sel
+                        activeColor: Theme.m3 ? Theme.accent : Theme.seg
+                        Behavior on radius { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
+                        onClicked: { Settings.style = modelData.id; Settings.font = ""; }
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+                            Icon { name: modelData.icon; size: 17; filled: parent.parent.sel; color: parent.parent.sel && Theme.m3 ? Theme.accentInk : Theme.text; anchors.verticalCenter: parent.verticalCenter }
+                            Txt { text: modelData.label; font.pixelSize: 13; font.weight: Theme.strong; color: parent.parent.sel && Theme.m3 ? Theme.accentInk : Theme.text }
+                        }
+                    }
+                }
+                Hover {
+                    Layout.preferredWidth: fontLbl.implicitWidth + 40
+                    Layout.preferredHeight: 40
+                    radius: Theme.m3 ? 20 : 10
+                    base: Theme.fill
+                    onClicked: m => {
+                        const f = Theme.fonts, i = f.indexOf(Theme.fontName);
+                        Settings.font = f[(i + (m.button === Qt.RightButton ? f.length - 1 : 1)) % f.length];
+                    }
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        Icon { name: "text_fields"; size: 17; color: Theme.text2; anchors.verticalCenter: parent.verticalCenter }
+                        Txt { id: fontLbl; text: Theme.fontName; font.pixelSize: 13; color: Theme.text }
                     }
                 }
             }
@@ -166,7 +216,7 @@ Sheet {
             Column {
                 anchors { left: art.right; leftMargin: 12; right: ctrls.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
                 spacing: 2
-                Txt { width: parent.width; text: root.player?.trackTitle || root.player?.identity || ""; font.pixelSize: 14; font.weight: Font.DemiBold }
+                Txt { width: parent.width; text: root.player?.trackTitle || root.player?.identity || ""; font.pixelSize: 14; font.weight: Theme.strong }
                 Txt { width: parent.width; text: root.player?.trackArtist ?? ""; font.pixelSize: 12; color: Theme.muted }
             }
             Row {

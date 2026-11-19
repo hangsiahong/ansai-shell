@@ -120,7 +120,7 @@ PanelWindow {
                 text: appName.appId ? (DesktopEntries.heuristicLookup(appName.appId)?.name ?? appName.appId.split(".").pop()) : ""
                 color: Theme.text
                 font.pixelSize: 13
-                font.weight: Font.DemiBold
+                font.weight: Theme.strong
             }
         }
         Txt {
@@ -144,7 +144,7 @@ PanelWindow {
             anchors.centerIn: parent
             spacing: 8
             Txt { text: Time.date; color: Theme.text2; font.pixelSize: 13; font.weight: Font.Medium }
-            Txt { text: Time.time; font.pixelSize: 13; font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
+            Txt { text: Time.time; font.pixelSize: 13; font.weight: Theme.strong; font.features: { "tnum": 1 } }
             Rectangle {
                 visible: Notifs.list.length > 0
                 width: 6; height: 6; radius: 3
@@ -196,7 +196,7 @@ PanelWindow {
             text: Niri.keyboardLayout.slice(0, 2).toUpperCase()
             color: Theme.muted
             font.pixelSize: 12
-            font.weight: Font.DemiBold
+            font.weight: Theme.strong
             Layout.rightMargin: 4
         }
 
@@ -221,7 +221,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     Txt {
                         text: Math.round(Battery.pct * 100) + "%"
-                        font.pixelSize: 12; font.weight: Font.DemiBold
+                        font.pixelSize: 12; font.weight: Theme.strong
                         font.features: { "tnum": 1 }
                         color: Battery.low ? Theme.danger : Theme.text2
                         anchors.verticalCenter: parent.verticalCenter

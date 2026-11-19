@@ -78,7 +78,7 @@ Sheet {
             Layout.bottomMargin: 4
             text: root.entry?.name ?? root.win?.app_id ?? ""
             font.pixelSize: 12
-            font.weight: Font.DemiBold
+            font.weight: Theme.strong
             color: Theme.muted
         }
 

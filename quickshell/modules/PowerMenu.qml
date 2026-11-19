@@ -58,7 +58,7 @@ Sheet {
                             anchors.centerIn: parent
                             name: modelData.icon
                             size: 30
-                            color: root.sel === index ? "#ffffff" : Theme.text
+                            color: root.sel === index ? (index >= 3 ? "#ffffff" : Theme.accentInk) : Theme.text
                         }
                     }
                     Txt {

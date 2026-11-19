@@ -5,6 +5,6 @@ import qs
 Rectangle {
     color: Theme.glass
     radius: Theme.rLg
-    border.width: 1
+    border.width: Theme.m3 ? 0 : 1
     border.color: Theme.glassLine
 }

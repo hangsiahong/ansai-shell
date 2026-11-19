@@ -31,7 +31,7 @@ Item {
             anchors.centerIn: parent
             text: (root.label || "?").charAt(0).toUpperCase()
             font.pixelSize: root.size * 0.45
-            font.weight: Font.DemiBold
+            font.weight: Theme.strong
             color: Theme.text2
         }
     }

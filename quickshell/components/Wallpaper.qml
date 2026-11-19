@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
-import Quickshell.Io
 import qs
+import qs.services
 
 // Settings.wallpaper if set, otherwise a dark field with soft accent glows.
 Item {
@@ -37,29 +37,10 @@ Item {
         }
     }
 
-    // No wallpaper chosen: reuse GNOME's (dark and light), so switching desktops keeps the look.
-    QtObject {
-        id: gnome
-        property string dark: ""
-        property string light: ""
-    }
-    Process {
-        running: !Settings.wallpaper
-        command: ["sh", "-c", "gsettings get org.gnome.desktop.background picture-uri-dark; gsettings get org.gnome.desktop.background picture-uri"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const l = text.trim().split("\n").map(s => s.replace(/^'|'$/g, ""));
-                gnome.dark = l[0] ?? "";
-                gnome.light = l[1] ?? "";
-            }
-        }
-    }
-
     Image {
         id: img
         anchors.fill: parent
-        readonly property string path: Settings.wallpaper || (Theme.dark ? gnome.dark : gnome.light) || gnome.dark
-        source: path ? (path.startsWith("/") ? "file://" + path : path) : ""
+        source: Scheme.wallpaperUrl
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         cache: false

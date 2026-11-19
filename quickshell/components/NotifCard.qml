@@ -54,7 +54,7 @@ Rectangle {
                 Layout.fillWidth: true
                 text: (root.n?.appName || "Notification").toUpperCase()
                 font.pixelSize: 11
-                font.weight: Font.DemiBold
+                font.weight: Theme.strong
                 font.letterSpacing: 0.4
                 color: Theme.muted
             }
@@ -82,7 +82,7 @@ Rectangle {
                     Layout.fillWidth: true
                     text: root.n?.summary ?? ""
                     font.pixelSize: 14
-                    font.weight: Font.DemiBold
+                    font.weight: Theme.strong
                 }
                 Txt {
                     Layout.fillWidth: true

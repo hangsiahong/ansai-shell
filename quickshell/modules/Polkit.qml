@@ -126,7 +126,7 @@ Scope {
                         radius: 12
                         base: Theme.accent
                         onClicked: pw.submitIt()
-                        Txt { anchors.centerIn: parent; text: "Authenticate"; font.pixelSize: 15; font.weight: Font.DemiBold; color: Theme.accentInk }
+                        Txt { anchors.centerIn: parent; text: "Authenticate"; font.pixelSize: 15; font.weight: Theme.strong; color: Theme.accentInk }
                     }
                 }
             }
