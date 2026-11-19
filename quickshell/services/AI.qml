@@ -60,7 +60,11 @@ Singleton {
         setMcp(url, { busy: true, e: "" });
         mcpCmd.createObject(root, { url: url, command: ["python3", mcpScript, "logout", url] }).running = true;
     }
-    Component.onCompleted: refreshMcp()
+    Component.onCompleted: {
+        // Chats can hold anything the user pasted: keep them private to the user.
+        Quickshell.execDetached(["sh", "-c", `mkdir -p "$1/ai-images" && chmod 700 "$1" && chmod -f 600 "$1/ai-chats.json"; true`, "sh", dataDir]);
+        refreshMcp();
+    }
     Process {
         id: mcpStatus
         stdout: SplitParser {
@@ -100,6 +104,38 @@ Singleton {
     property string draft: ""      // text waiting in the sidebar's input
     property string attachment: "" // image path to send with the next message
 
+    // ---- history: every conversation, newest first, in ~/.local/share/ansai-shell/ai-chats.json
+    readonly property string dataDir: (Quickshell.env("XDG_DATA_HOME") || Quickshell.env("HOME") + "/.local/share") + "/ansai-shell"
+    property var chats: []         // [{ id, title, updated, messages }]
+    property string chatId: ""
+    function save(): void {
+        if (!chat.length) return;
+        if (!chatId) chatId = Date.now().toString(36);
+        const first = chat.find(m => m.role === "user");
+        const title = (first?.content || "Image").replace(/\s+/g, " ").trim().slice(0, 90);
+        chats = [{ id: chatId, title: title, updated: Date.now(), messages: chat }, ...chats.filter(c => c.id !== chatId)].slice(0, 200);
+        histFile.setText(JSON.stringify(chats));
+    }
+    function openChat(id: string): void {
+        const c = chats.find(x => x.id === id);
+        if (!c || busy) return;
+        chat = c.messages;
+        chatId = id;
+        attachment = "";
+    }
+    function deleteChat(id: string): void {
+        chats = chats.filter(c => c.id !== id);
+        histFile.setText(JSON.stringify(chats));
+        if (id === chatId) { stop(); chat = []; chatId = ""; }
+    }
+    FileView {
+        id: histFile
+        path: root.dataDir + "/ai-chats.json"
+        printErrors: false
+        atomicWrites: true
+        onLoaded: { try { root.chats = JSON.parse(text()); } catch (e) { root.chats = []; } }
+    }
+
     function send(text: string): void {
         text = text.trim();
         if ((!text && !attachment) || busy) return;
@@ -112,6 +148,7 @@ Singleton {
         // Older images are dropped from the context: only the newest one is sent.
         const prior = chat.filter(m => !m.error).map(m => ({ role: m.role, content: m.content }));
         chat = [...chat, user, { role: "assistant", content: "" }];
+        save();
         busy = true;
         const i = chat.length - 1;
         const edit = f => { const c = Array.from(chat); c[i] = Object.assign({}, c[i]); f(c[i]); chat = c; };
@@ -122,6 +159,7 @@ Singleton {
             });
             busy = false;
             current = null;
+            save();
         }, {
             mcp: mcpLive,
             onEvent: ev => edit(m => {
@@ -144,7 +182,7 @@ Singleton {
         current.write(yes ? "y\n" : "n\n");
     }
     function stop(): void { if (current) current.stop(); }
-    function reset(): void { stop(); chat = []; attachment = ""; }
+    function reset(): void { stop(); chat = []; chatId = ""; attachment = ""; }
     // Open the sidebar with something to ask about.
     function askAbout(image: string, text: string): void {
         if (image) attachment = image;

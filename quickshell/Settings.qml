@@ -24,6 +24,7 @@ Singleton {
     property alias systemTheme: adapter.systemTheme
     property alias aiModel: adapter.aiModel
     property alias aiLang: adapter.aiLang
+    property alias aiLayout: adapter.aiLayout
     property alias mcpServers: adapter.mcpServers
 
     readonly property string dir: Quickshell.env("XDG_CONFIG_HOME") ? Quickshell.env("XDG_CONFIG_HOME") + "/ansai-shell" : Quickshell.env("HOME") + "/.config/ansai-shell"
@@ -55,6 +56,7 @@ Singleton {
             property bool dockMagnify: true
             property string aiModel: "koompi-luna"   // KOOMPI AI Gateway model (services/AI.qml)
             property var mcpServers: [{ name: "KOOMPI Cloud", url: "https://mcp.koompi.cloud", on: true }]   // MCP connectors for Ask AI
+            property string aiLayout: "side"   // Ask AI: "side" panel on the right | "center" big, in the middle
             property string aiLang: "Khmer"   // the other language for Translate (English <-> this)
             property bool systemTheme: true   // theme GTK/Qt apps and Ghostty to match (services/SystemTheme.qml)
             property list<string> pinned: ["org.gnome.Nautilus", "com.mitchellh.ghostty", "zen", "firefox", "code"]

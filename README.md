@@ -98,6 +98,8 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
 
 - **Ask AI sidebar** (Super+I or Alt+A, or ✦ in Control Center): streaming chat in English or Khmer; attach a screen area, or paste
   (Ctrl+V or the clipboard button) text or an image such as a screenshot you just took. The conversation stays until you start a new one.
+  Every chat is saved (Chats list, `~/.local/share/ansai-shell/ai-chats.json`, private to you) and survives restarts.
+  The ⤢ button switches between the right-side panel and a big centred view with the chat list beside it.
 - **Ask about the screen** (Super+Shift+S or Alt+Shift+S): pick an area; it is saved to `~/Pictures/Screenshots`, copied, and
   opened in the sidebar with the image attached ("what does this error mean?").
 - **Clipboard panel:** Ctrl+T translates English ↔ Khmer (language in Settings), Ctrl+S summarizes, Ctrl+E fixes
