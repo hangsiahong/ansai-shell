@@ -13,10 +13,16 @@ Rectangle {
     readonly property var n: entry.n
 
     implicitHeight: col.implicitHeight + (Theme.m3 ? 32 : 24)
-    radius: Theme.m3 ? 24 : Theme.r
-    color: popup ? Theme.glass : Theme.m3 ? Theme.surface2 : Theme.fill2
-    border.width: popup && !Theme.m3 ? 1 : 0
+    // ansai: macOS 27 notification, glass bubble with a big app icon, bold title and the age at the right.
+    radius: Theme.m3 ? 24 : 22
+    color: popup ? Theme.glass : Theme.m3 ? Theme.surface2 : Theme.glassTile
+    border.width: Theme.m3 ? 0 : 1
     border.color: Theme.glassLine
+    readonly property string age: {
+        const s = Math.floor((Time.now - entry.time) / 60000);
+        return s < 1 ? "now" : s < 60 ? s + "m ago" : Math.floor(s / 60) + "h ago";
+    }
+    readonly property string iconName: n?.appIcon || DesktopEntries.heuristicLookup(n?.appName ?? "")?.icon || ""
 
     MouseArea {
         anchors.fill: parent
@@ -44,6 +50,7 @@ Rectangle {
         spacing: 4
 
         RowLayout {
+            visible: Theme.m3
             spacing: 8
             AppIcon {
                 size: 18
@@ -75,14 +82,31 @@ Rectangle {
 
         RowLayout {
             spacing: 10
+            AppIcon {
+                visible: !Theme.m3
+                Layout.alignment: Qt.AlignTop
+                size: 34
+                icon: root.iconName
+                label: root.n?.appName ?? ""
+            }
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 2
-                Txt {
+                RowLayout {
                     Layout.fillWidth: true
-                    text: root.n?.summary ?? ""
-                    font.pixelSize: 14
-                    font.weight: Theme.strong
+                    Txt {
+                        Layout.fillWidth: true
+                        text: root.n?.summary || root.n?.appName || ""
+                        font.pixelSize: Theme.m3 ? 14 : 13
+                        font.weight: Theme.m3 ? Theme.strong : Font.Bold
+                    }
+                    Txt { visible: !Theme.m3; text: root.age; font.pixelSize: 11; color: Theme.muted }
+                    IconButton {
+                        visible: !Theme.m3
+                        implicitWidth: 18; implicitHeight: 18
+                        icon: "close"; iconSize: 13; iconColor: Theme.muted
+                        onClicked: Notifs.dismiss(root.entry)
+                    }
                 }
                 Txt {
                     Layout.fillWidth: true
@@ -92,7 +116,7 @@ Rectangle {
                     wrapMode: Text.Wrap
                     maximumLineCount: root.popup ? 3 : 6
                     font.pixelSize: 13
-                    color: Theme.text2
+                    color: Theme.m3 ? Theme.text2 : Theme.text
                     onLinkActivated: l => Qt.openUrlExternally(l)
                 }
             }
@@ -117,10 +141,10 @@ Rectangle {
                     required property var modelData
                     Layout.fillWidth: true
                     Layout.preferredHeight: Theme.m3 ? 36 : 30
-                    radius: Theme.m3 ? height / 2 : Theme.rSm
-                    base: Theme.m3 ? Theme.tonal : Theme.fill
+                    radius: Theme.m3 ? height / 2 : 9
+                    base: Theme.m3 ? Theme.tonal : Theme.glassTile
                     onClicked: { modelData.invoke(); Notifs.hidePopup(root.entry); }
-                    Txt { anchors.centerIn: parent; text: parent.modelData.text; font.pixelSize: 13; font.weight: Font.Medium; color: Theme.m3 ? Theme.tonalInk : Theme.accent }
+                    Txt { anchors.centerIn: parent; text: parent.modelData.text; font.pixelSize: 13; font.weight: Font.Medium; color: Theme.m3 ? Theme.tonalInk : Theme.text }
                 }
             }
         }

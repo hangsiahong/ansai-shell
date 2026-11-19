@@ -15,7 +15,7 @@ Sheet {
     panelY: Theme.barH + 4
     panelWidth: 248
     panelHeight: col.implicitHeight + 12
-    panelRadius: 12
+    panelRadius: Theme.rMenu
     enterFrom: -4
 
     // Captured on open so the target can't change while the menu holds focus.
@@ -41,20 +41,24 @@ Sheet {
         property string hint
         property bool destructive: false
         Layout.fillWidth: true
-        Layout.preferredHeight: 28
-        radius: 6
+        Layout.preferredHeight: Theme.m3 ? 28 : 26
+        radius: Theme.m3 ? 6 : 7
+        // ansai: macOS menus highlight the row in the accent colour with white text.
+        readonly property bool lit: !Theme.m3 && hovered
+        active: lit
+        activeColor: Theme.accent
         RowLayout {
             anchors { fill: parent; leftMargin: 8; rightMargin: 10 }
             spacing: 10
-            Icon { name: it.icon; size: 17; color: it.destructive ? Theme.danger : Theme.text2 }
+            Icon { name: it.icon; size: Theme.m3 ? 17 : 15; color: it.lit ? "#ffffff" : it.destructive ? Theme.danger : Theme.text2 }
             Txt {
                 Layout.fillWidth: true
                 text: it.label
                 elide: Text.ElideRight
                 font.pixelSize: 13
-                color: it.destructive ? Theme.danger : Theme.text
+                color: it.lit ? "#ffffff" : it.destructive ? Theme.danger : Theme.text
             }
-            Txt { text: it.hint; visible: !!it.hint; font.pixelSize: 12; color: Theme.faint }
+            Txt { text: it.hint; visible: !!it.hint; font.pixelSize: 12; color: it.lit ? Qt.rgba(1, 1, 1, 0.8) : Theme.faint }
         }
     }
     component Sep: Rectangle {

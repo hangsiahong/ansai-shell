@@ -14,7 +14,7 @@ Sheet {
     panelHeight: col.implicitHeight + 12
     panelX: Shell.dockEdge + 10
     panelY: Math.max(Theme.barH + 8, Math.min(Shell.dockMenuY - 24, height - panelHeight - 8))
-    panelRadius: Theme.m3 ? 20 : 12
+    panelRadius: Theme.rMenu
     enterFrom: 0
 
     // Captured on open so live window changes don't reshuffle the menu under the pointer.
@@ -39,25 +39,28 @@ Sheet {
         property bool checked: false
         property bool checkable: false
         Layout.fillWidth: true
-        Layout.preferredHeight: Theme.m3 ? 36 : 28
-        radius: Theme.m3 ? 18 : 6
+        Layout.preferredHeight: Theme.m3 ? 36 : 26
+        radius: Theme.m3 ? 18 : 7
+        readonly property bool lit: !Theme.m3 && hovered
+        active: lit
+        activeColor: Theme.accent
         RowLayout {
             anchors { fill: parent; leftMargin: Theme.m3 ? 12 : 8; rightMargin: 10 }
             spacing: 10
             Icon {
                 name: mi.checkable ? (mi.checked ? "radio_button_checked" : "radio_button_unchecked") : mi.icon
-                size: 17
+                size: Theme.m3 ? 17 : 15
                 filled: mi.checked
-                color: mi.destructive ? Theme.danger : mi.checked ? Theme.accent : Theme.text2
+                color: mi.lit ? "#ffffff" : mi.destructive ? Theme.danger : mi.checked ? Theme.accent : Theme.text2
             }
             Txt {
                 Layout.fillWidth: true
                 text: mi.label
                 elide: Text.ElideRight
                 font.pixelSize: 13
-                color: mi.destructive ? Theme.danger : Theme.text
+                color: mi.lit ? "#ffffff" : mi.destructive ? Theme.danger : Theme.text
             }
-            Txt { text: mi.hint; visible: !!mi.hint; font.pixelSize: 12; color: Theme.faint }
+            Txt { text: mi.hint; visible: !!mi.hint; font.pixelSize: 12; color: mi.lit ? Qt.rgba(1, 1, 1, 0.8) : Theme.faint }
         }
     }
     component MSep: Rectangle {
