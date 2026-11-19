@@ -48,27 +48,47 @@ Sheet {
             return 0;
         };
 
+        // Running apps: Enter switches to their most recent window instead of starting another copy.
+        const running = {};
         for (const w of Object.values(Niri.windows)) {
-            const s = score(w.title ?? "", w.app_id ?? "");
-            if (q && s > 0)
-                out.push({ kind: "win", id: w.id, title: w.title, sub: "Open window · " + (w.app_id ?? ""), app: w.app_id, s: s + 5 });
+            const k = Niri.appKey(w.app_id);
+            (running[k] = running[k] ?? []).push(w);
         }
+        for (const k in running)
+            running[k].sort((a, b) => Niri.stamp(b) - Niri.stamp(a));
 
         const usage = Settings.usage ?? {};
+        const shown = {};
         for (const a of DesktopEntries.applications.values) {
             if (a.noDisplay) continue;
             const s = score(a.name, [a.genericName, a.comment, (a.keywords ?? []).join(" ")].join(" "));
-            if (s > 0)
-                out.push({ kind: "app", entry: a, title: a.name, sub: a.genericName || a.comment || "", app: a.icon, s: s + Math.min(30, (usage[a.id] ?? 0) * 3) });
+            if (s <= 0) continue;
+            const wins = running[a.id.toLowerCase()] ?? [];
+            if (wins.length) shown[a.id.toLowerCase()] = true;
+            out.push({
+                kind: "app", entry: a, title: a.name, app: a.icon, wins: wins,
+                sub: wins.length ? `Open · switch to ${wins.length > 1 ? "last of " + wins.length + " windows" : "window"}  (Shift+Enter: new window)` : a.genericName || a.comment || "",
+                s: s + Math.min(30, (usage[a.id] ?? 0) * 3) + (wins.length ? 15 : 0)
+            });
+        }
+
+        // Individual windows by title; skip ones whose app already matched above unless the title itself matches.
+        for (const w of Object.values(Niri.windows)) {
+            const titleS = score(w.title ?? "", "");
+            const s = titleS || score("", w.app_id ?? "");
+            if (!q || s <= 0 || (!titleS && shown[Niri.appKey(w.app_id)])) continue;
+            out.push({ kind: "win", id: w.id, title: w.title, sub: "Open window · " + (DesktopEntries.heuristicLookup(w.app_id)?.name ?? w.app_id ?? ""), app: w.app_id, s: s + 5 });
         }
         out.sort((a, b) => b.s - a.s || a.title.localeCompare(b.title));
         return out.slice(0, 40);
     }
 
-    function activate(i: int): void {
+    function activate(i: int, fresh: bool): void {
         const it = items[i];
         if (!it) return;
-        if (it.kind === "app") {
+        if (it.kind === "app" && it.wins.length && !fresh) {
+            Niri.focusWindow(it.wins[0].id);
+        } else if (it.kind === "app") {
             const u = Object.assign({}, Settings.usage ?? {});
             u[it.entry.id] = (u[it.entry.id] ?? 0) + 1;
             Settings.usage = u;
@@ -116,8 +136,8 @@ Sheet {
                 onTextChanged: { root.query = text; root.sel = 0; }
 
                 Keys.onEscapePressed: Shell.close()
-                Keys.onReturnPressed: root.activate(root.sel)
-                Keys.onEnterPressed: root.activate(root.sel)
+                Keys.onReturnPressed: e => root.activate(root.sel, !!(e.modifiers & Qt.ShiftModifier))
+                Keys.onEnterPressed: e => root.activate(root.sel, !!(e.modifiers & Qt.ShiftModifier))
                 Keys.onDownPressed: root.sel = Math.min(root.items.length - 1, root.sel + 1)
                 Keys.onUpPressed: root.sel = Math.max(0, root.sel - 1)
                 Keys.onTabPressed: root.sel = (root.sel + 1) % Math.max(1, root.items.length)
@@ -166,7 +186,7 @@ Sheet {
                 active: index === root.sel
                 activeColor: Theme.m3 ? Theme.accentSoft : Theme.accent
                 readonly property color ink: Theme.m3 ? Theme.accentSoftInk : Theme.accentInk
-                onClicked: root.activate(index)
+                onClicked: m => root.activate(index, m.button === Qt.MiddleButton || !!(m.modifiers & Qt.ShiftModifier))
                 onHoveredChanged: if (hovered) root.sel = index
 
                 Item {
