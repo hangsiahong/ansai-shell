@@ -34,9 +34,13 @@ Sheet {
 
     Process {
         id: paste
-        command: ["wl-paste", "-n", "-t", "text"]
+        // An image on the clipboard (e.g. a screenshot) is saved and attached; otherwise the text is pasted.
+        command: ["sh", "-c", `t=$(wl-paste -l 2>/dev/null | grep -m1 '^image/'); if [ -n "$t" ]; then ` +
+            `d="\${XDG_RUNTIME_DIR:-/tmp}/ansai-ai"; mkdir -p "$d"; f="$d/paste-$(date +%s%N).\${t#image/}"; ` +
+            `wl-paste -t "$t" > "$f" && echo "IMG:$f"; else wl-paste -n -t text; fi`]
         stdout: StdioCollector {
             onStreamFinished: {
+                if (text.startsWith("IMG:")) { AI.attachment = text.slice(4).trim(); input.forceActiveFocus(); return; }
                 const t = text.trim();
                 if (!t) return;
                 input.text = (input.text ? input.text + "\n\n" : "") + t;
@@ -298,6 +302,9 @@ Sheet {
                                 else if (r.y + r.height > inFlick.contentY + inFlick.height) inFlick.contentY = r.y + r.height - inFlick.height;
                             }
                             Keys.onEscapePressed: Shell.close()
+                            Keys.onPressed: e => {
+                                if (e.key === Qt.Key_V && (e.modifiers & Qt.ControlModifier)) { paste.running = true; e.accepted = true; }
+                            }
                             Keys.onReturnPressed: e => { if (e.modifiers & Qt.ShiftModifier) e.accepted = false; else root.send(); }
                             Keys.onEnterPressed: e => { if (e.modifiers & Qt.ShiftModifier) e.accepted = false; else root.send(); }
                             Txt {
@@ -318,7 +325,7 @@ Sheet {
                         onClicked: AI.screenshot()
                     }
                     IconButton {
-                        icon: "content_paste"; iconSize: 18; iconColor: Theme.text2
+                        icon: "content_paste"; iconSize: 18; iconColor: Theme.text2  // text or image
                         onClicked: paste.running = true
                     }
                     Txt {

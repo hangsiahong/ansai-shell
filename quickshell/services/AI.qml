@@ -87,7 +87,7 @@ Singleton {
     Process {
         id: shot
         command: ["sh", "-c", `d="\${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"; mkdir -p "$d"; f="$d/Screenshot $(date '+%Y-%m-%d %H-%M-%S').png"; ` +
-                              `g=$(slurp -d) && grim -g "$g" "$f" && wl-copy < "$f" && echo "$f"`]
+                              `g=$(slurp -d -b '#00000066' -c '#0a84ffff' -s '#0a84ff22' -w 2) && grim -g "$g" "$f" && wl-copy < "$f" && echo "$f"`]
         stdout: StdioCollector { onStreamFinished: if (text.trim()) root.askAbout(text.trim(), "") }
     }
 
