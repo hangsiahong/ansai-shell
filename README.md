@@ -37,7 +37,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   (Shift+Enter starts a new one). `>cmd` runs in the terminal, `=1+2` calculates.
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
 - **AI** on the [KOOMPI AI Gateway](#ai): an Ask AI sidebar (Super+I), ask about part of the screen
-  (Super+Shift+I), and translate / summarize / fix / find-by-description in the clipboard panel.
+  (Super+Shift+S or Alt+Shift+S), and translate / summarize / fix / find-by-description in the clipboard panel.
 - **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
   15 s "keep changes?"), graphics (supergfxctl: integrated / hybrid / dGPU), power and battery (profile, charge
@@ -68,11 +68,11 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+E / Super+B | Files / browser |
 | Super+Shift+C (or Super+Shift+V, Alt+Shift+C) | Clipboard history: type to filter, Enter copies, Delete removes |
 | Super+I | Ask AI sidebar |
-| Super+Shift+I | Pick part of the screen and ask AI about it |
+| Super+Shift+S / Alt+Shift+S | Pick part of the screen and ask AI about it |
 | Clipboard: Ctrl+T / Ctrl+S / Ctrl+E / Ctrl+J / Tab | Translate / summarize / fix writing / ask in sidebar / AI find |
 | Super+O | Overview |
 | Super+Backspace | Close window (Caps Lock works as Super) |
-| Print / Super+Shift+S / Super+Shift+A / Alt+Shift+A | Screenshot an area |
+| Print / Super+Shift+A / Alt+Shift+A | Screenshot an area |
 | Super+Shift+←/→ | Move the current window left/right |
 | Super+Shift+/ | All shortcuts |
 
@@ -98,7 +98,7 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
 
 - **Ask AI sidebar** (Super+I, or ✦ in Control Center): streaming chat in English or Khmer; attach a screen area, or paste
   (Ctrl+V or the clipboard button) text or an image such as a screenshot you just took. The conversation stays until you start a new one.
-- **Ask about the screen** (Super+Shift+I): pick an area; it is saved to `~/Pictures/Screenshots`, copied, and
+- **Ask about the screen** (Super+Shift+S or Alt+Shift+S): pick an area; it is saved to `~/Pictures/Screenshots`, copied, and
   opened in the sidebar with the image attached ("what does this error mean?").
 - **Clipboard panel:** Ctrl+T translates English ↔ Khmer (language in Settings), Ctrl+S summarizes, Ctrl+E fixes
   spelling and grammar; Enter copies the result. Type a description and press Tab to have AI find it

@@ -205,7 +205,8 @@ binds {
     Mod+Shift+V     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
     Alt+Shift+C     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
     Mod+I           hotkey-overlay-title="Ask AI" { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "toggle"; }
-    Mod+Shift+I     hotkey-overlay-title="Ask AI about part of the screen" { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "screenshot"; }
+    Mod+Shift+S     hotkey-overlay-title="Ask AI about part of the screen" { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "screenshot"; }
+    Alt+Shift+S     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "screenshot"; }
 
     // Apps
     Mod+Return hotkey-overlay-title="Terminal" { spawn "ghostty"; }
@@ -226,7 +227,6 @@ binds {
 
     // Screenshots
     Print       { screenshot; }
-    Mod+Shift+S { screenshot; }
     Mod+Shift+A hotkey-overlay-title="Screenshot (pick area)" { screenshot; }
     Alt+Shift+A hotkey-overlay-title=null { screenshot; }
     Ctrl+Print  { screenshot-screen; }
