@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- page: everything below also publishes as a fragment -->
+<title>ansai shell</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A Wayland desktop for niri with two looks: macOS-style Liquid Glass and Android's Material 3. Light and dark, wallpapers that follow.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one dark stage. The recorded desktop is the hero, then a style switcher over real screenshots,
+   a drag-to-compare light/dark strip, the three drawn wallpapers, features, install and keys. */
+:root {
+  --bg: #07080d;
+  --bg-2: #0f1119;
+  --panel: rgba(255, 255, 255, 0.05);
+  --line: rgba(255, 255, 255, 0.10);
+  --ink: #f2f3f7;
+  --ink-2: #a9adbd;
+  --ink-3: #6f7486;
+  --accent: #6aa7ff;
+  --accent-2: #c9a2ff;
+  --seg: rgba(255, 255, 255, 0.14);
+  --code: #0b0d14;
+  --display: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --body: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, "JetBrains Mono", monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f6f9; --bg-2: #ffffff; --panel: rgba(10, 12, 30, 0.04); --line: rgba(10, 12, 30, 0.10);
+    --ink: #10121a; --ink-2: #4a4f60; --ink-3: #7b8091; --accent: #2a6ef2; --accent-2: #8a4fe6;
+    --seg: rgba(10, 12, 30, 0.08); --code: #10121a; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f6f6f9; --bg-2: #ffffff; --panel: rgba(10, 12, 30, 0.04); --line: rgba(10, 12, 30, 0.10);
+  --ink: #10121a; --ink-2: #4a4f60; --ink-3: #7b8091; --accent: #2a6ef2; --accent-2: #8a4fe6;
+  --seg: rgba(10, 12, 30, 0.08); --code: #10121a; color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+section { padding-block: 72px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.02em; }
+h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; font-weight: 650; }
+p { margin: 0; }
+.lede { color: var(--ink-2); font-size: 18px; max-width: 62ch; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+a { color: var(--accent); }
+img, video { max-width: 100%; display: block; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+/* ---- nav */
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  border-bottom: 1px solid var(--line);
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+nav .wrap { display: flex; align-items: center; gap: 20px; height: 52px; }
+.brand { display: flex; align-items: center; gap: 10px; font: 600 15px var(--display); color: var(--ink); text-decoration: none; }
+.mark { width: 24px; height: 24px; border-radius: 6.5px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font: 700 11px var(--mono); }
+nav .links { margin-left: auto; display: flex; gap: 18px; }
+nav .links a { color: var(--ink-2); text-decoration: none; font-size: 14px; }
+nav .links a:hover { color: var(--ink); }
+
+/* ---- hero */
+.hero { padding-block: 64px 40px; display: grid; gap: 28px; justify-items: center; text-align: center; }
+.hero h1 { font-size: clamp(40px, 7vw, 76px); line-height: 1.02; font-weight: 700; }
+.hero h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .lede { text-align: center; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; font: 500 15px var(--body); text-decoration: none; border: 1px solid var(--line); color: var(--ink); background: var(--panel); cursor: pointer; }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: transparent; }
+.screen {
+  width: 100%; max-width: 1040px; border-radius: 18px; overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: 0 40px 120px -30px rgba(80, 90, 255, 0.35), 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+  aspect-ratio: 16 / 10; background: var(--bg-2);
+}
+.screen video, .screen img { width: 100%; height: 100%; object-fit: cover; }
+.caption { color: var(--ink-3); font-size: 13px; }
+
+/* ---- two looks */
+.looks-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+.looks-head > div { display: grid; gap: 12px; min-width: 0; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: var(--seg); }
+.seg button {
+  border: 0; background: transparent; color: var(--ink-2); font: 500 14px var(--body);
+  padding: 7px 14px; border-radius: 9px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--bg-2); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+.gallery { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.gallery .main { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); aspect-ratio: 16 / 10; }
+.gallery .main img { width: 100%; height: 100%; object-fit: cover; transition: opacity .25s; }
+.thumbs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.thumbs button { padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; cursor: pointer; background: none; display: grid; gap: 0; text-align: left; }
+.thumbs button img { aspect-ratio: 16 / 10; object-fit: cover; width: 100%; }
+.thumbs button span { font: 500 12px var(--body); color: var(--ink-2); padding: 6px 8px; background: var(--panel); }
+.thumbs button[aria-pressed="true"] { border-color: var(--accent); }
+.thumbs button[aria-pressed="true"] span { color: var(--ink); }
+.look-note { color: var(--ink-2); max-width: 70ch; margin-top: 18px; }
+
+/* ---- light / dark compare */
+.compare { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); aspect-ratio: 16 / 10; user-select: none; touch-action: pan-y; }
+.compare img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.compare .top { clip-path: inset(0 0 0 var(--split, 50%)); }
+.compare .handle { position: absolute; top: 0; bottom: 0; left: var(--split, 50%); width: 2px; background: #fff; transform: translateX(-1px); box-shadow: 0 0 12px rgba(0, 0, 0, 0.4); }
+.compare .handle::after { content: "⇆"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, 0.9); color: #111; font-size: 18px; }
+.compare input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+.compare .tag { position: absolute; bottom: 12px; font: 500 12px var(--mono); padding: 4px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.55); color: #fff; }
+.compare .tag.l { left: 12px; } .compare .tag.r { right: 12px; }
+
+/* ---- wallpapers */
+.walls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+.walls figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
+.walls img { border-radius: 12px; border: 1px solid var(--line); aspect-ratio: 16 / 10; object-fit: cover; width: 100%; }
+.walls figcaption { font-size: 14px; color: var(--ink-2); }
+.walls figcaption b { color: var(--ink); font-weight: 600; }
+
+/* ---- features */
+.features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 48px; margin-top: 32px; }
+.feature { padding-block: 18px; border-top: 1px solid var(--line); display: grid; gap: 4px; min-width: 0; }
+.feature h3 { font-size: 17px; font-weight: 600; }
+.feature p { color: var(--ink-2); font-size: 15px; }
+
+/* ---- install / keys */
+.split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; margin-top: 28px; }
+pre { margin: 0; background: var(--code); color: #e6e9ef; border-radius: 12px; padding: 18px 20px; font: 14px/1.7 var(--mono); overflow-x: auto; border: 1px solid var(--line); }
+pre .c { color: #7d8590; }
+.copy { margin-top: 10px; }
+.keys { width: 100%; border-collapse: collapse; font-size: 14px; }
+.keys td { padding: 9px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.keys td:first-child { white-space: nowrap; padding-right: 16px; }
+kbd { font: 500 12px var(--mono); padding: 2px 6px; border-radius: 5px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.steps { display: grid; gap: 14px; }
+.steps p { color: var(--ink-2); font-size: 15px; }
+
+footer { border-top: 1px solid var(--line); padding-block: 28px 48px; color: var(--ink-3); font-size: 13px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+@media (max-width: 760px) {
+  .thumbs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .walls, .features, .split { grid-template-columns: 1fr; }
+  nav .links { display: none; }
+  section { padding-block: 52px; }
+}
+@media (prefers-reduced-motion: reduce) { .gallery .main img { transition: none; } }
+</style>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="mark">&gt;_</span> ansai shell</a>
+    <div class="links">
+      <a href="#looks">Two looks</a>
+      <a href="#wallpapers">Wallpapers</a>
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+  <div class="wrap hero">
+    <span class="eyebrow">niri · Quickshell · Wayland</span>
+    <h1>One desktop, <span>two looks</span>.</h1>
+    <p class="lede">A complete shell for the niri compositor. Switch between macOS-style Liquid Glass and Android's Material 3 at any moment, in light or dark, and the wallpaper follows.</p>
+    <div class="cta">
+      <a class="btn primary" href="#install">Install</a>
+      <a class="btn" href="#looks">See both looks</a>
+    </div>
+    <div class="screen">
+      <video src="showcase.mp4" poster="screenshots/poster.jpg" autoplay muted loop playsinline aria-label="Recording: the shell switching between the ansai and Android looks, light and dark, and wallpapers"></video>
+    </div>
+    <p class="caption">Recorded live on a 14-inch laptop: search, Control Center, light and dark, a wallpaper change, then the Android look.</p>
+  </div>
+
+  <section id="looks">
+    <div class="wrap">
+      <div class="looks-head">
+        <div>
+          <span class="eyebrow">Two looks</span>
+          <h2>Pick a style. Change it any time.</h2>
+        </div>
+        <div class="seg" role="group" aria-label="Style">
+          <button id="s-ansai" type="button" aria-pressed="true" data-style="ansai">ansai · Liquid Glass</button>
+          <button id="s-android" type="button" aria-pressed="false" data-style="android">Android · Material 3</button>
+        </div>
+      </div>
+      <div class="gallery">
+        <div class="main"><img id="main-shot" src="screenshots/ansai-desktop.jpg" alt="ansai desktop"></div>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+      <p class="look-note" id="look-note"></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <span class="eyebrow">Light and dark</span>
+      <h2 style="margin-top:12px">Drag to switch the theme.</h2>
+      <p class="lede" style="margin-top:12px">Panels, apps and the wallpaper all change together. GTK, libadwaita, Qt and Ghostty follow too.</p>
+      <div class="compare" id="compare" style="margin-top:28px">
+        <img src="screenshots/ansai-control.jpg" alt="ansai Control Center, dark">
+        <img class="top" src="screenshots/ansai-light-control.jpg" alt="ansai Control Center, light">
+        <div class="handle"></div>
+        <span class="tag l">dark</span><span class="tag r">light</span>
+        <input id="split" type="range" min="0" max="100" value="50" aria-label="Compare dark and light">
+      </div>
+    </div>
+  </section>
+
+  <section id="wallpapers">
+    <div class="wrap">
+      <span class="eyebrow">Wallpapers</span>
+      <h2 style="margin-top:12px">Three wallpapers, drawn for it.</h2>
+      <p class="lede" style="margin-top:12px">Each comes as a light and a dark picture, and the shell swaps them when the theme changes. Your own pairs work the same way: name them <code>name-light.jpg</code> and <code>name-dark.jpg</code>.</p>
+      <div class="walls">
+        <figure><img src="wallpapers/drift.jpg" alt="Drift wallpaper, light and dark halves"><figcaption><b>Drift</b> · soft colour fields</figcaption></figure>
+        <figure><img src="wallpapers/ribbons.jpg" alt="Ribbons wallpaper, light and dark halves"><figcaption><b>Ribbons</b> · glossy light trails</figcaption></figure>
+        <figure><img src="wallpapers/dunes.jpg" alt="Dunes wallpaper, light and dark halves"><figcaption><b>Dunes</b> · hills at dawn and dusk</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <span class="eyebrow">What's in it</span>
+      <h2 style="margin-top:12px">Everything a desktop needs, nothing it doesn't.</h2>
+      <div class="features">
+        <div class="feature"><h3>Top bar</h3><p>The focused app, the current workspace's windows left to right (click, scroll or drag to reorder), tray, status and clock.</p></div>
+        <div class="feature"><h3>Dock</h3><p>Pinned and running apps with workspaces stacked the way niri stacks them. Hides when a window would cover it.</p></div>
+        <div class="feature"><h3>Control Center</h3><p>Wi-Fi and Bluetooth with lists to connect, Focus, dark mode, night light, power mode, brightness, volume, now playing.</p></div>
+        <div class="feature"><h3>Search</h3><p>Apps and open windows in one field. An app that is already open is switched to. <kbd>&gt;cmd</kbd> runs a command, <kbd>=1+2</kbd> calculates.</p></div>
+        <div class="feature"><h3>Settings app</h3><p>Appearance, wallpaper, dock, displays with a 15-second "keep changes?", integrated / hybrid / dGPU graphics, battery charge limit, sound.</p></div>
+        <div class="feature"><h3>Liquid Glass, done properly</h3><p>A rim of light on the edges that face it and a hair of shadow on the others, over a blurred, saturated wallpaper with smooth corners.</p></div>
+        <div class="feature"><h3>Notifications, OSD, lock</h3><p>Notification bubbles, a calendar with history, volume and brightness under their menu-bar icons, a lock screen and password prompts.</p></div>
+        <div class="feature"><h3>Light on the laptop</h3><p>QML on Quickshell; about 4% CPU at idle. On hybrid laptops the desktop renders on the integrated GPU so the dGPU can sleep.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <span class="eyebrow">Install</span>
+      <h2 style="margin-top:12px">Two commands, then log in.</h2>
+      <div class="split">
+        <div class="steps">
+          <pre id="install-cmd"><span class="c"># Arch Linux</span>
+sudo pacman -S --needed niri xwayland-satellite quickshell \
+  brightnessctl playerctl swayidle cliphist fuzzel wlsunset
+git clone https://github.com/hangsiahong/ansai-shell
+cd ansai-shell &amp;&amp; ./install.sh</pre>
+          <button class="btn copy" id="copy" type="button">Copy commands</button>
+          <p>Log out and pick <b>Niri</b> in the login screen's session menu. Your old desktop stays there too. Edits to the QML reload live, so you can keep changing the shell while you use it.</p>
+        </div>
+        <table class="keys">
+          <tbody>
+            <tr><td><kbd>Super</kbd> <kbd>Space</kbd></td><td>Search apps and windows</td></tr>
+            <tr><td><kbd>Super</kbd> <kbd>A</kbd></td><td>Control Center</td></tr>
+            <tr><td><kbd>Super</kbd> <kbd>N</kbd></td><td>Calendar and notifications</td></tr>
+            <tr><td><kbd>Super</kbd> <kbd>Backspace</kbd></td><td>Close window (Caps Lock works as Super)</td></tr>
+            <tr><td><kbd>Super</kbd> <kbd>Shift</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Move the window left or right</td></tr>
+            <tr><td><kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>C</kbd></td><td>Screenshot an area</td></tr>
+            <tr><td><kbd>Super</kbd> <kbd>L</kbd></td><td>Lock</td></tr>
+            <tr><td><kbd>Super</kbd> <kbd>Shift</kbd> <kbd>/</kbd></td><td>All shortcuts</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>ansai shell · built on niri and Quickshell</span>
+    <span>Not affiliated with Apple or Google; the looks are inspired by macOS and Android.</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const views = [
+    ["desktop", "Desktop"], ["control", "Control Center"], ["launcher", "Search"],
+    ["calendar", "Calendar"], ["settings", "Settings"]
+  ];
+  const notes = {
+    ansai: "macOS-style Liquid Glass: a transparent menu bar, glass panels with a lit rim, a Control Center made of modules and a floating search field.",
+    android: "Material 3 Expressive: colours taken from your wallpaper, big rounded shapes, Roboto, and quick-settings tiles like a phone."
+  };
+  let style = "ansai", view = "desktop";
+  const main = document.getElementById("main-shot");
+  const thumbs = document.getElementById("thumbs");
+  const note = document.getElementById("look-note");
+  function render() {
+    main.src = `screenshots/${style}-${view}.jpg`;
+    main.alt = `${style} ${view}`;
+    note.textContent = notes[style];
+    thumbs.innerHTML = "";
+    for (const [id, label] of views) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(id === view));
+      b.innerHTML = `<img src="screenshots/${style}-${id}.jpg" alt="" loading="lazy"><span>${label}</span>`;
+      b.addEventListener("click", () => { view = id; render(); });
+      thumbs.appendChild(b);
+    }
+    document.querySelectorAll("[data-style]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.style === style)));
+  }
+  document.querySelectorAll("[data-style]").forEach(b => b.addEventListener("click", () => { style = b.dataset.style; render(); }));
+  render();
+
+  const cmp = document.getElementById("compare");
+  document.getElementById("split").addEventListener("input", e => cmp.style.setProperty("--split", e.target.value + "%"));
+
+  const copy = document.getElementById("copy");
+  copy.addEventListener("click", () => {
+    const text = document.getElementById("install-cmd").innerText.split("\n").filter(l => !l.startsWith("#")).join("\n");
+    navigator.clipboard.writeText(text).then(() => { copy.textContent = "Copied"; }, () => {
+      const r = document.createRange(); r.selectNodeContents(document.getElementById("install-cmd"));
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r); copy.textContent = "Selected: press Ctrl+C";
+    });
+    setTimeout(() => { copy.textContent = "Copy commands"; }, 2200);
+  });
+})();
+</script>
