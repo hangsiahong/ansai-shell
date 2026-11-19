@@ -10,6 +10,8 @@ Sheet {
     id: root
     name: "calendar"
     panelWidth: 380
+    // ansai (macOS) has the clock at the far right of the menu bar.
+    panelX: Theme.m3 ? (width - panelWidth) / 2 : width - panelWidth - 8
     panelHeight: Math.min(height - 60, col.implicitHeight + 24)
 
     property date month: new Date()
