@@ -104,6 +104,11 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
   spelling and grammar; Enter copies the result. Type a description and press Tab to have AI find it
   ("the wifi password", "that ssh command"). Ctrl+J sends the entry (or image) to the sidebar.
 
+- **Connectors (MCP):** in Settings → AI, **Connect** KOOMPI Cloud (`mcp.koompi.cloud`, listed by default) or add
+  any MCP server URL. Sign-in opens in your browser (OAuth with PKCE); tokens stay in
+  `~/.config/ansai-shell/mcp-tokens.json` (mode 600). Ask AI can then use the server's tools ("what's running on my
+  KOOMPI Cloud?"). Read-only tools run directly; anything that may change something shows **Allow / Deny** first.
+
 ```sh
 qs -c ansai ipc call ai toggle
 qs -c ansai ipc call ai send "ស្វាគមន៍! what can you do?"

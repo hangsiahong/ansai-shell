@@ -24,12 +24,14 @@ Singleton {
         `Be concise and practical. Reply in the language the user writes in (often Khmer or English). ` +
         `Use Markdown sparingly: short paragraphs, lists and code blocks when they help.`
 
-    // ask([{ role, content, image? }], onDelta(text), onDone(fullText, error)) → handle with .stop()
-    function ask(messages, onDelta, onDone) {
+    // ask([{ role, content, image? }], onDelta(text), onDone(fullText, error), opts) → handle with .stop()
+    // opts.mcp: server urls whose tools the model may use; opts.onEvent(ev) gets tool / tool_done events.
+    function ask(messages, onDelta, onDone, opts) {
         const p = req.createObject(root, {
-            body: JSON.stringify({ model: Settings.aiModel, messages: messages }),
+            body: JSON.stringify({ model: Settings.aiModel, messages: messages, mcp: opts?.mcp ?? [] }),
             onDelta: onDelta ?? null,
-            onDone: onDone ?? null
+            onDone: onDone ?? null,
+            onEvent: opts?.onEvent ?? null
         });
         p.running = true;
         return p;
@@ -39,8 +41,53 @@ Singleton {
         return ask([{ role: "system", content: instruction }, { role: "user", content: text }], onDelta, onDone);
     }
 
+    // ---- MCP connectors (scripts/mcp.py: OAuth sign-in in the browser, tokens in mcp-tokens.json)
+    property var mcp: ({})         // url → { connected, tools, e, busy }
+    readonly property var mcpServers: Array.from(Settings.mcpServers ?? [])
+    readonly property var mcpLive: mcpServers.filter(s => s.on && mcp[s.url]?.connected).map(s => s.url)
+    readonly property string mcpScript: Quickshell.shellDir + "/scripts/mcp.py"
+    function setMcp(url, v) { const m = Object.assign({}, mcp); m[url] = Object.assign({}, m[url] ?? {}, v); mcp = m; }
+    function refreshMcp(): void {
+        if (!mcpServers.length || mcpStatus.running) return;
+        mcpStatus.command = ["python3", mcpScript, "status", ...mcpServers.map(s => s.url)];
+        mcpStatus.running = true;
+    }
+    function connect(url: string): void {
+        setMcp(url, { busy: true, e: "" });
+        mcpCmd.createObject(root, { url: url, command: ["python3", mcpScript, "login", url] }).running = true;
+    }
+    function disconnect(url: string): void {
+        setMcp(url, { busy: true, e: "" });
+        mcpCmd.createObject(root, { url: url, command: ["python3", mcpScript, "logout", url] }).running = true;
+    }
+    Component.onCompleted: refreshMcp()
+    Process {
+        id: mcpStatus
+        stdout: SplitParser {
+            onRead: line => {
+                try { const r = JSON.parse(line); root.setMcp(r.url, { connected: r.connected, tools: r.tools ?? 0, e: r.e ?? "" }); } catch (x) {}
+            }
+        }
+    }
+    Component {
+        id: mcpCmd
+        Process {
+            property string url
+            stdout: SplitParser {
+                onRead: line => {
+                    let r;
+                    try { r = JSON.parse(line); } catch (x) { return; }
+                    if (r.opened) root.setMcp(url, { waiting: true });
+                    else if (r.e) root.setMcp(url, { e: r.e });
+                }
+            }
+            onExited: { root.setMcp(url, { busy: false, waiting: false }); root.refreshMcp(); destroy(); }
+        }
+    }
+
     // ---- sidebar conversation
-    property var chat: []          // [{ role: "user"|"assistant", content, image?, error? }]
+    // [{ role: "user"|"assistant", content, image?, error?, tools?: [{ id, name, title, server, args, ask, status, preview }] }]
+    property var chat: []
     property bool busy: false
     property var current: null
     property string draft: ""      // text waiting in the sidebar's input
@@ -52,23 +99,42 @@ Singleton {
         const user = { role: "user", content: text || "What's in this screenshot?" };
         if (attachment) user.image = attachment;
         attachment = "";
-        const history = [{ role: "system", content: system }];
+        const names = mcpServers.filter(s => mcpLive.includes(s.url)).map(s => s.name).join(", ");
+        const history = [{ role: "system", content: system + (names ? `\nYou can use tools from the user's connected services (${names}). ` +
+            `Use them when the question is about the user's account or data there; say briefly what you did.` : "") }];
         // Older images are dropped from the context: only the newest one is sent.
         const prior = chat.filter(m => !m.error).map(m => ({ role: m.role, content: m.content }));
         chat = [...chat, user, { role: "assistant", content: "" }];
         busy = true;
         const i = chat.length - 1;
-        current = ask([...history, ...prior, user], d => {
-            const c = Array.from(chat);
-            c[i] = { role: "assistant", content: c[i].content + d };
-            chat = c;
-        }, (full, err) => {
-            const c = Array.from(chat);
-            if (err) c[i] = { role: "assistant", content: c[i].content ? c[i].content + "\n\n" + err : err, error: !c[i].content };
-            chat = c;
+        const edit = f => { const c = Array.from(chat); c[i] = Object.assign({}, c[i]); f(c[i]); chat = c; };
+        current = ask([...history, ...prior, user], d => edit(m => m.content += d), (full, err) => {
+            edit(m => {
+                (m.tools ?? []).forEach((t, k) => { if (t.status === "wait" || t.status === "run") m.tools[k] = Object.assign({}, t, { status: "fail", preview: "Stopped" }); });
+                if (err) { m.content = m.content ? m.content + "\n\n" + err : err; m.error = !full && !(m.tools ?? []).length; }
+            });
             busy = false;
             current = null;
+        }, {
+            mcp: mcpLive,
+            onEvent: ev => edit(m => {
+                const tools = Array.from(m.tools ?? []);
+                if (ev.tool) tools.push(Object.assign({}, ev.tool, { status: ev.tool.ask ? "wait" : "run" }));
+                else if (ev.tool_done) {
+                    const k = tools.findIndex(t => t.id === ev.tool_done.id);
+                    if (k >= 0) tools[k] = Object.assign({}, tools[k], { status: ev.tool_done.preview === "Declined" ? "declined" : ev.tool_done.ok ? "ok" : "fail", preview: ev.tool_done.preview });
+                }
+                m.tools = tools;
+            })
         });
+    }
+    // Answer a tool that waits for approval (the newest assistant message's).
+    function approve(id: string, yes: bool): void {
+        if (!current) return;
+        const i = chat.length - 1, c = Array.from(chat);
+        c[i] = Object.assign({}, c[i], { tools: (c[i].tools ?? []).map(t => t.id === id ? Object.assign({}, t, { status: yes ? "run" : "declined" }) : t) });
+        chat = c;
+        current.write(yes ? "y\n" : "n\n");
     }
     function stop(): void { if (current) current.stop(); }
     function reset(): void { stop(); chat = []; attachment = ""; }
@@ -98,25 +164,28 @@ Singleton {
             property string body
             property var onDelta
             property var onDone
+            property var onEvent
             property string full: ""
             property string err: ""
             property bool stopped: false
             function stop() { stopped = true; running = false; }
             command: ["python3", root.script]
             stdinEnabled: true
-            onStarted: { write(body); stdinEnabled = false; }
+            // stdin stays open: tool approvals are answered on it ("y" / "n").
+            onStarted: write(body + "\n")
             stdout: SplitParser {
                 onRead: line => {
                     let ev;
                     try { ev = JSON.parse(line); } catch (e) { return; }
                     if (ev.e) p.err = ev.e;
                     else if (ev.d) { p.full += ev.d; if (p.onDelta) p.onDelta(ev.d); }
+                    else if ((ev.tool || ev.tool_done) && p.onEvent) p.onEvent(ev);
                 }
             }
             stderr: StdioCollector { id: errOut }
             onExited: code => {
                 if (!err && code !== 0 && !stopped) err = errOut.text.trim().split("\n").pop() || "AI request failed";
-                if (!err && !full && !stopped) err = "No answer came back";
+                if (!err && !full.trim() && !stopped) err = "No answer came back";
                 if (onDone) onDone(full, err);
                 destroy();
             }
@@ -145,5 +214,6 @@ Singleton {
         function image(path: string): void { root.askAbout(path, ""); }
         function ask(text: string): void { root.askAbout("", text); }
         function send(text: string): void { Shell.open = "ai"; root.send(text); }
+        function reset(): void { root.reset(); }
     }
 }

@@ -23,6 +23,7 @@ Sheet {
         if (AI.draft) { input.text = AI.draft; AI.draft = ""; input.cursorPosition = input.text.length; }
         input.forceActiveFocus();
         AI.checkKey();
+        AI.refreshMcp();
     }
 
     function send() {
@@ -73,7 +74,10 @@ Sheet {
                 Layout.fillWidth: true
                 spacing: 0
                 Txt { text: "Ask AI"; font.pixelSize: 15; font.weight: Theme.strong }
-                Txt { text: Settings.aiModel + " · KOOMPI AI"; font.pixelSize: 11; color: Theme.muted }
+                Txt {
+                    text: Settings.aiModel + (AI.mcpLive.length ? " · " + AI.mcpServers.filter(s => AI.mcpLive.includes(s.url)).map(s => s.name).join(", ") : " · KOOMPI AI")
+                    font.pixelSize: 11; color: Theme.muted
+                }
             }
             IconButton {
                 icon: "edit_square"; iconSize: 19; iconColor: Theme.text2
@@ -134,7 +138,90 @@ Sheet {
                         }
                     }
 
+                    Repeater {   // tool calls (MCP connectors)
+                        model: msg.modelData.tools ?? []
+                        Rectangle {
+                            id: tc
+                            required property var modelData
+                            readonly property bool waiting: modelData.status === "wait"
+                            property bool open: false
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: tcCol.implicitHeight + 16
+                            radius: 12
+                            color: Theme.m3 ? Theme.surface3 : Theme.glassTile
+                            border.width: waiting ? 1 : 0
+                            border.color: Theme.warn
+                            ColumnLayout {
+                                id: tcCol
+                                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 8; leftMargin: 10 }
+                                spacing: 6
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+                                    Icon {
+                                        name: ({ wait: "front_hand", run: "progress_activity", ok: "check_circle", fail: "error", declined: "block" })[tc.modelData.status] ?? "build"
+                                        size: 17
+                                        filled: tc.modelData.status !== "run"
+                                        color: tc.modelData.status === "ok" ? Theme.green : tc.modelData.status === "fail" ? Theme.danger
+                                             : tc.waiting ? Theme.warn : Theme.muted
+                                        RotationAnimation on rotation { running: tc.modelData.status === "run"; from: 0; to: 360; duration: 900; loops: Animation.Infinite }
+                                    }
+                                    Txt {
+                                        Layout.fillWidth: true
+                                        text: (tc.modelData.title || tc.modelData.name.replace(/_/g, " ")) + "  <font color='" + Theme.faint + "'>" + tc.modelData.server + "</font>"
+                                        textFormat: Text.StyledText
+                                        font.pixelSize: 13
+                                    }
+                                    IconButton {
+                                        implicitWidth: 24; implicitHeight: 24
+                                        icon: tc.open ? "expand_less" : "expand_more"; iconSize: 18; iconColor: Theme.muted
+                                        onClicked: tc.open = !tc.open
+                                    }
+                                }
+                                Txt {
+                                    visible: tc.waiting || tc.open
+                                    Layout.fillWidth: true
+                                    text: (tc.waiting ? "Allow this? " : "") + JSON.stringify(tc.modelData.args)
+                                    wrapMode: Text.WrapAnywhere
+                                    elide: Text.ElideNone
+                                    maximumLineCount: tc.open ? 30 : 4
+                                    font.family: tc.waiting ? Theme.font : Theme.mono
+                                    font.pixelSize: 12
+                                    color: Theme.text2
+                                }
+                                Txt {
+                                    visible: tc.open && !!tc.modelData.preview
+                                    Layout.fillWidth: true
+                                    text: tc.modelData.preview ?? ""
+                                    wrapMode: Text.WrapAnywhere
+                                    elide: Text.ElideNone
+                                    maximumLineCount: 12
+                                    font.family: Theme.mono
+                                    font.pixelSize: 11
+                                    color: Theme.muted
+                                }
+                                RowLayout {
+                                    visible: tc.waiting
+                                    spacing: 6
+                                    Hover {
+                                        implicitWidth: 76; implicitHeight: 28; radius: 14
+                                        base: Theme.accent
+                                        onClicked: AI.approve(tc.modelData.id, true)
+                                        Txt { anchors.centerIn: parent; text: "Allow"; font.pixelSize: 12; font.weight: Theme.strong; color: Theme.accentInk }
+                                    }
+                                    Hover {
+                                        implicitWidth: 76; implicitHeight: 28; radius: 14
+                                        base: Theme.fill
+                                        onClicked: AI.approve(tc.modelData.id, false)
+                                        Txt { anchors.centerIn: parent; text: "Deny"; font.pixelSize: 12 }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     Rectangle {   // bubble (user) or plain text (assistant)
+                        visible: !!body.text
                         Layout.alignment: msg.mine ? Qt.AlignRight : Qt.AlignLeft
                         Layout.preferredWidth: msg.mine ? body.width + 28 : list.width
                         Layout.preferredHeight: body.implicitHeight + (msg.mine ? 18 : 0)
@@ -150,7 +237,7 @@ Sheet {
                             selectByMouse: true
                             wrapMode: TextEdit.Wrap
                             textFormat: msg.mine ? TextEdit.PlainText : TextEdit.MarkdownText
-                            text: msg.modelData.content || (AI.busy && msg.last ? "…" : "")
+                            text: msg.modelData.content || (AI.busy && msg.last && !(msg.modelData.tools ?? []).length ? "…" : "")
                             color: msg.modelData.error ? Theme.danger : msg.mine ? (Theme.m3 ? Theme.accentSoftInk : "#ffffff") : Theme.text
                             selectionColor: Theme.accent
                             selectedTextColor: Theme.accentInk
@@ -212,7 +299,9 @@ Sheet {
                     model: AI.hasKey ? [
                         { i: "screenshot_region", t: "Ask about part of the screen", f: () => AI.screenshot() },
                         { i: "translate", t: "Translate my clipboard", f: () => { input.text = "Translate this (English ↔ " + Settings.aiLang + "):\n\n"; paste.running = true; } },
-                        { i: "summarize", t: "Summarize my clipboard", f: () => { input.text = "Summarize this:\n\n"; paste.running = true; } }
+                        { i: "summarize", t: "Summarize my clipboard", f: () => { input.text = "Summarize this:\n\n"; paste.running = true; } },
+                        ...AI.mcpServers.filter(s => !AI.mcp[s.url]?.connected).slice(0, 1).map(s => ({ i: "cloud", t: AI.mcp[s.url]?.waiting ? "Finish signing in in your browser…" : "Connect " + s.name, f: () => AI.connect(s.url) })),
+                        ...(AI.mcpLive.length ? [{ i: "cloud", t: "What's running on my KOOMPI Cloud?", f: () => AI.send("What apps and services do I have on KOOMPI Cloud, and are they running?") }] : [])
                     ] : [{ i: "key", t: "Open Settings → AI", f: () => Shell.openSettings("ai") }]
                     Hover {
                         required property var modelData

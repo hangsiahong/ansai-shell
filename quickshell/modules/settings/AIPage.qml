@@ -10,7 +10,7 @@ ColumnLayout {
     spacing: 22
     property string test: ""      // result of the Test button
     property bool testing: false
-    Component.onCompleted: AI.checkKey()
+    Component.onCompleted: { AI.checkKey(); AI.refreshMcp(); }
 
     SGroup {
         title: "KOOMPI AI Gateway"
@@ -67,6 +67,82 @@ ColumnLayout {
                 }
             }
         }
+    }
+
+    SGroup {
+        title: "Connectors (MCP)"
+        note: "Connected services give Ask AI tools to look things up and act for you. Anything that changes something asks you first. Sign-in happens in your browser; tokens stay on this computer."
+        Repeater {
+            model: AI.mcpServers
+            SRow {
+                id: cr
+                required property var modelData
+                required property int index
+                readonly property var st: AI.mcp[modelData.url] ?? {}
+                first: index === 0
+                icon: modelData.url.includes("koompi") ? "cloud" : "hub"
+                title: modelData.name
+                sub: st.waiting ? "Finish signing in in your browser…" : st.busy ? "Working…"
+                   : st.e ? st.e : st.connected ? "Connected · " + (st.tools ?? 0) + " tools · " + modelData.url.replace("https://", "")
+                   : modelData.url.replace("https://", "")
+                Switch {
+                    visible: !!cr.st.connected
+                    anchors.verticalCenter: parent.verticalCenter
+                    checked: cr.modelData.on
+                    onToggled: page.setServer(cr.index, { on: !cr.modelData.on })
+                }
+                Btn {
+                    text: cr.st.connected ? "Disconnect" : cr.st.waiting ? "Waiting…" : "Connect"
+                    kind: cr.st.connected ? "tonal" : "filled"
+                    opacity: cr.st.busy && !cr.st.waiting ? 0.5 : 1
+                    onClicked: if (!cr.st.busy) cr.st.connected ? AI.disconnect(cr.modelData.url) : AI.connect(cr.modelData.url)
+                }
+                IconButton {
+                    visible: !cr.st.connected && cr.index > 0
+                    icon: "close"; iconSize: 18; iconColor: Theme.danger
+                    onClicked: Settings.mcpServers = AI.mcpServers.filter((_, i) => i !== cr.index)
+                }
+            }
+        }
+        SRow {
+            icon: "add_link"
+            title: ""
+            Rectangle {
+                width: 330
+                height: Theme.m3 ? 40 : 30
+                radius: Theme.m3 ? 20 : 8
+                color: Theme.m3 ? Theme.surface3 : Theme.fill2
+                TextInput {
+                    id: urlIn
+                    anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                    verticalAlignment: TextInput.AlignVCenter
+                    color: Theme.text
+                    font.family: Theme.font
+                    font.pixelSize: 13
+                    clip: true
+                    onAccepted: addBtn.clicked(null)
+                    Txt { visible: !urlIn.text; anchors.verticalCenter: parent.verticalCenter; text: "https://… MCP server URL"; color: Theme.faint; font.pixelSize: 13 }
+                }
+            }
+            Btn {
+                id: addBtn
+                text: "Add"
+                opacity: /^https?:\/\/\S+$/.test(urlIn.text.trim()) ? 1 : 0.4
+                onClicked: {
+                    const u = urlIn.text.trim().replace(/\/+$/, "");
+                    if (!/^https?:\/\/\S+$/.test(u) || AI.mcpServers.some(s => s.url === u)) return;
+                    Settings.mcpServers = [...AI.mcpServers, { name: u.replace(/^https?:\/\//, "").split("/")[0], url: u, on: true }];
+                    urlIn.text = "";
+                    AI.refreshMcp();
+                }
+            }
+        }
+    }
+
+    function setServer(i, v) {
+        const l = AI.mcpServers.map(s => Object.assign({}, s));
+        Object.assign(l[i], v);
+        Settings.mcpServers = l;
     }
 
     SGroup {
