@@ -18,6 +18,7 @@ Singleton {
     property alias keepAwake: adapter.keepAwake
     property alias pinned: adapter.pinned
     property alias usage: adapter.usage
+    property alias padTab: adapter.padTab
     property alias dockMode: adapter.dockMode
     property alias dockSize: adapter.dockSize
     property alias dockMagnify: adapter.dockMagnify
@@ -52,6 +53,7 @@ Singleton {
             property bool nightLight: false
             property bool keepAwake: true
             property var usage: ({})
+            property string padTab: "frequent"   // Launchpad's category tab
             property string dockMode: "smart"   // "smart": hide when a window covers it | "auto": always hide | "always": never hide
             property int dockSize: 44
             property bool dockMagnify: true

@@ -27,24 +27,71 @@ Sheet {
 
     onShownChanged: if (shown) { input.text = ""; page = 0; pages.off = 0; input.forceActiveFocus(); }
 
+    // Tabs: the apps you use, everything, then one per category (an app goes in the first that fits).
+    readonly property var cats: [
+        { k: "Games", l: "Games", c: ["Game"] },
+        { k: "Develop", l: "Develop", c: ["Development", "IDE"] },
+        { k: "Graphics", l: "Graphics", c: ["Graphics", "Photography"] },
+        { k: "Media", l: "Media", c: ["AudioVideo", "Audio", "Video"] },
+        { k: "Office", l: "Office", c: ["Office"] },
+        { k: "Internet", l: "Internet", c: ["Network", "WebBrowser", "Chat", "Email"] },
+        { k: "Education", l: "Education", c: ["Education", "Science"] },
+        { k: "Settings", l: "Settings", c: ["Settings", "DesktopSettings", "HardwareSettings"] },
+        { k: "System", l: "System", c: ["System", "Monitor", "TerminalEmulator", "FileManager", "PackageManager"] },
+        { k: "Utilities", l: "Utilities", c: ["Utility", "Accessories"] }
+    ]
+    function catOf(a): string {
+        const have = a.categories ?? [];
+        return cats.find(c => c.c.some(x => have.includes(x)))?.k ?? "Other";
+    }
+    readonly property var all: {
+        const l = [];
+        for (const a of DesktopEntries.applications.values)
+            if (!a.noDisplay) l.push(a);
+        l.sort((a, b) => a.name.localeCompare(b.name));
+        return l;
+    }
+    // Opened from here or Search, pinned in the dock, or running now; most used first.
+    readonly property var frequent: {
+        const usage = Settings.usage ?? {};
+        const pinned = (Settings.pinned ?? []).map(p => String(p).toLowerCase());
+        const running = {};
+        for (const w of Object.values(Niri.windows)) running[Niri.appKey(w.app_id)] = true;
+        const id = a => a.id.toLowerCase();
+        const l = all.filter(a => (usage[a.id] ?? 0) > 0 || pinned.includes(id(a)) || running[id(a)]);
+        l.sort((a, b) => (usage[b.id] ?? 0) - (usage[a.id] ?? 0) || a.name.localeCompare(b.name));
+        return l;
+    }
+    readonly property var tabs: {
+        const n = {};
+        for (const a of all) { const k = catOf(a); n[k] = (n[k] ?? 0) + 1; }
+        const t = [];
+        if (frequent.length) t.push({ k: "frequent", l: "Frequent", n: frequent.length });
+        t.push({ k: "all", l: "All", n: all.length });
+        for (const c of cats) if (n[c.k]) t.push({ k: c.k, l: c.l, n: n[c.k] });
+        if (n.Other) t.push({ k: "Other", l: "Other", n: n.Other });
+        return t;
+    }
+    readonly property string tab: tabs.some(t => t.k === Settings.padTab) ? Settings.padTab : tabs[0].k
+    function setTab(k: string): void { Settings.padTab = k; go(0); }
+    function stepTab(d: int): void {
+        const i = tabs.findIndex(t => t.k === tab);
+        setTab(tabs[(i + d + tabs.length) % tabs.length].k);
+    }
+
+    // Searching looks through every app, whatever the tab.
     readonly property var apps: {
         const q = query.trim().toLowerCase();
-        const l = [];
-        for (const a of DesktopEntries.applications.values) {
-            if (a.noDisplay) continue;
-            if (q && ![a.name, a.genericName, (a.keywords ?? []).join(" ")].join(" ").toLowerCase().includes(q)) continue;
-            l.push(a);
-        }
-        // Name matches first when searching, then alphabetical.
-        const rank = a => !q ? 0 : a.name.toLowerCase().startsWith(q) ? 0 : a.name.toLowerCase().includes(q) ? 1 : 2;
-        l.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
-        return l;
+        if (!q) return tab === "frequent" ? frequent : tab === "all" ? all : all.filter(a => catOf(a) === tab);
+        const l = all.filter(a => [a.name, a.genericName, (a.keywords ?? []).join(" ")].join(" ").toLowerCase().includes(q));
+        const rank = a => a.name.toLowerCase().startsWith(q) ? 0 : a.name.toLowerCase().includes(q) ? 1 : 2;
+        return l.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
     }
 
     readonly property int cellW: 132
     readonly property int cellH: 128
     readonly property int cols: Math.max(3, Math.min(8, Math.floor((width - 160) / cellW)))
-    readonly property int rows: Math.max(2, Math.min(5, Math.floor((height - 200) / cellH)))
+    readonly property int rows: Math.max(2, Math.min(5, Math.floor((height - 250) / cellH)))
     readonly property int perPage: cols * rows
     readonly property int pageCount: Math.max(1, Math.ceil(apps.length / perPage))
 
@@ -105,6 +152,8 @@ Sheet {
             Keys.onPressed: e => {
                 if (e.key === Qt.Key_PageDown) root.go(root.page + 1);
                 else if (e.key === Qt.Key_PageUp) root.go(root.page - 1);
+                else if (e.key === Qt.Key_Tab) root.stepTab(1);
+                else if (e.key === Qt.Key_Backtab) root.stepTab(-1);
                 else return;
                 e.accepted = true;
             }
@@ -118,10 +167,46 @@ Sheet {
         }
     }
 
+    // Category tabs; hidden while searching, since search covers every app.
+    Row {
+        id: chips
+        anchors { top: field.bottom; topMargin: 18; horizontalCenter: parent.horizontalCenter }
+        spacing: 6
+        opacity: root.query.trim() ? 0.35 : 1
+        Behavior on opacity { NumberAnimation { duration: Theme.fast } }
+        Repeater {
+            model: root.tabs
+            delegate: Rectangle {
+                id: chip
+                required property var modelData
+                readonly property bool on: modelData.k === root.tab && !root.query.trim()
+                width: chipTxt.implicitWidth + 24
+                height: 28
+                radius: 14
+                color: on ? Theme.accent : chipMa.containsMouse ? Theme.fill : "transparent"
+                Txt {
+                    id: chipTxt
+                    anchors.centerIn: parent
+                    text: chip.modelData.l
+                    font.pixelSize: 13
+                    font.weight: chip.on ? Theme.strong : Font.Normal
+                    color: chip.on ? Theme.accentInk : Theme.text
+                }
+                MouseArea {
+                    id: chipMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: { input.text = ""; root.setTab(chip.modelData.k); }
+                }
+            }
+        }
+    }
+
     // Pages sit side by side; `off` is how far a swipe or drag has moved them from the current page.
     Item {
         id: pages
-        anchors { top: field.bottom; topMargin: 36; bottom: dots.top; bottomMargin: 20; horizontalCenter: parent.horizontalCenter }
+        anchors { top: chips.bottom; topMargin: 28; bottom: dots.top; bottomMargin: 20; horizontalCenter: parent.horizontalCenter }
         width: root.cols * root.cellW
         clip: true
         property real off: 0
