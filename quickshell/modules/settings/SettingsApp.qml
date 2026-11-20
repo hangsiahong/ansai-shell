@@ -17,16 +17,18 @@ FloatingWindow {
     onClosed: Shell.settings = false
 
     readonly property var pages: [
-        { id: "appearance", l: "Appearance", icon: "palette", sub: "Style, theme, wallpaper, font" },
-        { id: "wallpaper", l: "Wallpaper", icon: "wallpaper", sub: "Pick a picture" },
-        { id: "dock", l: "Dock", icon: "dock_to_left", sub: "Auto-hide, size, pinned apps" },
-        { id: "displays", l: "Displays", icon: "desktop_windows", sub: "Resolution, refresh, scale" },
-        { id: "graphics", l: "Graphics", icon: "memory", sub: "Integrated, hybrid, dGPU" },
-        { id: "power", l: "Power & Battery", icon: "battery_charging_full", sub: "Profile, fans, charge limit, keyboard" },
-        { id: "sound", l: "Sound", icon: "volume_up", sub: "Output and input devices" },
-        { id: "notifications", l: "Notifications", icon: "notifications", sub: "Do Not Disturb, schedule, apps" },
-        { id: "ai", l: "AI", icon: "auto_awesome", sub: "KOOMPI AI: model, key, languages" },
-        { id: "about", l: "About", icon: "info", sub: "This device, advanced" }
+        { id: "wifi", l: "Wi-Fi", icon: "wifi", sub: "Networks, saved networks", c: "#0a84ff" },
+        { id: "bluetooth", l: "Bluetooth", icon: "bluetooth", sub: "Devices, pairing", c: "#0a84ff" },
+        { id: "appearance", l: "Appearance", icon: "palette", sub: "Style, theme, wallpaper, font", c: "#636366" },
+        { id: "wallpaper", l: "Wallpaper", icon: "wallpaper", sub: "Pick a picture", c: "#32ade6" },
+        { id: "dock", l: "Dock", icon: "dock_to_left", sub: "Auto-hide, size, pinned apps", c: "#ff9f0a" },
+        { id: "displays", l: "Displays", icon: "desktop_windows", sub: "Resolution, refresh, scale", c: "#30d158" },
+        { id: "graphics", l: "Graphics", icon: "memory", sub: "Integrated, hybrid, dGPU", c: "#bf5af2" },
+        { id: "power", l: "Power & Battery", icon: "battery_charging_full", sub: "Profile, fans, charge limit, keyboard", c: "#34c759" },
+        { id: "sound", l: "Sound", icon: "volume_up", sub: "Output and input devices", c: "#ff375f" },
+        { id: "notifications", l: "Notifications", icon: "notifications", sub: "Do Not Disturb, schedule, apps", c: "#ff3b30" },
+        { id: "ai", l: "AI", icon: "auto_awesome", sub: "KOOMPI AI: model, key, languages", c: "#5e5ce6" },
+        { id: "about", l: "About", icon: "info", sub: "This device, advanced", c: "#8e8e93" }
     ]
     readonly property var page: pages.find(p => p.id === Shell.settingsPage) ?? pages[0]
 
@@ -86,7 +88,7 @@ FloatingWindow {
                             Rectangle {
                                 visible: !Theme.m3
                                 width: 26; height: 26; radius: 7
-                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#32ade6", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#ff3b30", "#5e5ce6", "#8e8e93"][nav.index]
+                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : nav.modelData.c
                                 Icon { anchors.centerIn: parent; name: nav.modelData.icon; size: 18; filled: true; color: "#ffffff" }
                             }
                             Icon {
