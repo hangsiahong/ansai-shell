@@ -36,7 +36,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 - **Search** (Super+Space or Alt+Space): apps and windows; an app that is already open is switched to
   (Shift+Enter starts a new one). `>cmd` runs in the terminal, `=1+2` calculates.
 - **Launchpad** (the ⋮⋮⋮ button at the top of the dock): every app as a paged icon grid over the blurred desktop,
-  with a search field. Scroll or ←/→ to flip pages, Enter opens the first match, Esc or a click on empty space closes.
+  with a search field. Swipe with two fingers, drag, scroll or ←/→ to flip pages, Enter opens the first match, Esc or a click on empty space closes.
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
 - **AI** on the [KOOMPI AI Gateway](#ai): Ask AI (Super+I), an agent that works on your computer (files, commands,
   apps, windows) and on KOOMPI Cloud, with your OK before it changes anything; ask about part of the screen

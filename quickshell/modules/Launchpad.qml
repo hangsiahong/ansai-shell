@@ -17,10 +17,15 @@ Sheet {
     panelRadius: 0
     enterFrom: 0
 
+    // Stay mapped while closed (invisible, clicks pass through) so the icons are already loaded when it opens.
+    visible: true
+    mask: shown ? null : noInput
+    property Region noInput: Region {}
+
     property string query: ""
     property int page: 0
 
-    onShownChanged: if (shown) { input.text = ""; page = 0; pages.positionViewAtBeginning(); input.forceActiveFocus(); }
+    onShownChanged: if (shown) { input.text = ""; page = 0; pages.off = 0; input.forceActiveFocus(); }
 
     readonly property var apps: {
         const q = query.trim().toLowerCase();
@@ -58,7 +63,6 @@ Sheet {
     }
     function go(p: int): void {
         page = Math.max(0, Math.min(pageCount - 1, p));
-        pages.currentIndex = page;
     }
 
     // Empty space closes, like macOS.
@@ -114,28 +118,60 @@ Sheet {
         }
     }
 
-    ListView {
+    // Pages sit side by side; `off` is how far a swipe or drag has moved them from the current page.
+    Item {
         id: pages
         anchors { top: field.bottom; topMargin: 36; bottom: dots.top; bottomMargin: 20; horizontalCenter: parent.horizontalCenter }
         width: root.cols * root.cellW
-        orientation: ListView.Horizontal
-        snapMode: ListView.SnapOneItem
-        highlightRangeMode: ListView.StrictlyEnforceRange
-        highlightMoveDuration: Theme.med * 2
-        boundsBehavior: Flickable.StopAtBounds
         clip: true
-        model: root.pageCount
-        onCurrentIndexChanged: root.page = currentIndex
+        property real off: 0
+        property bool moving: false
+        property real acc: 0
 
-        // One wheel notch flips a page.
-        WheelHandler {
-            property real acc: 0
-            onWheel: e => {
-                acc += e.angleDelta.y !== 0 ? -e.angleDelta.y : e.angleDelta.x;
-                if (Math.abs(acc) >= 120) { root.go(root.page + (acc > 0 ? 1 : -1)); acc = 0; }
+        // Lifted fingers: settle on the page the swipe pointed at.
+        function settle(): void {
+            const t = width * 0.12;
+            const p = off < -t ? root.page + 1 : off > t ? root.page - 1 : root.page;
+            moving = false;
+            off = 0;
+            root.go(p);
+        }
+        Timer { id: idle; interval: 120; onTriggered: pages.settle() }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.NoButton
+            onWheel: w => {
+                const px = w.pixelDelta;
+                if (px.x !== 0 || px.y !== 0) {
+                    // Touchpad: the grid follows the fingers, either direction works.
+                    const d = Math.abs(px.x) >= Math.abs(px.y) ? px.x : px.y;
+                    pages.moving = true;
+                    const lo = root.page >= root.pageCount - 1 ? -pages.width * 0.15 : -pages.width;
+                    const hi = root.page <= 0 ? pages.width * 0.15 : pages.width;
+                    pages.off = Math.max(lo, Math.min(hi, pages.off + d));
+                    idle.restart();
+                } else {
+                    // Mouse wheel: one notch flips a page.
+                    pages.acc += w.angleDelta.y !== 0 ? -w.angleDelta.y : -w.angleDelta.x;
+                    if (Math.abs(pages.acc) >= 120) { root.go(root.page + (pages.acc > 0 ? 1 : -1)); pages.acc = 0; }
+                }
             }
         }
+        // Click-and-drag also flips pages.
+        DragHandler {
+            target: null
+            xAxis.enabled: true
+            yAxis.enabled: false
+            onActiveTranslationChanged: if (active) { pages.moving = true; pages.off = activeTranslation.x; }
+            onActiveChanged: if (!active) pages.settle()
+        }
 
+        Row {
+            x: -root.page * pages.width + pages.off
+            Behavior on x { enabled: !pages.moving; NumberAnimation { duration: Theme.med * 1.6; easing.type: Easing.OutCubic } }
+            Repeater {
+                model: root.pageCount
         delegate: Item {
             id: pg
             required property int index
@@ -195,6 +231,8 @@ Sheet {
                     }
                 }
             }
+        }
+        }
         }
     }
 
