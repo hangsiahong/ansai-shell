@@ -11,6 +11,7 @@ Singleton {
     property alias style: adapter.style
     property alias font: adapter.font
     property alias iconSet: adapter.iconSet
+    property alias accent: adapter.accent
     property alias weatherCity: adapter.weatherCity
     property alias wallpaper: adapter.wallpaper
     property alias terminal: adapter.terminal
@@ -50,6 +51,7 @@ Singleton {
             property string style: "ansai"   // "ansai" | "material"
             property string font: ""   // empty: the style's own font
             property string weatherCity: ""   // Weather card in the calendar panel; empty = off
+            property string accent: ""   // "" : per look (ansai blue, Android wallpaper) | "wallpaper" | a Theme.accents key
             property string iconSet: ""   // "" : per look (ansai Phosphor, Android Material Symbols) | "phosphor" | "material"
             property string wallpaper: ""
             property string terminal: "ghostty"

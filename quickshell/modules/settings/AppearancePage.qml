@@ -17,7 +17,7 @@ ColumnLayout {
             first: true
             icon: "style"
             title: "Look"
-            sub: Theme.m3 ? "Material 3 Expressive, colours from your wallpaper" : "macOS-style Liquid Glass, blue accent"
+            sub: Theme.m3 ? "Material 3 Expressive, tonal colours" : "macOS-style Liquid Glass"
             Seg {
                 model: [{ v: "ansai", l: "ansai" }, { v: "material", l: "Android" }]
                 value: Settings.style
@@ -31,6 +31,44 @@ ColumnLayout {
                 model: [{ v: "light", l: "Light", icon: "light_mode" }, { v: "dark", l: "Dark", icon: "dark_mode" }]
                 value: Settings.theme === "light" ? "light" : "dark"
                 onPicked: v => Settings.theme = v
+            }
+        }
+        SRow {
+            icon: "palette"
+            title: "Accent colour"
+            sub: {
+                const a = Settings.accent || (Theme.m3 ? "wallpaper" : "blue");
+                return a === "wallpaper" ? "From your wallpaper" : a.charAt(0).toUpperCase() + a.slice(1);
+            }
+            Row {
+                spacing: 7
+                Repeater {
+                    model: ["wallpaper", "blue", "purple", "pink", "red", "orange", "yellow", "green", "graphite"]
+                    Item {
+                        id: dot
+                        required property string modelData
+                        readonly property bool on: (Settings.accent || (Theme.m3 ? "wallpaper" : "blue")) === modelData
+                        width: 22; height: 22
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 22; height: 22; radius: 11
+                            color: "transparent"
+                            border.width: dot.on ? 2 : 0
+                            border.color: Theme.text2
+                        }
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 16; height: 16; radius: 8
+                            color: dot.modelData === "wallpaper" ? Theme.pal.tone(Theme.pal.wallHue, 60, 55) : Theme.accents[dot.modelData][Theme.dark ? 1 : 0]
+                            Icon { visible: dot.modelData === "wallpaper"; anchors.centerIn: parent; name: "wallpaper"; size: 11; color: "#ffffff" }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Settings.accent = dot.modelData === (Theme.m3 ? "wallpaper" : "blue") ? "" : dot.modelData
+                        }
+                    }
+                }
             }
         }
         SRow {

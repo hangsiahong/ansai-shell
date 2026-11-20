@@ -27,9 +27,15 @@ Singleton {
     readonly property color text2: m3 ? pal.nv(dark ? 80 : 30) : dark ? Qt.rgba(235/255, 235/255, 245/255, 0.86) : Qt.rgba(60/255, 60/255, 67/255, 0.92)
     readonly property color muted: m3 ? pal.nv(dark ? 72 : 38) : dark ? Qt.rgba(235/255, 235/255, 245/255, 0.6) : Qt.rgba(60/255, 60/255, 67/255, 0.6)
     readonly property color faint: m3 ? pal.nv(dark ? 58 : 55) : dark ? Qt.rgba(235/255, 235/255, 245/255, 0.32) : Qt.rgba(60/255, 60/255, 67/255, 0.3)
-    readonly property color accent: m3 ? pal.p(dark ? 80 : 40) : dark ? "#0a84ff" : "#007aff"
-    readonly property color accentInk: m3 ? pal.p(dark ? 20 : 100) : "#ffffff"
-    readonly property color accentSoft: m3 ? pal.p(dark ? 30 : 90) : dark ? Qt.rgba(10/255, 132/255, 1, 0.18) : Qt.rgba(0, 122/255, 1, 0.12)
+    // macOS accent colours [light, dark]; Settings.accent picks one, or "wallpaper".
+    readonly property var accents: ({ blue: ["#007aff", "#0a84ff"], purple: ["#af52de", "#bf5af2"], pink: ["#ff2d55", "#ff375f"],
+        red: ["#ff3b30", "#ff453a"], orange: ["#ff9500", "#ff9f0a"], yellow: ["#ffcc00", "#ffd60a"],
+        green: ["#34c759", "#30d158"], graphite: ["#8e8e93", "#98989d"] })
+    readonly property color macAccent: Settings.accent === "wallpaper" ? pal.tone(pal.hue, 60, dark ? 64 : 52)
+        : (accents[Settings.accent] ?? accents.blue)[dark ? 1 : 0]
+    readonly property color accent: m3 ? pal.p(dark ? 80 : 40) : macAccent
+    readonly property color accentInk: m3 ? pal.p(dark ? 20 : 100) : Settings.accent === "yellow" ? "#000000" : "#ffffff"
+    readonly property color accentSoft: m3 ? pal.p(dark ? 30 : 90) : Qt.rgba(macAccent.r, macAccent.g, macAccent.b, dark ? 0.18 : 0.12)
     readonly property color accentSoftInk: m3 ? pal.p(dark ? 90 : 10) : accent
     // M3 secondary container: tonal fill for selected-but-quiet things (sliders' rest track, chips).
     readonly property color tonal: m3 ? pal.s(dark ? 30 : 90) : fill

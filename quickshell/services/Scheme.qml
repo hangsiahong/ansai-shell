@@ -31,8 +31,14 @@ Singleton {
     readonly property string builtinDir: Quickshell.shellDir + "/assets/wallpapers"
     readonly property string wallpaperUrl: wallpaper ? (wallpaper.startsWith("/") ? "file://" + wallpaper : wallpaper) : ""
 
+    // Settings.accent picks a fixed colour instead of the wallpaper's (graphite: near-grey palette).
+    readonly property var fixed: ({ blue: [0, 122, 255], purple: [175, 82, 222], pink: [255, 45, 85], red: [255, 59, 48],
+        orange: [255, 149, 0], yellow: [255, 204, 0], green: [52, 199, 89], graphite: [142, 142, 147] })[Settings.accent] ?? null
+    readonly property real hue: fixed ? (l => (Math.atan2(l[2], l[1]) * 180 / Math.PI + 360) % 360)(lab(fixed[0] / 255, fixed[1] / 255, fixed[2] / 255)) : wallHue
+    readonly property real chroma: Settings.accent === "graphite" ? 4 : 44
+
     // Hue of the most colourful wallpaper cluster; blue when the wallpaper is grey.
-    readonly property real hue: {
+    readonly property real wallHue: {
         let best = null, score = 0;
         for (const c of q.colors) {
             const l = lab(c.r, c.g, c.b);
@@ -53,7 +59,7 @@ Singleton {
         const g = fromLab(t, 0, 0);
         return Qt.rgba(clamp(g[0]), clamp(g[1]), clamp(g[2]), a ?? 1);
     }
-    function p(t: real): color { return tone(hue, 44, t); }
+    function p(t: real): color { return tone(hue, chroma, t); }
     function s(t: real): color { return tone(hue, 16, t); }
     function tr(t: real): color { return tone((hue + 60) % 360, 26, t); }
     function n(t: real): color { return tone(hue, 5, t); }
