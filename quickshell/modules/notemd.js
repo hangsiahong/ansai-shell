@@ -24,7 +24,7 @@ function render(src, c) {
     const out = [], lines = [];
     let gap = false, fence = false;
     const block = (i, html) => { lines.push(i); out.push(html); gap = false; };
-    const top = px => `margin-top:${gap ? px + 8 : px}px;`;
+    const top = px => `margin-bottom:0;margin-top:${gap ? px + 8 : px}px;`;
     src.split("\n").forEach((raw, i) => {
         if (/^\s*```/.test(raw)) { fence = !fence; gap = false; return; }
         if (fence) {
@@ -42,17 +42,17 @@ function render(src, c) {
             const done = m[1] !== " ";
             const box = `<a href="tick:${i}" style="color:${done ? c.accent : c.muted};text-decoration:none;font-size:17px">${done ? "☑" : "☐"}</a>&nbsp;`;
             const body = done ? `<span style="color:${c.muted}"><s>${inline(m[2], c)}</s></span>` : inline(m[2], c);
-            block(i, `<p style="${top(3)}margin-left:${ind + 24}px;text-indent:-24px">${box}${body}</p>`);
+            block(i, `<p style="${top(5)}margin-left:${ind + 24}px;text-indent:-24px">${box}${body}</p>`);
         } else if ((m = t.match(/^\s*[-*+]\s+(.*)$/))) {
-            block(i, `<p style="${top(3)}margin-left:${ind + 18}px;text-indent:-14px"><span style="color:${c.accent}">•</span>&nbsp;&nbsp;${inline(m[1], c)}</p>`);
+            block(i, `<p style="${top(5)}margin-left:${ind + 18}px;text-indent:-14px"><span style="color:${c.accent}">•</span>&nbsp;&nbsp;${inline(m[1], c)}</p>`);
         } else if ((m = t.match(/^\s*(\d+[.)])\s+(.*)$/))) {
-            block(i, `<p style="${top(3)}margin-left:${ind + 22}px;text-indent:-20px"><span style="color:${c.muted}">${m[1]}</span>&nbsp;${inline(m[2], c)}</p>`);
+            block(i, `<p style="${top(5)}margin-left:${ind + 22}px;text-indent:-20px"><span style="color:${c.muted}">${m[1]}</span>&nbsp;${inline(m[2], c)}</p>`);
         } else if ((m = t.match(/^\s*>\s?(.*)$/))) {
-            block(i, `<p style="${top(3)}margin-left:14px;color:${c.muted}"><i>${inline(m[1], c)}</i></p>`);
+            block(i, `<p style="${top(5)}margin-left:14px;color:${c.muted}"><i>${inline(m[1], c)}</i></p>`);
         } else if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(t)) {
             block(i, `<p style="${top(4)}color:${c.muted}">${"─".repeat(48)}</p>`);
         } else {
-            block(i, `<p style="${top(3)}">${inline(t, c)}</p>`);
+            block(i, `<p style="${top(5)}">${inline(t, c)}</p>`);
         }
     });
     return { html: out.join(""), lines: lines };

@@ -13,8 +13,8 @@ Sheet {
     id: root
     name: "note"
     exclusiveKeys: true
-    panelWidth: Math.min(680, width - 32)
-    panelHeight: Math.min(440, height - 120)
+    panelWidth: Math.min(960, width - 64)
+    panelHeight: Math.min(680, height - Theme.barH - 80)
     panelY: Theme.barH + 40
     panelRadius: Theme.m3 ? 28 : 22
 
@@ -150,7 +150,7 @@ unless asked to translate.\n\nThe note:\n<<<\n${editor.text}\n>>>` }];
 
         // Notes list
         Item {
-            width: 200
+            width: 230
             height: parent.height
             Row {
                 id: head
@@ -191,7 +191,7 @@ unless asked to translate.\n\nThe note:\n<<<\n${editor.text}\n>>>` }];
 
         // Editor
         Item {
-            width: parent.width - 201
+            width: parent.width - 231
             height: parent.height
             Txt {
                 id: stamp
