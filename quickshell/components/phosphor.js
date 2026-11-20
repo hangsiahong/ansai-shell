@@ -4,6 +4,16 @@
 // Names not listed here keep the Material glyph. Built from @phosphor-icons/web selection.json.
 var map = {
     "add": [0xe3d4, 0xe3d4],
+    "stylus": [0xe3aa, 0xe3aa],
+    "ink_highlighter": [0xec76, 0xec76],
+    "north_east": [0xe092, 0xe092],
+    "crop_square": [0xe45e, 0xe45e],
+    "circle": [0xe18a, 0xe18a],
+    "title": [0xe48a, 0xe48a],
+    "blur_on": [0xe566, 0xe566],
+    "crop": [0xe1d4, 0xe1d4],
+    "undo": [0xe08a, 0xe08a],
+    "redo": [0xe08c, 0xe08c],
     "calendar_month": [0xe10a, 0xe10a],
     "videocam": [0xe4da, 0xe4da],
     "notifications": [0xe0ce, 0xe0ce],

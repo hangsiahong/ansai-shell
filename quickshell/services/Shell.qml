@@ -24,6 +24,13 @@ Singleton {
     // Nested test runs must not take over the host session's D-Bus services.
     readonly property bool nested: Quickshell.env("ANSAI_SHELL_NESTED") === "1"
 
+    // Screenshot markup: the image being edited (modules/Markup.qml).
+    property string markupFile: ""
+    function markup(path: string): void {
+        markupFile = path;
+        open = "markup";
+    }
+
     function toggle(name: string): void {
         if (name === "settings") { settings ? (settings = false) : openSettings(""); return; }
         open = open === name ? "" : name;

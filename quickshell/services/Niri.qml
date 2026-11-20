@@ -24,6 +24,8 @@ Singleton {
     onFocusedWindowIdChanged: if (focusedWindowId >= 0) lastWindowId = focusedWindowId
     readonly property var barWindow: Shell.open !== "" ? (windows[lastWindowId] ?? null) : focusedWindow
 
+    signal screenshotTaken(string path)   // niri saved a screenshot (Print, Mod+Shift+A, ...)
+
     function workspacesOn(output: string): var {
         return workspaces.filter(w => w.output === output || !w.output).sort((a, b) => a.idx - b.idx);
     }
@@ -170,6 +172,8 @@ Singleton {
             layoutIdx = k.current_idx;
         } else if (ev.KeyboardLayoutSwitched) {
             layoutIdx = ev.KeyboardLayoutSwitched.idx;
+        } else if (ev.ScreenshotCaptured) {
+            if (ev.ScreenshotCaptured.path) screenshotTaken(ev.ScreenshotCaptured.path);
         }
     }
 

@@ -36,6 +36,8 @@ ShellRoot {
     SystemMenu {}
     AppMenu {}
     Toasts {}
+    ScreenshotThumb {}
+    Markup {}
     Osd {}
 
     LazyLoader {
@@ -67,6 +69,7 @@ ShellRoot {
         function pickColor(): void { ColorPick.pick(); }
         function theme(mode: string): void { Settings.theme = mode; }
         function accent(name: string): void { Settings.accent = name; }
+        function markup(path: string): void { Shell.markup(path); }
         function wallpaper(path: string): void { Settings.wallpaper = path; }
         function testNotify(): void {
             const n = { appName: "ansai", summary: "Agent finished: Rate-limit the /invoices endpoint", body: "billing-api · ready for review. 3 files changed, tests pass.", actions: [{ identifier: "review", text: "Review", invoke() {} }, { identifier: "later", text: "Later", invoke() {} }] };
