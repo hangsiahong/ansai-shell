@@ -28,6 +28,7 @@ ShellRoot {
     Clipboard {}
     AskAI {}
     AskBar {}
+    QuickNote {}
     DockMenu {}
     ControlCenter {}
     Calendar {}

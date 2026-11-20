@@ -38,6 +38,8 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 - **Launchpad** (the ⋮⋮⋮ button at the top of the dock): every app as a paged icon grid over the blurred desktop,
   sorted into tabs (Frequent: what you open, pin or have running; All; then Internet, Develop, Media, Office, System…;
   Tab/Shift+Tab switches) and a search field that covers every app. Swipe with two fingers, drag, scroll or ←/→ to flip pages, Enter opens the first match, Esc or a click on empty space closes.
+- **Quick Note** (Alt+N): a notes panel that opens on your latest note and saves as you type
+  (`~/.local/share/ansai-shell/notes.json`). Ctrl+N new note, Esc closes.
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
 - **Quick Ask:** point at the middle of the bottom edge and an Ask Ansai field slides up; Enter asks and the answer
   streams right above it ("Open in Ask Ansai" continues in the sidebar). Always shown on an empty workspace; with windows open it hides when the pointer leaves, unless you're typing.
@@ -78,6 +80,7 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+Return | Terminal |
 | Super+E / Super+B | Files / browser |
 | Super+Shift+C (or Super+Shift+V, Alt+Shift+C) | Clipboard history: type to filter, Enter copies, Delete removes |
+| Alt+N | Quick Note |
 | Super+I / Alt+A | Ask Ansai sidebar |
 | Super+Shift+S / Alt+Shift+S | Pick part of the screen and ask AI about it |
 | Clipboard: Ctrl+T / Ctrl+S / Ctrl+E / Ctrl+J / Tab | Translate / summarize / fix writing / ask in sidebar / AI find |

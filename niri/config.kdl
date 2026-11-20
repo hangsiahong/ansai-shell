@@ -178,7 +178,7 @@ layer-rule {
 }
 
 layer-rule {
-    match namespace="^ansai-(launcher|launchpad|control|calendar|power|polkit|toasts|osd|appmenu|clipboard)$"
+    match namespace="^ansai-(launcher|launchpad|note|control|calendar|power|polkit|toasts|osd|appmenu|clipboard)$"
     shadow {
         on
         softness 50
@@ -204,6 +204,7 @@ binds {
     Mod+Shift+C     hotkey-overlay-title="Clipboard history" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
     Mod+Shift+V     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
     Alt+Shift+C     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "clipboard"; }
+    Alt+N           hotkey-overlay-title="Quick Note" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "toggle" "note"; }
     Mod+I           hotkey-overlay-title="Ask Ansai" { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "toggle"; }
     Alt+A           hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "toggle"; }
     Mod+Shift+S     hotkey-overlay-title="Ask Ansai about part of the screen" { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "screenshot"; }
