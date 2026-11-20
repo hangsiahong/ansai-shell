@@ -1,13 +1,14 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import qs
 import qs.components
 import qs.services
 
 // Spotlight-style palette, like the web app's "Search or run…" (Ctrl K).
 // Open windows first, then apps ranked by match + launch count.
-// "> cmd" runs a shell command, "= expr" evaluates math.
+// "> cmd" runs a shell command, "= expr" evaluates math, ": word" finds an emoji and types it.
 Sheet {
     id: root
     name: "launcher"
@@ -21,13 +22,30 @@ Sheet {
     property string query: ""
     property int sel: 0
 
+    onQueryChanged: if (query.startsWith(":")) emojiFile.wanted = true
     onShownChanged: if (shown) { query = ""; input.text = ""; sel = 0; input.forceActiveFocus(); }
+
+    FileView {
+        id: emojiFile
+        property bool wanted: false   // loaded on the first ":" query only
+        path: wanted ? Quickshell.shellDir + "/assets/emoji.tsv" : ""
+        readonly property var lines: loaded ? text().split("\n").filter(l => l).map(l => { const p = l.split("\t"); return { ch: p[0], name: p[1], group: p[2] }; }) : []
+    }
 
     readonly property var items: {
         const q = query.trim().toLowerCase();
         if (q.startsWith(">")) {
             const cmd = query.trim().slice(1).trim();
             return cmd ? [{ kind: "run", title: cmd, sub: "Run in terminal", icon: "terminal" }] : [];
+        }
+        if (q.startsWith(":")) {
+            const w = q.slice(1).trim().split(/\s+/).filter(x => x);
+            const hits = [];
+            for (const l of emojiFile.lines) {
+                if (w.every(x => l.name.includes(x))) hits.push({ kind: "emoji", title: l.name.charAt(0).toUpperCase() + l.name.slice(1), sub: l.group, glyph: l.ch });
+                if (hits.length >= 40) break;
+            }
+            return hits;
         }
         if (q.startsWith("=")) {
             let val = "";
@@ -100,6 +118,9 @@ Sheet {
             Niri.focusWindow(it.id);
         } else if (it.kind === "run") {
             Quickshell.execDetached([Settings.terminal, "-e", "sh", "-c", it.title + "; exec $SHELL"]);
+        } else if (it.kind === "emoji") {
+            // Type it into the window that had focus once the launcher is gone; copy only without wtype.
+            Quickshell.execDetached(["sh", "-c", 'sleep 0.15; command -v wtype >/dev/null && exec wtype -- "$1" || printf %s "$1" | wl-copy', "sh", it.glyph]);
         } else if (it.kind === "calc") {
             Quickshell.execDetached(["wl-copy", it.title]);
         }
@@ -205,10 +226,16 @@ Sheet {
                     }
                     Rectangle {
                         anchors.fill: parent
-                        visible: !(row.modelData.kind === "app" || row.modelData.kind === "win")
                         radius: Theme.m3 ? 16 : 8
                         color: Theme.m3 ? Theme.tonal : Theme.surface3
+                        visible: !(row.modelData.kind === "app" || row.modelData.kind === "win" || row.modelData.kind === "emoji")
                         Icon { anchors.centerIn: parent; name: row.modelData.icon ?? ""; size: 20 }
+                    }
+                    Text {
+                        anchors.centerIn: parent
+                        visible: row.modelData.kind === "emoji"
+                        text: row.modelData.glyph ?? ""
+                        font.pixelSize: 24
                     }
                 }
 
