@@ -193,6 +193,29 @@ ColumnLayout {
             }
         }
         SRow {
+            icon: "partly_cloudy_day"
+            title: "Weather"
+            sub: Weather.error ? Weather.error : Weather.place ? "Showing " + Weather.place + " in the calendar panel (Open-Meteo)" : "Type a city to show weather in the calendar panel. Only the city name is sent (Open-Meteo)."
+            Rectangle {
+                width: 200
+                height: Theme.m3 ? 40 : 30
+                radius: Theme.m3 ? 20 : 8
+                color: Theme.m3 ? Theme.surface3 : Theme.fill2
+                TextInput {
+                    id: cityIn
+                    anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                    verticalAlignment: TextInput.AlignVCenter
+                    color: Theme.text
+                    font.family: Theme.font
+                    font.pixelSize: 13
+                    clip: true
+                    text: Settings.weatherCity
+                    onEditingFinished: Settings.weatherCity = text.trim()
+                    Txt { visible: !cityIn.text; anchors.verticalCenter: parent.verticalCenter; text: "City, e.g. Phnom Penh"; color: Theme.faint; font.pixelSize: 13 }
+                }
+            }
+        }
+        SRow {
             icon: "schedule"
             title: "24-hour clock"
             Switch { checked: Settings.use24h; onToggled: Settings.use24h = !Settings.use24h }

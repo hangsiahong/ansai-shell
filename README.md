@@ -57,6 +57,10 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   accessibility or looks at them, then clicks and types. It asks before it changes anything, and **learns from
   its mistakes** so the next run takes fewer steps. Also: ask about part of the screen (Super+Shift+S), and translate /
   summarize / fix / find-by-description in the clipboard panel. See [AI](#ai).
+- **Weather** in the calendar panel: set a city in Settings → Appearance → Weather. It's off by default and uses
+  Open-Meteo, so only the city name is sent.
+- **Alt+Tab:** niri's own window switcher with live previews, styled with the shell's accent colour and corners.
+- **Colour picker** (Control Center, or `qs -c ansai ipc call shell pickColor`): click any pixel to copy its `#rrggbb`.
 - **Notifications** grouped by app (a stack you open with Show all), plus calendar, OSD, lock screen, polkit prompts and power menu.
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
   15 s "keep changes?"), graphics (supergfxctl: integrated / hybrid / dGPU), power and battery (profile, charge

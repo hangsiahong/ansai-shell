@@ -95,6 +95,54 @@ Sheet {
             }
         }
 
+        Rectangle {   // weather (Settings → Appearance → Weather)
+            visible: Weather.enabled && Weather.current !== null
+            Layout.fillWidth: true
+            Layout.preferredHeight: wcol.implicitHeight + 24
+            radius: Theme.r
+            color: Theme.fill2
+            ColumnLayout {
+                id: wcol
+                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
+                spacing: 10
+                RowLayout {
+                    spacing: 10
+                    Icon {
+                        readonly property var lk: Weather.current ? Weather.look(Weather.current.code, Weather.current.day) : ["cloud", ""]
+                        name: lk[0]; size: 34; filled: true
+                        color: Theme.accent
+                    }
+                    Txt { text: (Weather.current?.temp ?? "") + "°"; font.pixelSize: 30; font.weight: Font.Light }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        Txt { Layout.fillWidth: true; text: Weather.current ? Weather.look(Weather.current.code, Weather.current.day)[1] : ""; font.pixelSize: 13; font.weight: Theme.strong }
+                        Txt { Layout.fillWidth: true; text: Weather.place; font.pixelSize: 12; color: Theme.muted }
+                    }
+                    Txt {
+                        visible: Weather.days.length > 0
+                        text: Weather.days.length ? "H " + Weather.days[0].max + "°  L " + Weather.days[0].min + "°" : ""
+                        font.pixelSize: 12; color: Theme.muted; font.features: { "tnum": 1 }
+                    }
+                }
+                Row {
+                    id: fc
+                    Layout.fillWidth: true
+                    Repeater {
+                        model: Weather.days.slice(1, 5)
+                        Column {
+                            required property var modelData
+                            width: fc.width / 4
+                            spacing: 3
+                            Txt { anchors.horizontalCenter: parent.horizontalCenter; text: Qt.formatDate(new Date(modelData.date + "T12:00"), "ddd"); font.pixelSize: 11; color: Theme.muted }
+                            Icon { anchors.horizontalCenter: parent.horizontalCenter; name: Weather.look(modelData.code, true)[0]; size: 20; color: Theme.text2 }
+                            Txt { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.max + "°  <font color='" + Theme.muted + "'>" + modelData.min + "°</font>"; textFormat: Text.StyledText; font.pixelSize: 11; font.features: { "tnum": 1 } }
+                        }
+                    }
+                }
+            }
+        }
+
         RowLayout {
             Layout.fillWidth: true
             Txt {
