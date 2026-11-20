@@ -42,7 +42,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 - **Quick Ask:** point at the middle of the bottom edge and an Ask AI field slides up; Enter asks and the answer
   streams right above it ("Open in Ask AI" continues in the sidebar). Hides when the pointer leaves, unless you're typing.
 - **AI** on the [KOOMPI AI Gateway](#ai): Ask AI (Super+I), an agent that works on your computer (files, commands,
-  apps, windows) and on KOOMPI Cloud, with your OK before it changes anything; ask about part of the screen
+  apps, windows, and other apps' screens: it reads them through accessibility or looks, then clicks and types) and on KOOMPI Cloud, with your OK before it changes anything; ask about part of the screen
   (Super+Shift+S or Alt+Shift+S), and translate / summarize / fix / find-by-description in the clipboard panel.
 - **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
@@ -55,7 +55,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 ## Install
 
 ```sh
-sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp python nodejs fd ripgrep
+sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp python nodejs fd ripgrep wtype python-gobject at-spi2-core
 ./install.sh
 ```
 

@@ -21,15 +21,17 @@ PanelWindow {
     WlrLayershell.keyboardFocus: AI.bar ? WlrKeyboardFocus.Exclusive : open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     property bool hot: false
+    property bool peek: false   // show the answer after the agent used the screen, until the pointer has been and gone
     property int from: -1   // index in AI.chat of the answer asked from here; -1: none to show
     readonly property var answer: from >= 0 ? AI.chat[from] ?? null : null
     readonly property bool waiting: (answer?.tools ?? []).some(t => t.status === "wait")
-    readonly property bool open: Shell.open === "" && (hot || AI.bar || input.text !== "" || (from >= 0 && AI.busy && input.activeFocus))
+    readonly property bool open: Shell.open === "" && !AI.driving && (hot || peek || AI.bar || input.text !== "" || (from >= 0 && AI.busy && input.activeFocus))
 
     onOpenChanged: if (!open) { input.focus = false; AI.bar = false; }
     Connections {
         target: AI
         function onBarChanged() { if (AI.bar) input.forceActiveFocus(); }
+        function onDrivingChanged() { if (!AI.driving && root.from >= 0) root.peek = true; }
         function onBarAsked(text) { input.text = text; root.ask(); }
     }
     Connections {
@@ -47,6 +49,7 @@ PanelWindow {
     }
     function openSidebar(): void {
         hot = false;
+        peek = false;
         AI.bar = false;
         Shell.open = "ai";
     }
@@ -61,7 +64,7 @@ PanelWindow {
             else leave.restart();
         }
     }
-    Timer { id: leave; interval: 500; onTriggered: root.hot = false }
+    Timer { id: leave; interval: 500; onTriggered: { root.hot = false; root.peek = false; } }
 
     Item {
         id: card
@@ -123,7 +126,7 @@ PanelWindow {
                         onClicked: root.openSidebar()
                     }
                     Btn { text: "Open in Ask AI"; kind: "tonal"; onClicked: root.openSidebar() }
-                    Btn { text: "Clear"; kind: "tonal"; onClicked: root.from = -1 }
+                    Btn { text: "Clear"; kind: "tonal"; onClicked: { root.from = -1; root.peek = false; } }
                 }
             }
 
@@ -153,7 +156,7 @@ PanelWindow {
                     selectionColor: Theme.accentSoft
                     clip: true
                     onAccepted: root.ask()
-                    Keys.onEscapePressed: { if (text) text = ""; else { root.hot = false; AI.bar = false; focus = false; } }
+                    Keys.onEscapePressed: { if (text) text = ""; else { root.hot = false; root.peek = false; AI.bar = false; focus = false; } }
                     Txt {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: !input.text

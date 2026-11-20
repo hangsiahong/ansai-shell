@@ -27,12 +27,12 @@ if [ -e /etc/xdg/autostart/xfce-polkit.desktop ] && [ ! -e "$cfg/autostart/xfce-
 fi
 
 missing=()
-for b in niri qs xwayland-satellite brightnessctl wpctl playerctl swayidle wl-paste cliphist fuzzel wlsunset ghostty node python3 grim slurp; do
+for b in niri qs xwayland-satellite brightnessctl wpctl playerctl swayidle wl-paste cliphist fuzzel wlsunset ghostty node python3 grim slurp wtype; do
     command -v "$b" >/dev/null || missing+=("$b")
 done
 if [ ${#missing[@]} -gt 0 ]; then
     echo "missing commands: ${missing[*]}"
-    echo "install with: sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp nodejs python"
+    echo "install with: sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp wtype nodejs python python-gobject at-spi2-core"
 fi
 command -v niri >/dev/null && niri validate -c "$cfg/niri/config.kdl"
 echo "done: log out and pick \"Niri\" in the login screen's session menu."

@@ -111,7 +111,11 @@ How to answer:
     property int gen: 0   // bumped by reset(): a stopped request must not write into the new chat
     property var current: null
     signal barAsked(string text)
-    property bool bar: false   // quick Ask bar at the bottom edge, opened from a key (modules/AskBar.qml)
+    property bool bar: false
+    // The agent is using the mouse and keyboard: shell panels stay out of the way until the answer is done.
+    property bool driving: false
+    property string reopen: ""
+    onBusyChanged: if (!busy && driving) { driving = false; if (reopen) Shell.open = reopen; reopen = ""; }   // quick Ask bar at the bottom edge, opened from a key (modules/AskBar.qml)
     property string draft: ""      // text waiting in the sidebar's input
     property string attachment: "" // image path to send with the next message
 
@@ -172,10 +176,13 @@ How to answer:
         const history = [{ role: "system", content: system + `
 
 You can act on this computer with tools: run commands, read/write/edit files, search files, open files and URLs,
-start apps, list/focus/arrange windows (niri), read/copy the clipboard, look at the screen, read web pages.
+start apps, list/focus/arrange windows (niri), read/copy the clipboard, read web pages, and see and use other apps on the screen
+(desktop_* tools: read an app's accessibility tree and act on it, or look at the screen and click/type/press keys).
 - Use them instead of telling the user how to do something they asked you to do. Look first (read, list, search), then act.
 - Prefer the dedicated tools; use run_command for the rest (system info, packages, git, network). Keep commands safe and specific.
 - Anything that changes something waits for the user's approval in the app; if declined, don't retry it.
+- To do something in an app (send a message, fill in a form): open or focus it, read or look, act, then check the result.
+  Before sending, posting, paying or deleting, make sure the right person, chat or amount is on screen; if you can't, stop and say why.
 - After acting, say in one line what you did and the result.` + (names ? `
 
 Tools from the user's connected services (${names}):
@@ -304,6 +311,13 @@ Tools from the user's connected services (${names}):
         target: "ai"
         function toggle(): void { Shell.toggle("ai"); }
         function bar(): void { Shell.close(); root.bar = !root.bar; }
+        function aside(): void {
+            if (!root.busy) return;
+            if (Shell.open === "ai") root.reopen = "ai";
+            Shell.close();
+            root.bar = false;
+            root.driving = true;
+        }
         function barAsk(text: string): void { Shell.close(); root.bar = true; root.barAsked(text); }
         function chatId(): string { return root.chatId; }
         function open(id: string): void { root.openChat(id); }
