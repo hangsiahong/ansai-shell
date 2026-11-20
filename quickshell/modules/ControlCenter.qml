@@ -463,24 +463,31 @@ Sheet {
                 onClicked: Battery.cycleProfile()
             }
         }
-        RowLayout {
+        GridLayout {
             Layout.fillWidth: true
-            spacing: 10
+            columns: 3
+            rowSpacing: 10
+            columnSpacing: 10
             Repeater {
                 model: [
-                    { icon: "screenshot_region", run: () => { Shell.close(); Niri.action("screenshot"); } },
-                    { icon: Recorder.recording ? "stop_circle" : "screen_record", run: () => { Shell.close(); Recorder.toggle(); } },
-                    { icon: "colorize", run: () => { Shell.close(); ColorPick.pick(); } },
-                    { icon: "auto_awesome", run: () => { Shell.open = "ai"; } },
-                    { icon: "android", run: () => { Settings.style = "material"; Settings.font = ""; } },
-                    { icon: "lock", run: () => { Shell.close(); Lock.lock(); } },
-                    { icon: "power_settings_new", run: () => { Shell.open = "power"; } }
-                ]
+                    { icon: "screenshot_region", label: "Screenshot", run: () => { Shell.close(); Niri.action("screenshot"); } },
+                    { icon: Recorder.recording ? "stop_circle" : "screen_record", label: Recorder.recording ? "Stop" : "Record", on: Recorder.recording, run: () => { Shell.close(); Recorder.toggle(); } },
+                    { icon: "colorize", label: "Colour Picker", run: () => { Shell.close(); ColorPick.pick(); } },
+                    { icon: "auto_awesome", label: "Ask AI", run: () => { Shell.open = "ai"; } },
+                    { icon: "notes", label: "Quick Note", run: () => { Shell.open = "note"; } },
+                    { icon: "content_paste", label: "Clipboard", run: () => { Shell.open = "clipboard"; } },
+                    { icon: "android", label: "Android Style", run: () => { Settings.style = "material"; Settings.font = ""; } },
+                    { icon: "lock", label: "Lock", run: () => { Shell.close(); Lock.lock(); } },
+                    { icon: "power_settings_new", label: "Power", run: () => { Shell.open = "power"; } }
+                ].filter(b => b.label !== "Record" && b.label !== "Stop" || Recorder.available)
                 MacToggle {
                     required property var modelData
                     Layout.fillWidth: true; Layout.preferredWidth: 1
                     wide: false
                     icon: modelData.icon
+                    label: modelData.label
+                    on: !!modelData.on
+                    onColor: Theme.danger
                     onClicked: modelData.run()
                 }
             }
