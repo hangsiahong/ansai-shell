@@ -7,7 +7,7 @@ import qs.components
 import qs.services
 
 // macOS-style floating thumbnail after a screenshot: bottom right for a few seconds (longer while hovered).
-// Click opens Markup to draw on it; the x dismisses it.
+// Click opens Markup to draw on it; "Copy text" copies the text in it (services/Ocr.qml); the x dismisses it.
 PanelWindow {
     id: root
     property string file: ""
@@ -44,7 +44,7 @@ PanelWindow {
     Timer {
         id: hide
         interval: 6000
-        onTriggered: if (ma.containsMouse) restart(); else root.up = false
+        onTriggered: if (ma.containsMouse || ocr.containsMouse) restart(); else root.up = false
     }
 
     Item {
@@ -87,7 +87,7 @@ PanelWindow {
             onClicked: Shell.markup(root.file)
         }
         Rectangle {
-            visible: ma.containsMouse || x0.containsMouse
+            visible: ma.containsMouse || x0.containsMouse || ocr.containsMouse
             anchors { left: parent.left; top: parent.top; margins: -8 }
             width: 24; height: 24; radius: 12
             color: Qt.rgba(0, 0, 0, 0.7)
@@ -95,6 +95,20 @@ PanelWindow {
             border.color: Qt.rgba(1, 1, 1, 0.5)
             Icon { anchors.centerIn: parent; name: "close"; size: 13; color: "#ffffff" }
             MouseArea { id: x0; anchors.fill: parent; hoverEnabled: true; onClicked: root.up = false }
+        }
+        Rectangle {
+            visible: ma.containsMouse || ocr.containsMouse
+            anchors { right: parent.right; top: parent.top; margins: 8 }
+            width: ocrRow.implicitWidth + 16; height: 24; radius: 12
+            color: ocr.containsMouse ? Theme.accent : Qt.rgba(0, 0, 0, 0.7)
+            Row {
+                id: ocrRow
+                anchors.centerIn: parent
+                spacing: 4
+                Icon { anchors.verticalCenter: parent.verticalCenter; name: "document_scanner"; size: 13; color: "#ffffff" }
+                Txt { anchors.verticalCenter: parent.verticalCenter; text: "Copy text"; font.pixelSize: 11; font.weight: Font.DemiBold; color: "#ffffff" }
+            }
+            MouseArea { id: ocr; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Ocr.copyFrom(root.file); root.up = false; } }
         }
         Rectangle {
             visible: ma.containsMouse

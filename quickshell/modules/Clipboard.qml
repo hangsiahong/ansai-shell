@@ -10,6 +10,7 @@ import qs.services
 // Delete removes an entry. Images show a thumbnail, decoded on demand into $XDG_RUNTIME_DIR.
 // AI (services/AI.qml): Ctrl+T translate, Ctrl+S summarize, Ctrl+E fix writing, Ctrl+J ask in the
 // sidebar; Tab asks AI to find an entry from a description ("the wifi password from yesterday").
+// Images: Ctrl+O shows the text in them (scripts/ocr.sh, English and Khmer), Enter copies it.
 Sheet {
     id: root
     name: "clipboard"
@@ -43,7 +44,8 @@ Sheet {
         { k: "translate", l: "Translate", i: "translate", key: "Ctrl+T", t: "Translation" },
         { k: "summarize", l: "Summarize", i: "summarize", key: "Ctrl+S", t: "Summary" },
         { k: "fix", l: "Fix writing", i: "spellcheck", key: "Ctrl+E", t: "Fixed writing" },
-        { k: "ask", l: "Ask Ansai", i: "auto_awesome", key: "Ctrl+J", t: "" }
+        { k: "ask", l: "Ask Ansai", i: "auto_awesome", key: "Ctrl+J", t: "" },
+        { k: "ocr", l: "Copy text", i: "document_scanner", key: "Ctrl+O", t: "Text in the image", image: true }
     ]
     function prompt(k) {
         const lang = Settings.aiLang;
@@ -56,8 +58,16 @@ Sheet {
         if (!e || mode === "result") return;
         if (e.image) {
             if (k === "ask") AI.askAbout(`${cache}/${e.id}.${e.ext}`, "");
+            if (k !== "ocr") return;
+            ocr.command = ["sh", "-c", `[ -s "$2" ] || printf '%s\\t\\n' "$1" | cliphist decode > "$2"; exec "$0" "$2"`,
+                           Quickshell.shellDir + "/scripts/ocr.sh", e.id, `${cache}/${e.id}.${e.ext}`];
+            ocr.running = true;
+            mode = "result";
+            resultTitle = "Text in the image";
+            resultText = ""; resultErr = ""; resultBusy = true;
             return;
         }
+        if (k === "ocr") return;
         decoder.kind = k;
         decoder.command = ["sh", "-c", `printf '%s\\t\\n' "$1" | cliphist decode`, "sh", e.id];
         decoder.running = true;
@@ -103,6 +113,16 @@ Sheet {
         });
     }
 
+    Process {
+        id: ocr
+        stdout: StdioCollector { id: ocrOut }
+        stderr: StdioCollector { id: ocrErr }
+        onExited: {
+            root.resultBusy = false;
+            root.resultText = ocrOut.text.trim();
+            if (!root.resultText) root.resultErr = ocrErr.text.trim() || "No text found in this image";
+        }
+    }
     Process {
         id: decoder
         property string kind
@@ -186,7 +206,7 @@ Sheet {
                     else if (e.key === Qt.Key_PageDown) { root.sel = Math.min(root.items.length - 1, root.sel + 8); e.accepted = true; }
                     else if (e.key === Qt.Key_PageUp) { root.sel = Math.max(0, root.sel - 8); e.accepted = true; }
                     else if (e.modifiers & Qt.ControlModifier) {
-                        const k = { [Qt.Key_T]: "translate", [Qt.Key_S]: "summarize", [Qt.Key_E]: "fix", [Qt.Key_J]: "ask" }[e.key];
+                        const k = { [Qt.Key_T]: "translate", [Qt.Key_S]: "summarize", [Qt.Key_E]: "fix", [Qt.Key_J]: "ask", [Qt.Key_O]: "ocr" }[e.key];
                         if (k) { root.act(k); e.accepted = true; }
                     }
                 }
@@ -330,7 +350,7 @@ Sheet {
 
             // AI actions on the selected entry (images: only Ask Ansai)
             Repeater {
-                model: root.mode === "result" ? [] : root.actions.filter(a => !root.items[root.sel]?.image || a.k === "ask")
+                model: root.mode === "result" ? [] : root.actions.filter(a => root.items[root.sel]?.image ? (a.k === "ask" || a.image) : !a.image)
                 Hover {
                     required property var modelData
                     visible: root.items.length > 0
@@ -351,7 +371,7 @@ Sheet {
             Txt {
                 Layout.fillWidth: true
                 Layout.leftMargin: 6
-                text: root.mode === "result" ? (root.resultBusy ? "Writing…" : "Enter copies · Esc goes back")
+                text: root.mode === "result" ? (root.resultBusy ? (root.resultTitle === "Text in the image" ? "Reading the image…" : "Writing…") : "Enter copies · Esc goes back")
                     : root.items.length ? "" : "Enter copies · Delete removes · Esc closes"
                 font.pixelSize: 12
                 color: Theme.faint

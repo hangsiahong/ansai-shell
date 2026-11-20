@@ -210,6 +210,8 @@ binds {
     Alt+A           hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "toggle"; }
     Mod+Shift+S     hotkey-overlay-title="Ask Ansai about part of the screen" { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "screenshot"; }
     Alt+Shift+S     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "screenshot"; }
+    Mod+Shift+O     hotkey-overlay-title="Copy text from part of the screen" { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "copyText"; }
+    Alt+Shift+O     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "copyText"; }
 
     // Apps
     Mod+Return hotkey-overlay-title="Terminal" { spawn-sh r#"exec "$(jq -r '.terminal // "ghostty"' ~/.config/ansai-shell/settings.json 2>/dev/null || echo ghostty)""#; }

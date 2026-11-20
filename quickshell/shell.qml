@@ -69,6 +69,7 @@ ShellRoot {
         function settings(page: string): void { Shell.openSettings(page); }
         function record(): void { Recorder.toggle(); }
         function pickColor(): void { ColorPick.pick(); }
+        function copyText(): void { Ocr.screen(); }
         function theme(mode: string): void { Settings.theme = mode; }
         function accent(name: string): void { Settings.accent = name; }
         function markup(path: string): void { Shell.markup(path); }

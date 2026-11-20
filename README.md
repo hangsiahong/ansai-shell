@@ -148,6 +148,9 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
   (Ctrl+V or the clipboard button) text or an image such as a screenshot you just took. The conversation stays until you start a new one.
   Every chat is saved (Chats list, `~/.local/share/ansai-shell/ai-chats.json`, private to you) and survives restarts.
   The ⤢ button switches between the right-side panel and a big centred view with the chat list beside it.
+- **Copy text from the screen** (Super+Shift+O or Alt+Shift+O): pick an area and its text (English and Khmer) is copied.
+  Also "Copy text" on the screenshot thumbnail, and Ctrl+O on an image in the clipboard panel. Uses tesseract; the Khmer
+  data is downloaded once to `~/.local/share/ansai-shell/tessdata` if it isn't installed.
 - **Ask about the screen** (Super+Shift+S or Alt+Shift+S): pick an area; it is saved to `~/Pictures/Screenshots`, copied, and
   opened in the sidebar with the image attached ("what does this error mean?").
 - **Clipboard panel:** Ctrl+T translates English ↔ Khmer (language in Settings), Ctrl+S summarizes, Ctrl+E fixes

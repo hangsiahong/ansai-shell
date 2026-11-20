@@ -38,7 +38,7 @@ for b in niri qs xwayland-satellite brightnessctl wpctl playerctl swayidle wl-pa
 done
 if [ ${#missing[@]} -gt 0 ]; then
     echo "missing commands: ${missing[*]}"
-    echo "install with: sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp wtype nodejs python python-gobject at-spi2-core"
+    echo "install with: sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp wtype nodejs python python-gobject at-spi2-core tesseract tesseract-data-eng"
 fi
 command -v niri >/dev/null && niri validate -c "$cfg/niri/config.kdl"
 echo "done: log out and pick \"Niri\" in the login screen's session menu."

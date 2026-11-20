@@ -76,6 +76,7 @@ var map = {
     "coffee": [0xe1c2, 0xe1c2],
     "computer": [0xe560, 0xe560],
     "content_copy": [0xe1ca, 0xe1ca],
+    "document_scanner": [0xebb6, 0xebb6],
     "content_paste": [0xe198, 0xe198],
     "content_paste_search": [0xe196, 0xe196],
     "dark_mode": [0xe330, 0xe330],
