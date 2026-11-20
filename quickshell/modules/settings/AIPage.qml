@@ -13,6 +13,7 @@ ColumnLayout {
     property bool adding: false   // provider list open
     property string prov: AI.provider    // provider whose models the Model group lists ("" = KOOMPI)
     property string filter: ""
+    property bool allLessons: false
     Component.onCompleted: { AI.checkKey(); AI.refreshMcp(); AI.refreshAccounts(); }
     Component.onDestruction: if (AI.signin && AI.signin.step !== "busy" && AI.signin.step !== "url" && AI.signin.step !== "code") AI.cancelSignIn()
 
@@ -295,20 +296,26 @@ ColumnLayout {
             sub: Settings.aiLearn ? AI.lessons.length + (AI.lessons.length === 1 ? " lesson" : " lessons") + " so far" : "Off: no new lessons, and saved ones aren't used"
             Switch { checked: Settings.aiLearn; onToggled: Settings.aiLearn = !Settings.aiLearn }
         }
-        Repeater {
-            model: AI.lessons
+        Repeater {   // newest first; only the latest 3 until "Show all"
+            model: AI.lessons.map((l, i) => ({ l: l, i: i })).reverse().slice(0, page.allLessons ? undefined : 3)
             SRow {
                 id: lr
-                required property string modelData
-                required property int index
+                required property var modelData
                 icon: "lightbulb"
                 title: ""
-                sub: modelData
+                sub: modelData.l
                 IconButton {
                     icon: "delete"; iconSize: 18; iconColor: Theme.danger
-                    onClicked: AI.setLessons(AI.lessons.filter((_, i) => i !== lr.index))
+                    onClicked: AI.setLessons(AI.lessons.filter((_, i) => i !== lr.modelData.i))
                 }
             }
+        }
+        SRow {
+            visible: AI.lessons.length > 3
+            clickable: true
+            icon: page.allLessons ? "expand_less" : "expand_more"
+            title: page.allLessons ? "Show fewer" : `Show all ${AI.lessons.length} lessons`
+            onClicked: page.allLessons = !page.allLessons
         }
     }
 
