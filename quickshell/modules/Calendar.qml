@@ -131,12 +131,82 @@ Sheet {
             Layout.preferredHeight: Math.min(contentHeight, 420)
             clip: true
             spacing: 8
-            model: Notifs.list
+            // Grouped per app, newest group first; a group of several shows its newest card over a stack until opened.
+            property var open: ({})
+            model: {
+                const g = [], at = {};
+                for (const e of Notifs.list) {
+                    const k = e.n?.appName || "Notification";
+                    if (at[k] === undefined) { at[k] = g.length; g.push({ app: k, entries: [] }); }
+                    g[at[k]].entries.push(e);
+                }
+                return g;
+            }
             boundsBehavior: Flickable.StopAtBounds
-            delegate: NotifCard {
+            delegate: Column {
+                id: grp
                 required property var modelData
-                entry: modelData
+                readonly property int count: modelData.entries.length
+                readonly property bool expanded: count === 1 || ListView.view.open[modelData.app] === true
                 width: ListView.view.width
+                spacing: 6
+
+                RowLayout {
+                    visible: grp.count > 1
+                    width: parent.width
+                    Txt {
+                        Layout.fillWidth: true
+                        leftPadding: 4
+                        text: grp.modelData.app + "  ·  " + grp.count
+                        font.pixelSize: 12; font.weight: Theme.strong; color: Theme.muted
+                    }
+                    Hover {
+                        Layout.preferredHeight: 22
+                        Layout.preferredWidth: lessTxt.implicitWidth + 16
+                        radius: 11
+                        base: Theme.fill
+                        onClicked: {
+                            const lv = grp.ListView.view, o = Object.assign({}, lv.open);
+                            o[grp.modelData.app] = !grp.expanded;
+                            lv.open = o;
+                        }
+                        Txt { id: lessTxt; anchors.centerIn: parent; text: grp.expanded ? "Show less" : "Show all"; font.pixelSize: 11; color: Theme.text2 }
+                    }
+                    IconButton {
+                        implicitWidth: 22; implicitHeight: 22
+                        icon: "close"; iconSize: 14; iconColor: Theme.muted
+                        onClicked: grp.modelData.entries.forEach(e => Notifs.dismiss(e))
+                    }
+                }
+                Item {
+                    width: parent.width
+                    height: top.height + (grp.expanded ? 0 : Math.min(grp.count - 1, 2) * 7)
+                    Repeater {   // the stack's edges peeking out under the newest card
+                        model: grp.expanded ? 0 : Math.min(grp.count - 1, 2)
+                        Rectangle {
+                            required property int index
+                            x: (index + 1) * 10; width: parent.width - x * 2
+                            y: top.height - 20 + (index + 1) * 7; height: 20
+                            z: -index - 1
+                            radius: 12
+                            color: Theme.m3 ? Theme.surface2 : Theme.glassTile
+                            opacity: 0.8 - index * 0.25
+                        }
+                    }
+                    NotifCard {
+                        id: top
+                        width: parent.width
+                        entry: grp.modelData.entries[0]
+                    }
+                }
+                Repeater {
+                    model: grp.expanded ? grp.modelData.entries.slice(1) : []
+                    NotifCard {
+                        required property var modelData
+                        entry: modelData
+                        width: grp.width
+                    }
+                }
             }
         }
     }
