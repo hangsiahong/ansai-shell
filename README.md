@@ -32,9 +32,11 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 - **Dock** on the left: Launchpad button, workspaces (niri stacks them vertically), pinned and running apps;
   auto-hides when a window would cover it. Right-click for windows, actions, pin, quit.
 - **Control Center:** Wi-Fi and Bluetooth with lists to connect, Focus, dark mode, night light, power mode,
-  brightness, volume, now playing.
+  brightness, volume, now playing, and screen recording (gpu-screen-recorder). The recording saves to
+  `~/Videos/Recordings`, and a red timer in the bar stops it; `qs -c ansai ipc call shell record` toggles it.
 - **Search** (Super+Space or Alt+Space): apps and windows; an app that is already open is switched to
-  (Shift+Enter starts a new one). `>cmd` runs in the terminal, `=1+2` calculates.
+  (Shift+Enter starts a new one). `>cmd` runs in the terminal, `=1+2` calculates,
+  `:heart` finds an emoji and types it into the app you were in.
 - **Launchpad** (the ⋮⋮⋮ button at the top of the dock): every app as a paged icon grid over the blurred desktop,
   sorted into tabs (Frequent: what you open, pin or have running; All; then Internet, Develop, Media, Office, System…;
   Tab/Shift+Tab switches) and a search field that covers every app. Swipe with two fingers, drag, scroll or ←/→ to
@@ -55,10 +57,11 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   accessibility or looks at them, then clicks and types. It asks before it changes anything, and **learns from
   its mistakes** so the next run takes fewer steps. Also: ask about part of the screen (Super+Shift+S), and translate /
   summarize / fix / find-by-description in the clipboard panel. See [AI](#ai).
-- **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
+- **Notifications** grouped by app (a stack you open with Show all), plus calendar, OSD, lock screen, polkit prompts and power menu.
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
   15 s "keep changes?"), graphics (supergfxctl: integrated / hybrid / dGPU), power and battery (profile, charge
-  limit, keyboard light), sound, about.
+  limit, keyboard light), sound (with a volume slider for each app that is playing), about. Appearance also picks the
+  app icon theme.
 - **Icons:** the ansai look uses Phosphor (MIT), thin SF Symbols-like line icons that switch to filled when selected. Android uses Material Symbols Rounded. Settings → Appearance → Icons overrides either.
 - **Fonts:** eight UI fonts with live previews in Settings → Appearance: Inter (ansai default), Google Sans Flex (Android default), Geist, Figtree, Nunito, Roboto, Noto Sans and Kantumruy Pro. They're bundled under the OFL, and Khmer text falls back to Kantumruy Pro.
 - **System theme:** GTK 3/4, libadwaita, Qt and Ghostty follow the shell's colours and font.
