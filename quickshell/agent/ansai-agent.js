@@ -19239,7 +19239,7 @@ async function saveNotes(l) {
   await mkdir(dirname(NOTES), { recursive: !0 }), await writeFile(NOTES, JSON.stringify(l.filter((n) => n.text.trim())));
 }
 var noteTitle = (n) => (n.text.trim().split(`
-`)[0] || "New note").slice(0, 60), findNote = (l, id) => id ? l.find((n) => n.id === id) : l[0], noteTools = [
+`)[0].replace(/^(#+|[-*+](\s+\[[ xX]\])?)\s+/, "").replace(/\*\*|`/g, "") || "New note").slice(0, 60), findNote = (l, id) => id ? l.find((n) => n.id === id) : l[0], noteTools = [
   {
     name: "quick_notes",
     title: "Read notes",
@@ -19260,8 +19260,8 @@ var noteTitle = (n) => (n.text.trim().split(`
   {
     name: "quick_note_add",
     title: "Add to notes",
-    description: 'Write into Quick Note: a new note (default), or add text to the end of a note (to: a note id, or "latest").',
-    parameters: obj2({ text: S("What to write. First line is the note's title for a new note."), to: S('Leave out for a new note; a note id or "latest" to append') }, ["text"]),
+    description: 'Write into Quick Note: a new note (default), or add text to the end of a note (to: a note id, or "latest"). Notes show Markdown formatted, so make them easy to read: start a new note with "# Title", use "## " sections, "- " bullets, "- [ ] " to-dos (the user ticks them), **bold** for key words, `code` for commands, links as [text](url); short lines, no tables or HTML.',
+    parameters: obj2({ text: S('Markdown to write. For a new note the first line ("# Title") is its title.'), to: S('Leave out for a new note; a note id or "latest" to append') }, ["text"]),
     async run({ text: t, to }) {
       let l = await loadNotes();
       if (to) {
@@ -19280,7 +19280,7 @@ var noteTitle = (n) => (n.text.trim().split(`
     name: "quick_note_change",
     title: "Change a note",
     ask: !0,
-    description: "Replace a note's whole text, or delete it (text empty).",
+    description: "Replace a note's whole text (Markdown, same style as quick_note_add), or delete it (text empty).",
     parameters: obj2({ id: S("Note id"), text: S("The new full text; empty deletes the note") }, ["id", "text"]),
     async run({ id, text: t }) {
       let l = await loadNotes(), n = findNote(l, id);

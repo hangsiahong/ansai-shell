@@ -40,7 +40,8 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   Tab/Shift+Tab switches) and a search field that covers every app. Swipe with two fingers, drag, scroll or ←/→ to
   flip pages, Enter opens the first match, Esc or a click on empty space closes.
 - **Quick Note** (Alt+N): a notes panel that opens on your latest note and saves as you type
-  (`~/.local/share/ansai-shell/notes.json`). Ctrl+N new note, Esc closes.
+  (`~/.local/share/ansai-shell/notes.json`). Notes are Markdown, shown formatted (headings, bold, lists, links, code):
+  click a line to edit there, click ☐ to tick a to-do, just type to add a line. Ctrl+N new note, Esc stops editing, then closes.
   Ask Ansai about the open note from the field at its bottom (summarize, fix, translate, add a to-do) and add the answer
   to the note or replace it. Ask Ansai can also write notes itself ("add to my quick note: …").
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
