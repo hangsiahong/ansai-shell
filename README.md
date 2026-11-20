@@ -94,6 +94,7 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+E / Super+B | Files / browser |
 | Super+Shift+C (or Super+Shift+V, Alt+Shift+C) | Clipboard history: type to filter, Enter copies, Delete removes |
 | Alt+N | Quick Note |
+| Alt+G / Super+G | Go to an empty workspace (with Shift: take the window there) |
 | Super+I / Alt+A | Ask Ansai sidebar |
 | Bottom edge (hover) | Quick Ask field |
 | Dock ⋮⋮⋮ | Launchpad (two-finger swipe / ←→ pages, Tab switches category) |

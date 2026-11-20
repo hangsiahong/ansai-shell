@@ -280,6 +280,11 @@ binds {
     Mod+Shift+7 { move-column-to-workspace 7; }
     Mod+Shift+8 { move-column-to-workspace 8; }
     Mod+Shift+9 { move-column-to-workspace 9; }
+    // niri keeps one empty workspace last on each screen; a too-high number lands there.
+    Mod+G       hotkey-overlay-title="Go to an empty workspace" { focus-workspace 255; }
+    Alt+G       hotkey-overlay-title=null { focus-workspace 255; }
+    Mod+Shift+G hotkey-overlay-title="Move the window to an empty workspace" { move-column-to-workspace 255; }
+    Alt+Shift+G hotkey-overlay-title=null { move-column-to-workspace 255; }
     Mod+Page_Down { focus-workspace-down; }
     Mod+Page_Up   { focus-workspace-up; }
 
