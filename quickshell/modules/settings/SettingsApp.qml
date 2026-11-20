@@ -27,6 +27,7 @@ FloatingWindow {
         { id: "power", l: "Power & Battery", icon: "battery_charging_full", sub: "Profile, fans, charge limit, keyboard", c: "#34c759" },
         { id: "sound", l: "Sound", icon: "volume_up", sub: "Output and input devices", c: "#ff375f" },
         { id: "notifications", l: "Notifications", icon: "notifications", sub: "Do Not Disturb, schedule, apps", c: "#ff3b30" },
+        { id: "defaults", l: "Default Apps", icon: "apps", sub: "Browser, files, terminal, viewers", c: "#5856d6" },
         { id: "ai", l: "AI", icon: "auto_awesome", sub: "KOOMPI AI: model, key, languages", c: "#5e5ce6" },
         { id: "about", l: "About", icon: "info", sub: "This device, advanced", c: "#8e8e93" }
     ]

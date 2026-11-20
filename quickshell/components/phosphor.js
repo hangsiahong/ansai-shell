@@ -3,6 +3,14 @@
 // ansai look: Material Symbols names -> Phosphor 2.1 (MIT) [regular, fill] codepoints, an SF Symbols-like set.
 // Names not listed here keep the Material glyph. Built from @phosphor-icons/web selection.json.
 var map = {
+    "public": [0xe288, 0xe288],
+    "mail": [0xe218, 0xe218],
+    "folder": [0xe25a, 0xe25a],
+    "description": [0xe23a, 0xe23a],
+    "picture_as_pdf": [0xe702, 0xe702],
+    "image": [0xe2ca, 0xe2ca],
+    "movie": [0xe792, 0xe792],
+    "edit_note": [0xe34c, 0xe34c],
     "add": [0xe3d4, 0xe3d4],
     "stylus": [0xe3aa, 0xe3aa],
     "ink_highlighter": [0xec76, 0xec76],

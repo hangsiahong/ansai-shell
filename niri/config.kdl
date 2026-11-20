@@ -212,8 +212,8 @@ binds {
     Alt+Shift+S     hotkey-overlay-title=null { spawn "qs" "-c" "ansai" "ipc" "call" "ai" "screenshot"; }
 
     // Apps
-    Mod+Return hotkey-overlay-title="Terminal" { spawn "ghostty"; }
-    Mod+T      { spawn "ghostty"; }
+    Mod+Return hotkey-overlay-title="Terminal" { spawn-sh r#"exec "$(jq -r '.terminal // "ghostty"' ~/.config/ansai-shell/settings.json 2>/dev/null || echo ghostty)""#; }
+    Mod+T      { spawn-sh r#"exec "$(jq -r '.terminal // "ghostty"' ~/.config/ansai-shell/settings.json 2>/dev/null || echo ghostty)""#; }
     Mod+E      hotkey-overlay-title="Files" { spawn "nautilus" "--new-window"; }
     Mod+B      hotkey-overlay-title="Browser" { spawn "xdg-open" "https://"; }
 

@@ -18,7 +18,7 @@ Item {
     signal clicked
 
     Layout.fillWidth: true
-    implicitHeight: Math.max(Theme.m3 ? 64 : 50, head.implicitHeight + 22) + (bottom.children.length ? bottom.implicitHeight + 14 : 0)
+    implicitHeight: Math.max(Theme.m3 ? 64 : 50, head.implicitHeight + 22) + (bottom.visibleChildren.length ? bottom.implicitHeight + 14 : 0)
     opacity: dim ? 0.45 : 1
 
     Rectangle {   // hairline between rows (ansai only, inset past the icon)
