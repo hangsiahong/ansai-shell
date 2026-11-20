@@ -27,12 +27,29 @@ Sheet {
         printErrors: false
         atomicWrites: true
         blockLoading: true
-        onLoaded: { try { root.notes = JSON.parse(text()); } catch (e) { root.notes = []; } }
+        watchChanges: true   // Ask Ansai's quick_note tools write the same file
+        onFileChanged: reload()
+        onLoaded: root.merge(text())
+    }
+    property string lastSaved: ""
+    // Take in notes changed outside the panel, keeping an unsaved empty note and anything typed but not yet saved.
+    function merge(t: string): void {
+        if (t === lastSaved) return;
+        let l = [];
+        try { l = JSON.parse(t || "[]"); } catch (e) { return; }
+        const mine = note;
+        if (saver.running && mine) l = [mine, ...l.filter(n => n.id !== mine.id)];
+        else if (mine && !mine.text.trim() && !l.some(n => n.id === mine.id)) l = [mine, ...l];
+        notes = l;
+        const now = notes.find(n => n.id === cur);
+        if (!now && notes.length) open(notes[0].id);
+        else if (now && now.text !== editor.text) { const c = editor.cursorPosition; editor.text = now.text; editor.cursorPosition = Math.min(c, editor.text.length); }
     }
     Timer { id: saver; interval: 400; onTriggered: root.persist() }
     function persist(): void {
         Quickshell.execDetached(["mkdir", "-p", root.file.slice(0, root.file.lastIndexOf("/"))]);
-        store.setText(JSON.stringify(notes.filter(n => n.text.trim())));
+        lastSaved = JSON.stringify(notes.filter(n => n.text.trim()));
+        store.setText(lastSaved);
     }
 
     onShownChanged: {
@@ -47,6 +64,43 @@ Sheet {
             persist();
         }
     }
+
+    // ---- Ask Ansai inside the note
+    property string askA: ""
+    property bool askBusy: false
+    property bool askErr: false
+    property var askProc: null
+    property var askLast: null   // previous question and answer, so follow-ups work
+    function askNote(q: string): void {
+        q = q.trim();
+        if (!q || askBusy) return;
+        if (!AI.hasKey) { askA = "Add your KOOMPI AI key in Settings → AI first."; askErr = true; return; }
+        askIn.text = "";
+        askA = ""; askErr = false; askBusy = true;
+        const id = cur;
+        const msgs = [{ role: "system", content: `You help with a note in the user's Quick Note. Today is ${Qt.formatDate(new Date(), "dddd d MMMM yyyy")}.
+When asked to write, rewrite, fix, summarize, translate, continue or turn it into a list, reply with only the text to put in the note:
+no preamble, no quotes, plain text or simple markdown lists. For questions about the note, answer briefly. Match the note's language
+unless asked to translate.\n\nThe note:\n<<<\n${editor.text}\n>>>` }];
+        if (askLast) msgs.push({ role: "user", content: askLast.q }, { role: "assistant", content: askLast.a });
+        msgs.push({ role: "user", content: q });
+        askProc = AI.ask(msgs, d => { if (cur === id) askA += d; }, (full, err) => {
+            askBusy = false; askProc = null;
+            if (cur !== id) return;
+            if (err) { askA = err; askErr = true; return; }
+            askA = (full ?? askA).trim();
+            askLast = { q: q, a: askA };
+        });
+    }
+    function useAnswer(replace: bool): void {
+        const t = askA.trim();
+        if (!t) return;
+        editor.text = replace ? t : editor.text.replace(/\s*$/, "") + (editor.text.trim() ? "\n\n" : "") + t;
+        editor.cursorPosition = editor.text.length;
+        askA = ""; askLast = null;
+        editor.forceActiveFocus();
+    }
+    onCurChanged: { if (askProc) askProc.stop(); askA = ""; askBusy = false; askLast = null; }
 
     function open(id: string): void {
         cur = id;
@@ -140,7 +194,7 @@ Sheet {
             }
             Flickable {
                 id: flick
-                anchors { top: stamp.bottom; topMargin: 10; left: parent.left; leftMargin: 18; right: parent.right; rightMargin: 14; bottom: parent.bottom; bottomMargin: 8 }
+                anchors { top: stamp.bottom; topMargin: 10; left: parent.left; leftMargin: 18; right: parent.right; rightMargin: 14; bottom: askBox.top; bottomMargin: 8 }
                 contentHeight: editor.contentHeight
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
@@ -171,6 +225,86 @@ Sheet {
                         text: "Write something…"
                         color: Theme.faint
                         font.pixelSize: 15
+                    }
+                }
+            }
+
+            // Ask Ansai about this note: the answer can go into the note or replace it.
+            Column {
+                id: askBox
+                anchors { left: parent.left; leftMargin: 10; right: parent.right; rightMargin: 6; bottom: parent.bottom; bottomMargin: 4 }
+                spacing: 6
+                Rectangle {
+                    visible: root.askA !== "" || root.askBusy
+                    width: parent.width
+                    height: Math.min(170, ans.contentHeight + 20) + (ansBtns.visible ? ansBtns.height + 8 : 0)
+                    radius: 14
+                    color: Theme.m3 ? Theme.surface3 : Theme.fill2
+                    Flickable {
+                        id: ansFlick
+                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 10 }
+                        height: Math.min(170, ans.contentHeight + 20) - 20
+                        contentHeight: ans.contentHeight
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        onContentHeightChanged: if (root.askBusy) contentY = Math.max(0, contentHeight - height)
+                        TextEdit {
+                            id: ans
+                            width: ansFlick.width
+                            readOnly: true
+                            selectByMouse: true
+                            wrapMode: TextEdit.Wrap
+                            textFormat: TextEdit.MarkdownText
+                            text: root.askA || "…"
+                            color: root.askErr ? Theme.danger : Theme.text
+                            font.family: Theme.font
+                            font.pixelSize: 13
+                        }
+                    }
+                    Row {
+                        id: ansBtns
+                        anchors { right: parent.right; bottom: parent.bottom; margins: 6 }
+                        spacing: 4
+                        visible: !root.askBusy && !root.askErr && root.askA !== ""
+                        Repeater {
+                            model: [
+                                { l: "Add to note", f: () => root.useAnswer(false) },
+                                { l: "Replace note", f: () => root.useAnswer(true) },
+                                { l: "Dismiss", f: () => { root.askA = ""; } }
+                            ]
+                            delegate: Hover {
+                                required property var modelData
+                                width: bl.implicitWidth + 20; height: 26
+                                radius: 13
+                                base: Theme.m3 ? Theme.tonal : Theme.fill
+                                onClicked: modelData.f()
+                                Txt { id: bl; anchors.centerIn: parent; text: parent.modelData.l; font.pixelSize: 12 }
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    width: parent.width
+                    height: 36
+                    radius: 18
+                    color: Theme.m3 ? Theme.surface3 : Theme.fill2
+                    Icon { id: sp; x: 12; anchors.verticalCenter: parent.verticalCenter; name: "auto_awesome"; size: 17; color: Theme.accent }
+                    TextInput {
+                        id: askIn
+                        anchors { left: sp.right; leftMargin: 8; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
+                        color: Theme.text
+                        font.family: Theme.font
+                        font.pixelSize: 13
+                        clip: true
+                        onAccepted: root.askNote(text)
+                        Keys.onEscapePressed: { if (text) text = ""; else editor.forceActiveFocus(); }
+                        Txt {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: !askIn.text
+                            text: root.askBusy ? "Thinking…" : "Ask Ansai about this note (summarize, fix, translate, add a to-do…)"
+                            color: Theme.faint
+                            font.pixelSize: 13
+                        }
                     }
                 }
             }
