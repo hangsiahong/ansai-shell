@@ -268,6 +268,10 @@ Sheet {
                 onClicked: { Shell.close(); Recorder.toggle(); }
             }
             IconButton {
+                icon: "colorize"
+                onClicked: { Shell.close(); ColorPick.pick(); }
+            }
+            IconButton {
                 icon: "tune"
                 onClicked: Shell.openSettings("")
             }
@@ -466,6 +470,7 @@ Sheet {
                 model: [
                     { icon: "screenshot_region", run: () => { Shell.close(); Niri.action("screenshot"); } },
                     { icon: Recorder.recording ? "stop_circle" : "screen_record", run: () => { Shell.close(); Recorder.toggle(); } },
+                    { icon: "colorize", run: () => { Shell.close(); ColorPick.pick(); } },
                     { icon: "auto_awesome", run: () => { Shell.open = "ai"; } },
                     { icon: "android", run: () => { Settings.style = "material"; Settings.font = ""; } },
                     { icon: "lock", run: () => { Shell.close(); Lock.lock(); } },

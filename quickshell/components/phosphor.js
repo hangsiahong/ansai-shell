@@ -165,5 +165,7 @@ var map = {
     "stop_circle": [0xe46e, 0xe46e],
     "graphic_eq": [0xebbc, 0xebbc],
     "mood": [0xe436, 0xe436],
-    "apps_outage": [0xe5da, 0xe5da]
+    "apps_outage": [0xe5da, 0xe5da],
+    "colorize": [0xe568, 0xe568],
+    "partly_cloudy_day": [0xe540, 0xe540]
 };
