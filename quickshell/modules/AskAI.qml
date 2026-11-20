@@ -406,12 +406,13 @@ Sheet {
                                     selectByMouse: true
                                     wrapMode: TextEdit.Wrap
                                     textFormat: msg.mine ? TextEdit.PlainText : TextEdit.MarkdownText
-                                    text: msg.mine ? msg.modelData.content : root.tight(msg.modelData.content) || (AI.busy && msg.last && !msg.tools.length ? "…" : "")
+                                    text: msg.mine ? msg.modelData.content : root.tight(msg.modelData.content)
                                     color: msg.modelData.error ? Theme.danger : msg.mine ? (Theme.m3 ? Theme.accentSoftInk : "#ffffff") : Theme.text
                                     selectionColor: Theme.accent
                                     selectedTextColor: Theme.accentInk
                                     font.family: Theme.font
                                     font.pixelSize: 14
+                                    TypingDots { visible: !msg.mine && !body.text && AI.busy && msg.last && !msg.tools.length; y: (body.contentHeight - height) / 2; color: body.color }
                                     TextMetrics { id: metrics; font: body.font; text: msg.modelData.content.split("\n").reduce((a, b) => a.length > b.length ? a : b, "") }
                                 }
                             }

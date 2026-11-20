@@ -318,10 +318,11 @@ the clipboard, "what I copied" or pasting, and put that content into your answer
                             selectByMouse: true
                             wrapMode: TextEdit.Wrap
                             textFormat: TextEdit.MarkdownText
-                            text: root.askA || "…"
+                            text: root.askA || ""
                             color: root.askErr ? Theme.danger : Theme.text
                             font.family: Theme.font
                             font.pixelSize: 13
+                            TypingDots { visible: !ans.text; y: (ans.contentHeight - height) / 2; size: 5; color: ans.color }
                         }
                     }
                     Row {

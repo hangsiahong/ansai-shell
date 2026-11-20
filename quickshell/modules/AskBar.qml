@@ -109,12 +109,13 @@ PanelWindow {
                         selectByMouse: true
                         wrapMode: TextEdit.Wrap
                         textFormat: TextEdit.MarkdownText
-                        text: root.answer?.content || (root.waiting ? "" : AI.busy ? "…" : "")
+                        text: root.answer?.content || ""
                         color: root.answer?.error ? Theme.danger : Theme.text
                         selectionColor: Theme.accent
                         selectedTextColor: Theme.accentInk
                         font.family: Theme.font
                         font.pixelSize: 14
+                        TypingDots { visible: !txt.text && !root.waiting && AI.busy; y: (txt.contentHeight - height) / 2; color: txt.color }
                     }
                 }
                 Row {

@@ -330,12 +330,13 @@ Sheet {
                     readOnly: true
                     selectByMouse: true
                     wrapMode: TextEdit.Wrap
-                    text: root.resultErr || root.resultText || "…"
+                    text: root.resultErr || root.resultText 
                     color: root.resultErr ? Theme.danger : Theme.text
                     selectionColor: Theme.accent
                     selectedTextColor: Theme.accentInk
                     font.family: Theme.font
                     font.pixelSize: 15
+                    TypingDots { visible: !res.text; y: (res.contentHeight - height) / 2; color: res.color }
                 }
             }
         }
