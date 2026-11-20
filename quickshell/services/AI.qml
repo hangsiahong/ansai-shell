@@ -156,6 +156,7 @@ How to answer:
     readonly property string dataDir: (Quickshell.env("XDG_DATA_HOME") || Quickshell.env("HOME") + "/.local/share") + "/ansai-shell"
     property var chats: []         // [{ id, title, updated, messages }]
     property string chatId: ""
+    property string chatTitle: ""  // the AI's name for the open chat; "" until named (the first prompt stands in)
     property bool chatsRead: false
     // Read the saved chats before anything writes them, so a save can't replace history it hasn't seen.
     function readChats(): void {
@@ -173,15 +174,33 @@ How to answer:
         if (!chatsRead) return;
         if (!chatId) chatId = Date.now().toString(36);
         const first = chat.find(m => m.role === "user");
-        const title = (first?.content || "Image").replace(/\s+/g, " ").trim().slice(0, 90);
-        chats = [{ id: chatId, title: title, updated: Date.now(), messages: chat }, ...chats.filter(c => c.id !== chatId)].slice(0, 200);
+        const title = chatTitle || (first?.content || "Image").replace(/\s+/g, " ").trim().slice(0, 90);
+        chats = [{ id: chatId, title: title, named: !!chatTitle, updated: Date.now(), messages: chat }, ...chats.filter(c => c.id !== chatId)].slice(0, 200);
         histFile.setText(JSON.stringify(chats));
+    }
+    // After the first answer, a short title from the AI replaces the prompt in the chat list.
+    function nameChat(): void {
+        if (chatTitle) return;
+        const id = chatId, u = chat.find(m => m.role === "user"), a = chat.find(m => m.role === "assistant" && m.content && !m.error);
+        if (!u) return;
+        task(`Name this chat for a chat list: 2 to 5 words, in the language the user wrote in, like "Facebook post search" or "Sabay Tek owner".
+No quotes, no period, no emoji. Reply with only the name.`,
+            `User: ${(u.content || "(an image)").slice(0, 600)}\n\nAssistant: ${(a?.content ?? "").slice(0, 400)}`, (full, err) => {
+                const t = (full ?? "").trim().split("\n")[0].replace(/^["'“”*#\s]+|["'“”*.\s]+$/g, "").slice(0, 60);
+                if (err || !t) return;
+                const c = chats.find(x => x.id === id);
+                if (!c) return;
+                chats = chats.map(x => x.id === id ? Object.assign({}, x, { title: t, named: true }) : x);
+                histFile.setText(JSON.stringify(chats));
+                if (chatId === id) chatTitle = t;
+            });
     }
     function openChat(id: string): void {
         const c = chats.find(x => x.id === id);
         if (!c || busy) return;
         chat = c.messages;
         chatId = id;
+        chatTitle = c.named ? c.title : "";
         attachment = "";
     }
     function deleteChat(id: string): void {
@@ -288,7 +307,7 @@ Tools from the user's connected services (${names}):
             busy = false;
             current = null;
             save();
-            if (!err) audit(user.content, chat[i]);
+            if (!err) { audit(user.content, chat[i]); nameChat(); }
         }, {
             mcp: mcpLive,
             tools: true,
@@ -319,7 +338,7 @@ Tools from the user's connected services (${names}):
         current.write(yes ? "y\n" : "n\n");
     }
     function stop(): void { if (current) current.stop(); }
-    function reset(): void { stop(); gen++; busy = false; current = null; chat = []; chatId = ""; attachment = ""; }
+    function reset(): void { stop(); gen++; busy = false; current = null; chat = []; chatId = ""; chatTitle = ""; attachment = ""; }
     // Open the sidebar with something to ask about.
     function askAbout(image: string, text: string): void {
         if (image) attachment = image;
