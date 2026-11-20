@@ -35,7 +35,7 @@ How to answer:
     // opts.onEvent(ev) gets tool / tool_done events.
     function ask(messages, onDelta, onDone, opts) {
         const p = req.createObject(root, {
-            body: JSON.stringify({ model: Settings.aiModel, messages: messages, mcp: opts?.mcp ?? [], tools: !!opts?.tools }),
+            body: JSON.stringify({ model: Settings.aiModel, messages: messages, mcp: opts?.mcp ?? [], tools: !!opts?.tools, learn: !!opts?.tools && Settings.aiLearn }),
             onDelta: onDelta ?? null,
             onDone: onDone ?? null,
             onEvent: opts?.onEvent ?? null
@@ -166,6 +166,43 @@ How to answer:
         blockLoading: true   // text() is the file's content as soon as it's asked for
     }
 
+    // ---- lessons: one line each in ai-lessons.md, written by the agent's remember_lesson tool and by audit() below,
+    // read into every desktop conversation's instructions. Settings → AI lists and deletes them.
+    property var lessons: []
+    FileView {
+        id: lessonsFile
+        path: root.dataDir + "/ai-lessons.md"
+        printErrors: false
+        atomicWrites: true
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: root.lessons = text().split("\n").filter(l => l.startsWith("- ")).map(l => l.slice(2).trim()).filter(Boolean)
+        onLoadFailed: root.lessons = []
+    }
+    function setLessons(l): void {
+        lessons = l;
+        lessonsFile.setText(l.length ? "# Ask Ansai lessons (one per line; edit or delete freely)\n" + l.map(x => "- " + x).join("\n") + "\n" : "");
+    }
+    // After a long or bumpy desktop task, a quick review writes down what would have made it shorter.
+    function audit(request: string, msg): void {
+        const tools = msg.tools ?? [];
+        if (!Settings.aiLearn || !(tools.length >= 6 || tools.some(t => t.status === "fail"))) return;
+        const trace = tools.map((t, k) => `${k + 1}. ${t.name} ${JSON.stringify(t.args ?? {}).slice(0, 200)} → ${t.status}: ${(t.preview ?? "").replace(/Screen content below[^.]*\.[^.]*\.[^.]*\.[^.]*\./, "").replace(/\s+/g, " ").slice(0, 160)}`).join("\n");
+        task(`You review how a desktop AI assistant did a task, so it does better next time. It controls apps with tools
+(open URLs, launch apps, desktop_read/desktop_act on the accessibility tree, desktop_see screenshots, desktop_input mouse and keyboard).
+Find the biggest avoidable waste or mistake and write ONE lesson that would prevent it: one line, under 30 words,
+general enough to reuse, concrete (name the site, app, URL pattern or tool), no private data (names, messages, numbers).
+Example: "YouTube: open https://www.youtube.com/results?search_query=<words> instead of typing into the search box."
+Existing lessons (don't repeat or contradict them):
+${lessons.map(l => "- " + l).join("\n") || "(none)"}
+If the task went fine or nothing reusable can be learned, reply exactly NONE. Otherwise reply with only the lesson line.`,
+            `Request: ${request}\n\nSteps:\n${trace}\n\nFinal answer: ${(msg.content ?? "").slice(0, 400)}`, (full, err) => {
+                const l = (full ?? "").trim().replace(/^[-*•]\s*/, "").replace(/^"|"$/g, "").split("\n")[0].trim();
+                if (err || !l || /^NONE\b/i.test(l) || l.length > 300 || lessons.includes(l)) return;
+                setLessons([...lessons, l].slice(-60));
+            });
+    }
+
     function send(text: string): void {
         text = text.trim();
         if ((!text && !attachment) || busy) return;
@@ -183,7 +220,16 @@ start apps, list/focus/arrange windows (niri), read/copy the clipboard, read web
 - Anything that changes something waits for the user's approval in the app; if declined, don't retry it.
 - To do something in an app (send a message, fill in a form): open or focus it, read or look, act, then check the result.
   Before sending, posting, paying or deleting, make sure the right person, chat or amount is on screen; if you can't, stop and say why.
-- After acting, say in one line what you did and the result.` + (names ? `
+- Use the fewest steps. For websites, open a URL that already does the job instead of clicking and typing in the page
+  (search results: https://www.youtube.com/results?search_query=…, https://www.google.com/search?q=…, https://www.google.com/maps/search/…).
+- In apps and browsers prefer desktop_read with find, then desktop_act on the element: exact and cheap. Use desktop_see and
+  desktop_input only when the tree doesn't show what you need. Pages need a moment after opening: pass wait to desktop_read/desktop_see.
+- After typing something that matters, read it back before pressing Enter or Send.
+- When a step failed and you found what works, or the user corrects you, save it with remember_lesson (one short general line).
+- After acting, say in one line what you did and the result.` + (Settings.aiLearn && lessons.length ? `
+
+Lessons from earlier tasks (follow them):
+${lessons.map(l => "- " + l).join("\n")}` : "") + (names ? `
 
 Tools from the user's connected services (${names}):
 - Use them for anything about the user's account, services, usage, billing or data there. Don't guess what a tool would tell you.
@@ -207,6 +253,7 @@ Tools from the user's connected services (${names}):
             busy = false;
             current = null;
             save();
+            if (!err) audit(user.content, chat[i]);
         }, {
             mcp: mcpLive,
             tools: true,
@@ -311,6 +358,12 @@ Tools from the user's connected services (${names}):
         target: "ai"
         function toggle(): void { Shell.toggle("ai"); }
         function bar(): void { Shell.close(); root.bar = !root.bar; }
+        function auditChat(id: string): void {
+            root.readChats();
+            const c = root.chats.find(x => x.id === id);
+            const m = c?.messages ?? [];
+            for (let k = 1; k < m.length; k++) if (m[k].role === "assistant" && m[k - 1].role === "user") root.audit(m[k - 1].content, m[k]);
+        }
         function aside(): void {
             if (!root.busy) return;
             if (Shell.open === "ai") root.reopen = "ai";

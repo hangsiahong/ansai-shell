@@ -46,6 +46,8 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   Chromium browsers (Brave, Chrome) only show their pages to it when started with `ACCESSIBILITY_ENABLED=1` in the
   environment and `--force-renderer-accessibility` (e.g. `Exec=env ACCESSIBILITY_ENABLED=1 …` in a copy of the app's
   .desktop file in `~/.local/share/applications`); otherwise it falls back to screenshots and the mouse.
+  It learns: after a long or bumpy task a quick review saves one lesson ("YouTube: open the search-results URL
+  instead of typing") to `~/.local/share/ansai-shell/ai-lessons.md`, used next time; Settings → AI lists and deletes them.
   (Super+Shift+S or Alt+Shift+S), and translate / summarize / fix / find-by-description in the clipboard panel.
 - **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a

@@ -146,6 +146,33 @@ ColumnLayout {
         }
     }
 
+    SGroup {
+        title: "Learning"
+        note: "After a task that took many steps or hit a snag, Ask Ansai writes down one short lesson and follows it next time. Lessons stay on this computer (" + AI.dataDir.replace(Quickshell.env("HOME"), "~") + "/ai-lessons.md); delete any that are wrong."
+        SRow {
+            first: true
+            icon: "school"
+            title: "Learn from mistakes"
+            sub: Settings.aiLearn ? AI.lessons.length + (AI.lessons.length === 1 ? " lesson" : " lessons") + " so far" : "Off: no new lessons, and saved ones aren't used"
+            Switch { checked: Settings.aiLearn; onToggled: Settings.aiLearn = !Settings.aiLearn }
+        }
+        Repeater {
+            model: AI.lessons
+            SRow {
+                id: lr
+                required property string modelData
+                required property int index
+                icon: "lightbulb"
+                title: ""
+                sub: modelData
+                IconButton {
+                    icon: "delete"; iconSize: 18; iconColor: Theme.danger
+                    onClicked: AI.setLessons(AI.lessons.filter((_, i) => i !== lr.index))
+                }
+            }
+        }
+    }
+
     function setServer(i, v) {
         const l = AI.mcpServers.map(s => Object.assign({}, s));
         Object.assign(l[i], v);

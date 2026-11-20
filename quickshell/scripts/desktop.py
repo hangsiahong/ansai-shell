@@ -637,6 +637,43 @@ WTYPE_KEYS = {"enter": "Return", "return": "Return", "tab": "Tab", "escape": "Es
 WTYPE_MODS = {"ctrl": "ctrl", "control": "ctrl", "shift": "shift", "alt": "alt", "super": "logo", "meta": "logo", "win": "logo"}
 
 
+XDO_KEYS = {"enter": "Return", "return": "Return", "tab": "Tab", "escape": "Escape", "esc": "Escape", "backspace": "BackSpace",
+            "delete": "Delete", "home": "Home", "end": "End", "pageup": "Prior", "pagedown": "Next", "left": "Left", "up": "Up",
+            "right": "Right", "down": "Down", "space": "space", "insert": "Insert", "-": "minus",
+            **{f"f{i}": f"F{i}" for i in range(1, 13)}}
+XDO_MODS = {"ctrl": "ctrl", "control": "ctrl", "shift": "shift", "alt": "alt", "super": "super", "meta": "super", "win": "super"}
+
+
+def x11_focused():
+    """True when the focused window is an X11 app (via xwayland-satellite). wtype's virtual keyboard sends
+    keycodes for its own uploaded keymap, which XWayland reads with the real layout ("abc" arrives as "123"),
+    so X11 apps get xdotool instead."""
+    if not os.environ.get("DISPLAY"):
+        return False
+    try:
+        win = json.loads(run_tool(["niri", "msg", "-j", "focused-window"], env=niri_env()) or "null")
+        xpid = subprocess.run(["xdotool", "getactivewindow", "getwindowpid"], capture_output=True, text=True, timeout=5).stdout.strip()
+    except (Fail, OSError, ValueError, subprocess.SubprocessError):
+        return False
+    if not win:
+        return False
+    try:  # xwayland-satellite hosts X11 windows, so niri reports its pid for them
+        if open(f"/proc/{win.get('pid')}/comm").read().strip().startswith("xwayland"):
+            return True
+    except OSError:
+        pass
+    return xpid.isdigit() and int(xpid) == win.get("pid")
+
+
+def xdotool(args):
+    if locked():
+        raise Fail(LOCKED_MSG)
+    r = subprocess.run(["xdotool", *args], capture_output=True, text=True, timeout=60)
+    if r.returncode:
+        raise Fail(f"xdotool failed: {(r.stderr or r.stdout).strip()[:200]}")
+    time.sleep(0.2)
+
+
 def wtype(args):
     if locked():
         raise Fail(LOCKED_MSG)
@@ -759,6 +796,9 @@ def cmd_type(a):
     if len(text) > 2000:
         raise Fail("type at most 2000 characters at a time")
     if BACKEND == "niri":
+        if x11_focused():
+            xdotool(["type", "--delay", "12", "--", text])
+            return {"did": f"typed {len(text)} characters", "active": active_window()}
         # wtype uploads a keymap holding whatever characters it needs, so any script types as keys.
         wtype(["-d", "8", "--", text])
         return {"did": f"typed {len(text)} characters", "active": active_window()}
@@ -797,6 +837,13 @@ def cmd_key(a):
         raise Fail(f"only the last of {a['keys']!r} can be a non-modifier key (modifiers: ctrl, shift, alt, super)")
     key = keysym_for_name(MODS.get(combo[-1].lower(), combo[-1]))
     times = max(1, min(int(a.get("times", 1)), 50))
+    if BACKEND == "niri" and x11_focused():
+        last = combo[-1].lower()
+        name = XDO_KEYS.get(last) or XDO_MODS.get(last) or (combo[-1] if len(combo[-1]) == 1 else None)
+        if not name:
+            raise Fail(f"unknown key {combo[-1]!r} (use names like enter, tab, escape, f5, left, or a single character)")
+        xdotool(["key", "--repeat", str(times), "--delay", "20", "+".join([XDO_MODS[p.lower()] for p in combo[:-1]] + [name])])
+        return {"did": f"pressed {a['keys']}" + (f" ×{times}" if times > 1 else ""), "active": active_window()}
     if BACKEND == "niri":
         mods_w = [WTYPE_MODS[p.lower()] for p in combo[:-1]]
         last = combo[-1].lower()

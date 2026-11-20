@@ -27,6 +27,7 @@ Singleton {
     property alias aiLang: adapter.aiLang
     property alias aiLayout: adapter.aiLayout
     property alias aiAllowAll: adapter.aiAllowAll
+    property alias aiLearn: adapter.aiLearn
     property alias mcpServers: adapter.mcpServers
 
     readonly property string dir: Quickshell.env("XDG_CONFIG_HOME") ? Quickshell.env("XDG_CONFIG_HOME") + "/ansai-shell" : Quickshell.env("HOME") + "/.config/ansai-shell"
@@ -59,6 +60,7 @@ Singleton {
             property bool dockMagnify: true
             property string aiModel: "koompi-luna"   // KOOMPI AI Gateway model (services/AI.qml)
             property var mcpServers: [{ name: "KOOMPI Cloud", url: "https://mcp.koompi.cloud", on: true }]   // MCP connectors for Ask Ansai
+            property bool aiLearn: true   // Ask Ansai keeps short lessons from its mistakes (ai-lessons.md) and uses them next time
             property bool aiAllowAll: false   // Ask Ansai runs connector actions without asking first
             property string aiLayout: "side"   // Ask Ansai: "side" panel on the right | "center" big, in the middle
             property string aiLang: "Khmer"   // the other language for Translate (English <-> this)
