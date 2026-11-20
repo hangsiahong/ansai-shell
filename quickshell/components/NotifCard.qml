@@ -39,13 +39,19 @@ Rectangle {
             if (def) def.invoke();
             if (root.popup) Notifs.hidePopup(root.entry);
         }
-        onContainsMouseChanged: hideTimer.running = !containsMouse && root.popup
+        onContainsMouseChanged: {
+            if (!root.popup) return;
+            if (containsMouse) hideTimer.stop();
+            else { hideTimer.interval = Math.min(root.timeout, 2500); hideTimer.restart(); }
+        }
     }
 
+    readonly property int timeout: n?.urgency === NotificationUrgency.Critical ? 0x7fffffff : (n?.expireTimeout > 0 ? n.expireTimeout : 5000)
+    // The toast stack's Repeater recreates cards whenever a popup comes or goes, so count from arrival, not creation.
     Timer {
         id: hideTimer
         running: root.popup
-        interval: root.n?.urgency === NotificationUrgency.Critical ? 0x7fffffff : (root.n?.expireTimeout > 0 ? root.n.expireTimeout : 5000)
+        interval: Math.max(300, root.timeout - (Date.now() - root.entry.time))
         onTriggered: Notifs.hidePopup(root.entry)
     }
 
