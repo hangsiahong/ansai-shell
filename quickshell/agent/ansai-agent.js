@@ -72883,7 +72883,7 @@ workspaces: ` + ws.map((w) => `${w.output}:${w.name || w.idx}${w.is_focused ? " 
         ls.length ? ls.join(`
 `) : find ? `Nothing in ${id} matches “${find}”.` : `${id} shows nothing in its accessibility tree; use desktop_see.`,
         r2.more ? `
-…and ${r2.more} more elements. Read a smaller part (an element id as window), or use find.` : ""
+…cut here, there is more. Read a smaller part (an element id as window), or use find.` : ""
       ].join(`
 `).trimEnd());
     }

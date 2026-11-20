@@ -45,6 +45,10 @@ class Fail(Exception):
     pass
 
 
+class Stop(Exception):
+    pass
+
+
 def dbus(dest, path, iface, method, args=None, reply=None, timeout=10000):
     try:
         r = bus.call_sync(dest, path, iface, method, args, GLib.VariantType(reply) if reply else None,
@@ -336,12 +340,18 @@ def cmd_read(a):
     limit = max(10, min(int(a.get("limit", 300)), 1500))
     depth = max(1, min(int(a.get("depth", 40)), 60))
     find = (a.get("find") or "").lower()
-    lines, seen, more = [], 0, 0
+    lines, seen, more, visited = [], 0, 0, 0
+    # Chromium's accessibility bridge can crash the browser when a busy page (Facebook, YouTube) is queried
+    # node by node while it changes, so bound the whole walk: nodes visited and seconds spent.
+    budget, deadline = max(limit * 4, 1500), time.monotonic() + 6
     # GTK 4 sets neither state on anything, so a missing one only means "disabled" where the window has it.
     tracks_enabled = bool({"enabled", "sensitive"} & node_states(root))
 
     def walk(n, path, d, indent):
-        nonlocal seen, more
+        nonlocal seen, more, visited
+        visited += 1
+        if visited > budget or time.monotonic() > deadline:
+            raise Stop
         try:
             st = node_states(n)
             if d > 0 and "showing" not in st:
@@ -357,7 +367,7 @@ def cmd_read(a):
             if shown:
                 if seen >= limit:
                     more += 1
-                    return
+                    raise Stop
                 seen += 1
                 flags = [f for f in ("focused", "checked", "selected", "expanded") if f in st]
                 if tracks_enabled and not {"enabled", "sensitive"} & st and role not in ("label", "text", "paragraph", "static"):
@@ -383,7 +393,10 @@ def cmd_read(a):
         except GLib.Error:
             return
 
-    walk(root, root_id, 0, 0)
+    try:
+        walk(root, root_id, 0, 0)
+    except Stop:
+        more = max(more, 1)
     return {"lines": lines, "more": more, "active": active_window()}
 
 

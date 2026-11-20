@@ -405,7 +405,7 @@ const desktop = [
             const r = await desk("read", { id, ...(find ? { find } : {}), ...(limit ? { limit: Math.trunc(limit) } : {}) });
             const ls = r.lines || [];
             return text([UNTRUSTED, activeLine(r.active), "", ls.length ? ls.join("\n") : find ? `Nothing in ${id} matches “${find}”.` : `${id} shows nothing in its accessibility tree; use desktop_see.`,
-                r.more ? `\n…and ${r.more} more elements. Read a smaller part (an element id as window), or use find.` : ""].join("\n").trimEnd());
+                r.more ? "\n…cut here, there is more. Read a smaller part (an element id as window), or use find." : ""].join("\n").trimEnd());
         }
     },
     {
