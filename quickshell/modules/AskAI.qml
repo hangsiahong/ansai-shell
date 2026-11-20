@@ -186,7 +186,7 @@ Sheet {
                         spacing: 0
                         Txt { text: "Ask Ansai"; font.pixelSize: 15; font.weight: Theme.strong }
                         Txt {
-                            text: Settings.aiModel + " · this computer" + (AI.mcpLive.length ? ", " + AI.mcpServers.filter(s => AI.mcpLive.includes(s.url)).map(s => s.name).join(", ") : "")
+                            text: AI.modelLabel + (AI.via && AI.provider && AI.accounts.filter(a => a.provider === AI.provider).length > 1 ? " (" + AI.via.label + ")" : "") + " · this computer" + (AI.mcpLive.length ? ", " + AI.mcpServers.filter(s => AI.mcpLive.includes(s.url)).map(s => s.name).join(", ") : "")
                             font.pixelSize: 11; color: Theme.muted
                         }
                     }
@@ -452,7 +452,7 @@ Sheet {
                         Icon { Layout.alignment: Qt.AlignHCenter; name: "auto_awesome"; size: 40; color: Theme.faint }
                         Txt {
                             Layout.alignment: Qt.AlignHCenter
-                            text: AI.hasKey ? "Ask anything" : "Add your KOOMPI AI key"
+                            text: AI.ready ? "Ask anything" : "Set up AI in Settings → AI"
                             font.pixelSize: 17; font.weight: Theme.strong
                         }
                         Txt {
@@ -460,12 +460,12 @@ Sheet {
                             Layout.bottomMargin: 10
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.WordWrap
-                            text: AI.hasKey ? "English or ខ្មែរ. Attach a screenshot or paste what you copied."
-                                            : "Settings → AI. Get one from the KOOMPI AI Gateway in KConsole."
+                            text: AI.ready ? "English or ខ្មែរ. Attach a screenshot or paste what you copied."
+                                            : "Sign in with ChatGPT, Claude, Copilot and more, or add a KOOMPI AI key."
                             font.pixelSize: 13; color: Theme.muted
                         }
                         Repeater {
-                            model: AI.hasKey ? [
+                            model: AI.ready ? [
                                 { i: "screenshot_region", t: "Ask about part of the screen", f: () => AI.screenshot() },
                                 { i: "translate", t: "Translate my clipboard", f: () => { input.text = "Translate this (English ↔ " + Settings.aiLang + "):\n\n"; paste.running = true; } },
                                 { i: "summarize", t: "Summarize my clipboard", f: () => { input.text = "Summarize this:\n\n"; paste.running = true; } },

@@ -10,7 +10,158 @@ ColumnLayout {
     spacing: 22
     property string test: ""      // result of the Test button
     property bool testing: false
-    Component.onCompleted: { AI.checkKey(); AI.refreshMcp(); }
+    property bool adding: false   // provider list open
+    property string prov: AI.provider    // provider whose models the Model group lists ("" = KOOMPI)
+    property string filter: ""
+    Component.onCompleted: { AI.checkKey(); AI.refreshMcp(); AI.refreshAccounts(); }
+    Component.onDestruction: if (AI.signin && AI.signin.step !== "busy" && AI.signin.step !== "url" && AI.signin.step !== "code") AI.cancelSignIn()
+
+    function when(ms) { return Qt.formatTime(new Date(ms), Settings.use24h ? "HH:mm" : "h:mm AP") + (new Date(ms).toDateString() === new Date().toDateString() ? "" : " " + Qt.formatDate(new Date(ms), "ddd")); }
+    function acctStatus(a) {
+        if (a.error) return a.error;
+        if (a.limitedUntil > Time.now) return "Hit its limit · resting until " + when(a.limitedUntil);
+        return (a.type === "oauth" ? "Subscription sign-in" : "API key") + (a.lastUsed ? " · last used " + when(a.lastUsed) : "");
+    }
+    // Providers to offer: subscriptions first, then API-key services, by name.
+    readonly property var offer: AI.providers.slice().sort((a, b) => ((b.id === "openai-codex") - (a.id === "openai-codex")) || (!!b.oauth?.sub - !!a.oauth?.sub) || a.name.localeCompare(b.name))
+
+    SGroup {
+        title: "Accounts"
+        note: "Sign in with a subscription (ChatGPT, Claude, Copilot…) or an API key. Add several accounts of the same service: when one hits its limit, Ask Ansai moves on to the next. Tokens stay on this computer (" + Settings.dir.replace(Quickshell.env("HOME"), "~") + "/ai-accounts.json), readable by you alone."
+        Repeater {
+            model: AI.accounts
+            SRow {
+                id: ar
+                required property var modelData
+                required property int index
+                first: index === 0
+                icon: modelData.error ? "warning" : modelData.limitedUntil > Time.now ? "hourglass_empty" : modelData.type === "oauth" ? "account_circle" : "key"
+                title: modelData.label
+                sub: AI.providerName(modelData.provider) + " · " + page.acctStatus(modelData)
+                Btn {
+                    visible: !!ar.modelData.error
+                    text: "Sign in again"
+                    onClicked: { AI.signOut(ar.modelData.id); AI.signIn(ar.modelData.provider, ar.modelData.type === "oauth" ? "oauth" : "api_key"); }
+                }
+                IconButton {
+                    icon: "logout"; iconSize: 18; iconColor: Theme.danger
+                    onClicked: {
+                        if (Settings.aiAccount === ar.modelData.id) Settings.aiAccount = "auto";
+                        AI.signOut(ar.modelData.id);
+                    }
+                }
+            }
+        }
+        // Sign-in in progress
+        SRow {
+            visible: !!AI.signin
+            first: !AI.accounts.length
+            icon: AI.signin?.step === "done" ? "check_circle" : AI.signin?.step === "error" ? "error" : "login"
+            title: AI.providerName(AI.signin?.provider ?? "")
+            sub: AI.signin?.step === "url" ? "Finish signing in in the browser page that opened"
+               : AI.signin?.step === "code" ? "Enter the code below on the page that opened"
+               : AI.signin?.prompt && AI.signin?.step === "prompt" ? AI.signin.prompt.message
+               : (AI.signin?.msg ?? "")
+            Btn {
+                visible: !!AI.signin?.url && (AI.signin?.step === "url" || AI.signin?.step === "code")
+                text: "Open page"
+                onClicked: Qt.openUrlExternally(AI.signin.url)
+            }
+            Btn {
+                text: AI.signin?.step === "done" || AI.signin?.step === "error" ? "Done" : "Cancel"
+                onClicked: AI.cancelSignIn()
+            }
+            below: Column {
+                width: parent.width
+                spacing: 8
+                Txt {
+                    visible: AI.signin?.step === "code"
+                    text: AI.signin?.code ?? ""
+                    font.pixelSize: 26
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 3
+                    font.features: { "tnum": 1 }
+                }
+                Chips {
+                    visible: AI.signin?.step === "prompt" && AI.signin?.prompt?.type === "select"
+                    model: (AI.signin?.prompt?.options ?? []).map(o => ({ v: o.id, l: o.label }))
+                    onPicked: v => AI.answerSignIn(v)
+                }
+                Row {
+                    // Free-text answers: an API key, or (browser flows) the redirect URL pasted when the page can't reach this computer.
+                    visible: !!AI.signin?.prompt && AI.signin.prompt.type !== "select" && (AI.signin.step === "prompt" || AI.signin.step === "url")
+                    spacing: 8
+                    Field {
+                        id: answer
+                        width: 330
+                        secret: AI.signin?.prompt?.type === "secret"
+                        placeholder: AI.signin?.step === "url" ? "Or paste the address the browser ended on" : (AI.signin?.prompt?.placeholder || "")
+                        onAccepted: sendAnswer.clicked(null)
+                    }
+                    Btn {
+                        id: sendAnswer
+                        text: "Continue"
+                        kind: "filled"
+                        opacity: answer.text.trim() ? 1 : 0.4
+                        onClicked: { if (!answer.text.trim()) return; AI.answerSignIn(answer.text.trim()); answer.text = ""; }
+                    }
+                }
+            }
+        }
+        SRow {
+            first: !AI.accounts.length && !AI.signin
+            icon: "add"
+            title: "Add account"
+            sub: page.adding ? "Pick a service" : "ChatGPT, Claude, GitHub Copilot, Gemini, Grok, OpenRouter, DeepSeek…"
+            clickable: true
+            onClicked: page.adding = !page.adding
+            Icon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: "expand_more"; size: 16; color: Theme.muted
+                rotation: page.adding ? 180 : 0
+                Behavior on rotation { NumberAnimation { duration: Theme.med } }
+            }
+            below: Column {
+                visible: page.adding
+                width: parent.width
+                spacing: 2
+                Repeater {
+                    model: page.adding ? page.offer : []
+                    Item {
+                        id: pv
+                        required property var modelData
+                        width: parent.width
+                        height: 40
+                        Column {
+                            anchors { left: parent.left; leftMargin: 8; right: btns.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                            Txt { width: parent.width; text: pv.modelData.name; font.pixelSize: 13 }
+                            Txt {
+                                width: parent.width
+                                text: pv.modelData.oauth ? (pv.modelData.oauth.label || pv.modelData.oauth.name) : pv.modelData.key
+                                font.pixelSize: 11; color: Theme.muted
+                            }
+                        }
+                        Row {
+                            id: btns
+                            anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter }
+                            spacing: 6
+                            Btn {
+                                visible: !!pv.modelData.oauth
+                                text: "Sign in"
+                                kind: "filled"
+                                onClicked: { page.adding = false; AI.signIn(pv.modelData.id, "oauth"); }
+                            }
+                            Btn {
+                                visible: !!pv.modelData.key
+                                text: "API key"
+                                onClicked: { page.adding = false; AI.signIn(pv.modelData.id, "api_key"); }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     SGroup {
         title: "KOOMPI AI Gateway"
@@ -19,19 +170,7 @@ ColumnLayout {
             first: true
             icon: AI.hasKey ? "key" : "key_off"
             title: AI.hasKey ? "Key saved" : "No key yet"
-            sub: page.testing ? "Testing…" : page.test || (AI.hasKey ? "Paste a new key below to replace it" : "Paste your kpi_… key below")
-            Btn {
-                visible: AI.hasKey
-                text: "Test"
-                onClicked: {
-                    page.testing = true;
-                    page.test = "";
-                    AI.task("Reply with exactly: OK", "ping", (full, err) => {
-                        page.testing = false;
-                        page.test = err ? "✕ " + err : "✓ Connected · " + Settings.aiModel + " answered";
-                    });
-                }
-            }
+            sub: (AI.hasKey ? "Paste a new key below to replace it" : "Paste your kpi_… key below")
         }
         SRow {
             icon: "password"
@@ -181,16 +320,64 @@ ColumnLayout {
 
     SGroup {
         title: "Model"
-        note: "koompi-luna (Mekong) understands Khmer and reads screenshots. Any other gateway model works too: set \"aiModel\" in ~/.config/ansai-shell/settings.json."
+        note: page.prov ? "Signed-in accounts of " + AI.providerName(page.prov) + " answer in turn." : "koompi-luna (Mekong) understands Khmer and reads screenshots. Any other gateway model works too: set \"aiModel\" in ~/.config/ansai-shell/settings.json."
         SRow {
             first: true
             icon: "neurology"
             title: "Model"
-            sub: Settings.aiModel
+            sub: AI.modelLabel + " · " + AI.providerName(AI.provider)
+            below: Column {
+                width: parent.width
+                spacing: 10
+                Chips {
+                    visible: model.length > 1
+                    model: [{ v: "", l: "KOOMPI" }].concat([...new Set(AI.accounts.map(a => a.provider))].map(p => ({ v: p, l: AI.providerName(p) })))
+                    value: page.prov
+                    onPicked: v => { page.prov = v; page.filter = ""; }
+                }
+                Field {
+                    id: mf
+                    visible: (AI.catalogModels[page.prov] ?? []).length > 16
+                    width: 260
+                    placeholder: "Search " + (AI.catalogModels[page.prov] ?? []).length + " models"
+                    onTextChanged: page.filter = text.trim().toLowerCase()
+                }
+                Chips {
+                    readonly property var all: page.prov ? (AI.catalogModels[page.prov] ?? []).map(m => ({ v: page.prov + "/" + m.id, l: m.id })) : AI.models.map(m => ({ v: m, l: m.replace("koompi-", "") }))
+                    model: all.filter(m => !page.filter || m.l.toLowerCase().includes(page.filter)).slice(0, 40)
+                    value: Settings.aiModel
+                    onPicked: v => { Settings.aiModel = v; page.test = ""; }
+                }
+            }
+        }
+        SRow {
+            id: acr
+            readonly property var mine: AI.accounts.filter(a => a.provider === AI.provider)
+            visible: mine.length > 1
+            icon: "sync"
+            title: "Account"
+            sub: Settings.aiAccount === "auto" || !mine.some(a => a.id === Settings.aiAccount) ? "Automatic: the next account takes over when one hits its limit" : "Always this account"
             below: Chips {
-                model: AI.models.map(m => ({ v: m, l: m.replace("koompi-", "") }))
-                value: Settings.aiModel
-                onPicked: v => { Settings.aiModel = v; page.test = ""; }
+                model: [{ v: "auto", l: "Automatic" }].concat(acr.mine.map(a => ({ v: a.id, l: a.label })))
+                value: acr.mine.some(a => a.id === Settings.aiAccount) ? Settings.aiAccount : "auto"
+                onPicked: v => Settings.aiAccount = v
+            }
+        }
+        SRow {
+            visible: AI.ready
+            icon: "check_circle"
+            title: "Test"
+            sub: page.testing ? "Testing…" : page.test || "Send a short message to the chosen model"
+            Btn {
+                text: "Test"
+                onClicked: {
+                    page.testing = true;
+                    page.test = "";
+                    AI.task("Reply with exactly: OK", "ping", (full, err) => {
+                        page.testing = false;
+                        page.test = err ? "✕ " + err : "✓ " + AI.modelLabel + " answered" + (AI.provider && AI.via ? " · " + AI.via.label : "");
+                    });
+                }
             }
         }
         SRow {

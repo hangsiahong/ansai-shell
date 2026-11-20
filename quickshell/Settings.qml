@@ -40,6 +40,7 @@ Singleton {
     property alias dockMagnify: adapter.dockMagnify
     property alias systemTheme: adapter.systemTheme
     property alias aiModel: adapter.aiModel
+    property alias aiAccount: adapter.aiAccount
     property alias aiLang: adapter.aiLang
     property alias aiLayout: adapter.aiLayout
     property alias aiAllowAll: adapter.aiAllowAll
@@ -90,7 +91,8 @@ Singleton {
             property string dockMode: "smart"   // "smart": hide when a window covers it | "auto": always hide | "always": never hide
             property int dockSize: 44
             property bool dockMagnify: true
-            property string aiModel: "koompi-luna"   // KOOMPI AI Gateway model (services/AI.qml)
+            property string aiModel: "koompi-luna"   // KOOMPI AI Gateway model, or "provider/model" for a signed-in account (services/AI.qml)
+            property string aiAccount: "auto"   // account id to always use, or "auto": next account when one hits its limit
             property var mcpServers: [{ name: "KOOMPI Cloud", url: "https://mcp.koompi.cloud", on: true }]   // MCP connectors for Ask Ansai
             property bool aiLearn: true   // Ask Ansai keeps short lessons from its mistakes (ai-lessons.md) and uses them next time
             property bool aiAllowAll: false   // Ask Ansai runs connector actions without asking first

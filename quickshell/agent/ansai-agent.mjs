@@ -7,8 +7,13 @@
 //   stdout {"d": text} | {"tool": {id, name, title, server, args, ask}} | {"tool_done": {id, ok, preview}} | {"e": msg}
 // Tools that change something wait for approval; looking things up runs right away.
 // The key comes from ~/.config/ansai-shell/ai-key (or $ANSAI_AI_KEY) and is never printed.
+// A model "provider/id" (e.g. "openai-codex/gpt-6-sol") uses signed-in accounts instead (accounts.mjs); request
+// field "account" pins one account id, else "auto" moves on to the next account when one is rate limited.
+// Other modes: `catalog` (providers, models, accounts as JSON), `login <provider> [oauth|api_key]`
+// (interactive JSON lines), `logout <id>`, `rename <id> <label>`.
 import { Agent } from "@earendil-works/pi-agent-core";
 import { createModels, createProvider } from "@earendil-works/pi-ai";
+import * as Accounts from "./accounts.mjs";
 import { stream, streamSimple } from "@earendil-works/pi-ai/api/openai-completions";
 import { execFile, spawn } from "node:child_process";
 import { mkdtemp, readFile, readdir, rm, stat, writeFile, mkdir } from "node:fs/promises";
@@ -543,13 +548,40 @@ async function mcpTools(urls, taken) {
 }
 
 // ---- main
+async function accountsMode(cmd, args) {
+    const file = Accounts.accountsFile(CFG);
+    if (cmd === "catalog") return out(await Accounts.catalog(file));
+    if (cmd === "login") return out({ ok: await Accounts.login(file, args[0], args[1], out, nextLine) });
+    if (cmd === "logout") return out({ ok: !!await Accounts.update(file, db => { db.accounts = db.accounts.filter(a => a.id !== args[0]); }) });
+    if (cmd === "rename") return out({ ok: !!await Accounts.update(file, db => { const a = db.accounts.find(x => x.id === args[0]); if (a) a.label = args.slice(1).join(" ").trim() || a.label; }) });
+    out({ e: `Unknown mode ${cmd}` });
+}
+
+// Model + streamFn for a "provider/id" model, over that provider's signed-in accounts.
+async function accountModel(req) {
+    const file = Accounts.accountsFile(CFG);
+    const [pid, ...rest] = req.model.split("/");
+    const bound = Accounts.boundModels(file);
+    const model = bound.models.getModel(pid, rest.join("/"));
+    if (!model) return { e: `Unknown model ${req.model}. Pick one in Settings → AI.` };
+    const accounts = Accounts.order(await Accounts.load(file), pid, req.account);
+    if (!accounts.length) return { e: `No ${bound.models.getProvider(pid)?.name || pid} account. Sign in in Settings → AI.` };
+    out({ via: Accounts.pub(accounts[0]) });
+    const streamFn = Accounts.failover(file, bound, accounts, (a, why) => out({ via: { ...Accounts.pub(a), after: why } }));
+    return { model, streamFn };
+}
+
 async function main() {
+    if (process.argv[2]) return accountsMode(process.argv[2], process.argv.slice(3));
+    const req0 = await nextLine();
+    let req = null;
+    try { req = JSON.parse(req0); } catch { return out({ e: "Bad request" }); }
+    if (req.model?.includes("/")) return chat(req, await accountModel(req));
     let key = (process.env.ANSAI_AI_KEY || "").trim();
     if (!key) {
         try { key = (await readFile(join(CFG, "ai-key"), "utf8")).trim(); } catch { /* no key */ }
     }
     if (!key) return out({ e: `No AI key. Paste one in Settings → AI (saved to ${join(CFG, "ai-key")}).` });
-    const req = JSON.parse(await nextLine());
 
     const modelId = req.model || "koompi-luna";
     const model = {
@@ -564,13 +596,19 @@ async function main() {
         auth: { apiKey: { name: "KOOMPI AI key", resolve: async () => ({ auth: { apiKey: key }, source: "ai-key" }) } },
         api: { stream, streamSimple },
     }));
+    return chat(req, { model, streamFn: models.streamSimple.bind(models) });
+}
+
+async function chat(req, { model, streamFn, e }) {
+    if (e) return out({ e });
+    const modelId = model.id;
 
     // The conversation: system messages become the prompt; only the newest image is sent.
     const system = req.messages.filter(m => m.role === "system").map(m => m.content).join("\n\n");
     const convo = req.messages.filter(m => m.role !== "system");
     const zero = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } };
     const toMsg = async m => {
-        if (m.role === "assistant") return { role: "assistant", content: [{ type: "text", text: m.content || "" }], api: "openai-completions", provider: "koompi", model: modelId, usage: zero, stopReason: "stop", timestamp: Date.now() };
+        if (m.role === "assistant") return { role: "assistant", content: [{ type: "text", text: m.content || "" }], api: model.api, provider: model.provider, model: modelId, usage: zero, stopReason: "stop", timestamp: Date.now() };
         if (!m.image) return { role: "user", content: m.content || "", timestamp: Date.now() };
         const data = (await readFile(m.image)).toString("base64");
         return { role: "user", content: [{ type: "text", text: m.content || "Describe this image." }, { type: "image", data, mimeType: IMG[extname(m.image).toLowerCase()] || "image/png" }], timestamp: Date.now() };
@@ -590,7 +628,7 @@ async function main() {
 
     const agent = new Agent({
         initialState: { systemPrompt: system, model, tools, messages: msgs },
-        streamFn: models.streamSimple.bind(models),
+        streamFn,
         toolExecution: "sequential",
         identity: { attribution: null },
     });
@@ -622,7 +660,9 @@ async function main() {
     });
 
     await agent.prompt(last);
-    if (failed) out({ e: /401|unauthori[sz]ed/i.test(failed) ? `${failed} — check the key in Settings → AI` : failed });
+    const said = /"message"\s*:\s*"([^"]+)"/.exec(failed)?.[1];
+    if (said) failed = failed.replace(/\{[\s\S]*\}/, said);
+    if (failed) out({ e: /401|unauthori[sz]ed/i.test(failed) ? `${failed} — check the key or account in Settings → AI` : failed });
 }
 
 main().catch(err => out({ e: String(err?.message || err) })).finally(() => { bridge?.stdin.end(); rl.close(); process.stdin.destroy(); });

@@ -5,7 +5,8 @@ import Quickshell
 import Quickshell.Io
 import qs
 
-// KOOMPI AI Gateway via agent/ansai-agent.js (pi-mono agent loop: desktop tools + MCP connectors), which holds the key.
+// KOOMPI AI Gateway or signed-in provider accounts (ChatGPT, Claude, Copilot…) via agent/ansai-agent.js
+// (pi-mono agent loop: desktop tools + MCP connectors), which holds the keys and tokens.
 // ask() runs one request; the Ask Ansai sidebar's conversation lives here so it survives closing it.
 Singleton {
     id: root
@@ -14,6 +15,37 @@ Singleton {
     readonly property string script: Quickshell.shellDir + "/agent/ansai-agent.js"
     readonly property var models: ["koompi-luna", "koompi-smart", "koompi-fast", "koompi-lite", "koompi-balance"]
     property bool hasKey: false
+    // ---- Signed-in accounts (agent/accounts.mjs; tokens stay in ai-accounts.json, only metadata comes here)
+    property var providers: []      // [{ id, name, oauth: { name, sub } | null, key }]
+    property var catalogModels: ({})  // provider id → [{ id, name, image }] for providers with an account
+    property var accounts: []       // [{ id, provider, label, type, limitedUntil, error, lastUsed }]
+    property var via: null          // account the last answer came from
+    readonly property string provider: Settings.aiModel.includes("/") ? Settings.aiModel.split("/")[0] : ""
+    readonly property bool ready: provider ? accounts.some(a => a.provider === provider) : hasKey
+    readonly property string modelLabel: provider ? Settings.aiModel.slice(provider.length + 1) : Settings.aiModel
+    function providerName(id) { return id === "" ? "KOOMPI" : (providers.find(p => p.id === id)?.name ?? id); }
+    function refreshAccounts(): void { if (!catalogProc.running) catalogProc.running = true; }
+    // Sign-in in progress: { provider, kind, step: "busy"|"url"|"code"|"prompt"|"done"|"error", url, code, prompt, msg }
+    property var signin: null
+    property var signinProc: null
+    function signIn(provider: string, kind: string): void {
+        cancelSignIn();
+        signin = { provider: provider, kind: kind, step: "busy", msg: "Starting…" };
+        signinProc = loginComp.createObject(root, { command: ["node", script, "login", provider, kind] });
+        signinProc.running = true;
+    }
+    function answerSignIn(text: string): void {
+        if (!signinProc) return;
+        signinProc.write(text.replace(/\n/g, " ") + "\n");
+        signin = Object.assign({}, signin, { step: "busy", msg: "Signing in…" });
+    }
+    function cancelSignIn(): void {
+        if (signinProc) { signinProc.stopped = true; signinProc.running = false; }
+        signinProc = null;
+        signin = null;
+    }
+    function signOut(id: string): void { acctCmd.createObject(root, { command: ["node", script, "logout", id] }).running = true; }
+    function renameAccount(id: string, label: string): void { acctCmd.createObject(root, { command: ["node", script, "rename", id, label] }).running = true; }
     function checkKey(): void { keyCheck.running = false; keyCheck.running = true; }
     function setKey(key: string): void {
         keyWriter.key = key.trim();
@@ -35,7 +67,7 @@ How to answer:
     // opts.onEvent(ev) gets tool / tool_done events.
     function ask(messages, onDelta, onDone, opts) {
         const p = req.createObject(root, {
-            body: JSON.stringify({ model: Settings.aiModel, messages: messages, mcp: opts?.mcp ?? [], tools: !!opts?.tools, only: opts?.only ?? null, learn: !!opts?.tools && Settings.aiLearn }),
+            body: JSON.stringify({ model: Settings.aiModel, account: Settings.aiAccount, messages: messages, mcp: opts?.mcp ?? [], tools: !!opts?.tools, only: opts?.only ?? null, learn: !!opts?.tools && Settings.aiLearn }),
             onDelta: onDelta ?? null,
             onDone: onDone ?? null,
             onEvent: opts?.onEvent ?? null
@@ -72,6 +104,7 @@ How to answer:
         Quickshell.execDetached(["sh", "-c", `mkdir -p "$1/ai-images" && chmod 700 "$1" && chmod -f 600 "$1/ai-chats.json"; true`, "sh", dataDir]);
         readChats();
         refreshMcp();
+        refreshAccounts();
     }
     Process {
         id: mcpStatus
@@ -327,6 +360,7 @@ Tools from the user's connected services (${names}):
                     if (ev.e) p.err = ev.e;
                     else if (ev.d) { p.full += ev.d; if (p.onDelta) p.onDelta(ev.d); }
                     else if ((ev.tool || ev.tool_done) && p.onEvent) p.onEvent(ev);
+                    else if (ev.via) { root.via = ev.via; if (ev.via.after) root.refreshAccounts(); }
                 }
             }
             stderr: StdioCollector { id: errOut }
@@ -334,6 +368,76 @@ Tools from the user's connected services (${names}):
                 if (!err && code !== 0 && !stopped) err = errOut.text.trim().split("\n").pop() || "AI request failed";
                 if (!err && !full.trim() && !stopped) err = "No answer came back";
                 if (onDone) onDone(full, err);
+                if (root.provider && err) root.refreshAccounts();
+                destroy();
+            }
+        }
+    }
+
+    Process {
+        id: catalogProc
+        command: ["node", root.script, "catalog"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const c = JSON.parse(text);
+                    root.providers = c.providers;
+                    root.catalogModels = c.models;
+                    root.accounts = c.accounts;
+                } catch (e) {}
+            }
+        }
+    }
+    Component {
+        id: acctCmd
+        Process {
+            onExited: { root.refreshAccounts(); destroy(); }
+        }
+    }
+    Component {
+        id: loginComp
+        Process {
+            id: lp
+            property bool stopped: false
+            property string err: ""
+            stdinEnabled: true
+            stdout: SplitParser {
+                onRead: line => {
+                    let m;
+                    try { m = JSON.parse(line); } catch (e) { return; }
+                    if (root.signinProc !== lp) return;
+                    const s = Object.assign({}, root.signin);
+                    if (m.e) { lp.err = m.e; return; }
+                    if (m.ok) { s.step = "done"; s.msg = "Signed in as " + m.ok.label; root.signin = s; return; }
+                    if (m.prompt) {
+                        // Codex asks browser vs device code: the browser flow, with a pasted-URL fallback, suits a desktop.
+                        const br = m.prompt.type === "select" && m.prompt.options.find(o => /browser/i.test(o.id + o.label));
+                        if (br) { lp.write(br.id + "\n"); return; }
+                        s.step = "prompt"; s.prompt = m.prompt;
+                        if (s.url) s.step = "url";
+                        root.signin = s;
+                        return;
+                    }
+                    const ev = m.ev ?? {};
+                    if (ev.type === "auth_url") {
+                        s.step = "url"; s.url = ev.url; s.msg = ev.instructions || "Finish signing in in your browser";
+                        Qt.openUrlExternally(ev.url);
+                    } else if (ev.type === "device_code") {
+                        s.step = "code"; s.code = ev.userCode; s.url = ev.verificationUri; s.msg = "Enter this code on the sign-in page";
+                        Qt.openUrlExternally(ev.verificationUri);
+                    } else if (ev.message) {
+                        s.msg = ev.message;
+                        if (ev.links?.length) s.url = ev.links[0].url;
+                    }
+                    root.signin = s;
+                }
+            }
+            stderr: StdioCollector { id: lerr }
+            onExited: code => {
+                if (root.signinProc === lp && !stopped && root.signin?.step !== "done")
+                    root.signin = Object.assign({}, root.signin, { step: "error", msg: lp.err || lerr.text.trim().split("\n").pop() || "Sign-in failed" });
+                if (root.signinProc === lp) root.signinProc = null;
+                root.refreshAccounts();
                 destroy();
             }
         }

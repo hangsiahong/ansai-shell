@@ -295,7 +295,7 @@ Sheet {
                 spacing: 8
                 Icon { name: "auto_awesome"; size: 18; filled: true; color: Theme.accent }
                 Txt { text: root.resultTitle; font.pixelSize: 14; font.weight: Theme.strong }
-                Txt { visible: root.resultBusy; text: "· " + Settings.aiModel; font.pixelSize: 12; color: Theme.faint }
+                Txt { visible: root.resultBusy; text: "· " + AI.modelLabel; font.pixelSize: 12; color: Theme.faint }
             }
             Flickable {
                 id: resFlick

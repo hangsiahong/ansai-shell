@@ -88,7 +88,7 @@ Sheet {
     function askNote(q: string): void {
         q = q.trim();
         if (!q || askBusy) return;
-        if (!AI.hasKey) { askA = "Add your KOOMPI AI key in Settings → AI first."; askErr = true; return; }
+        if (!AI.ready) { askA = "Set up AI in Settings → AI first."; askErr = true; return; }
         askIn.text = "";
         askA = ""; askErr = false; askBusy = true;
         const id = cur;
