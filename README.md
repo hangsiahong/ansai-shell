@@ -37,22 +37,23 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   (Shift+Enter starts a new one). `>cmd` runs in the terminal, `=1+2` calculates.
 - **Launchpad** (the ⋮⋮⋮ button at the top of the dock): every app as a paged icon grid over the blurred desktop,
   sorted into tabs (Frequent: what you open, pin or have running; All; then Internet, Develop, Media, Office, System…;
-  Tab/Shift+Tab switches) and a search field that covers every app. Swipe with two fingers, drag, scroll or ←/→ to flip pages, Enter opens the first match, Esc or a click on empty space closes.
+  Tab/Shift+Tab switches) and a search field that covers every app. Swipe with two fingers, drag, scroll or ←/→ to
+  flip pages, Enter opens the first match, Esc or a click on empty space closes.
 - **Quick Note** (Alt+N): a notes panel that opens on your latest note and saves as you type
   (`~/.local/share/ansai-shell/notes.json`). Ctrl+N new note, Esc closes.
   Ask Ansai about the open note from the field at its bottom (summarize, fix, translate, add a to-do) and add the answer
   to the note or replace it. Ask Ansai can also write notes itself ("add to my quick note: …").
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
 - **Quick Ask:** point at the middle of the bottom edge and an Ask Ansai field slides up; Enter asks and the answer
-  streams right above it ("Open in Ask Ansai" continues in the sidebar). Always shown on an empty workspace; with windows open it hides when the pointer leaves, unless you're typing.
-- **AI** on the [KOOMPI AI Gateway](#ai): Ask Ansai (Super+I), an agent that works on your computer (files, commands,
-  apps, windows, and other apps' screens: it reads them through accessibility or looks, then clicks and types) and on KOOMPI Cloud, with your OK before it changes anything; ask about part of the screen
-  Chromium browsers (Brave, Chrome) only show their pages to it when started with `ACCESSIBILITY_ENABLED=1` in the
-  environment and `--force-renderer-accessibility` (e.g. `Exec=env ACCESSIBILITY_ENABLED=1 …` in a copy of the app's
-  .desktop file in `~/.local/share/applications`); otherwise it falls back to screenshots and the mouse.
-  It learns: after a long or bumpy task a quick review saves one lesson ("YouTube: open the search-results URL
-  instead of typing") to `~/.local/share/ansai-shell/ai-lessons.md`, used next time; Settings → AI lists and deletes them.
-  (Super+Shift+S or Alt+Shift+S), and translate / summarize / fix / find-by-description in the clipboard panel.
+  streams right above it ("Open in Ask Ansai" continues in the sidebar). Always shown on an empty workspace; with
+  windows open it hides when the pointer leaves, unless you're typing.
+- **App hotkeys:** one key per app that switches to it, starts it, or (pressed again) goes back to where you were.
+  See [Keys](#keys).
+- **Ask Ansai** on the [KOOMPI AI Gateway](#ai) (Super+I): an agent that works on your computer (files, commands,
+  apps, windows, notes) and on KOOMPI Cloud, and can **use other apps for you**: it reads their screens through
+  accessibility or looks at them, then clicks and types. It asks before it changes anything, and **learns from
+  its mistakes** so the next run takes fewer steps. Also: ask about part of the screen (Super+Shift+S), and translate /
+  summarize / fix / find-by-description in the clipboard panel. See [AI](#ai).
 - **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
   15 s "keep changes?"), graphics (supergfxctl: integrated / hybrid / dGPU), power and battery (profile, charge
@@ -84,7 +85,9 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+Shift+C (or Super+Shift+V, Alt+Shift+C) | Clipboard history: type to filter, Enter copies, Delete removes |
 | Alt+N | Quick Note |
 | Super+I / Alt+A | Ask Ansai sidebar |
-| Super+Shift+S / Alt+Shift+S | Pick part of the screen and ask AI about it |
+| Bottom edge (hover) | Quick Ask field |
+| Dock ⋮⋮⋮ | Launchpad (two-finger swipe / ←→ pages, Tab switches category) |
+| Super+Shift+S / Alt+Shift+S | Pick part of the screen and ask Ansai about it |
 | Clipboard: Ctrl+T / Ctrl+S / Ctrl+E / Ctrl+J / Tab | Translate / summarize / fix writing / ask in sidebar / AI find |
 | Super+O | Overview |
 | Super+Backspace | Close window (Caps Lock works as Super) |
@@ -99,8 +102,11 @@ to the window you were on:
 ```kdl
 binds {
     Alt+Shift+T { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "app" "org.telegram.desktop"; }
+    Alt+B       { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "app" "brave-origin"; }
 }
 ```
+
+The desktop id is the `.desktop` file name without the extension (`ls ~/.local/share/applications /usr/share/applications`).
 
 
 ## Settings
@@ -138,6 +144,21 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
   spelling and grammar; Enter copies the result. Type a description and press Tab to have AI find it
   ("the wifi password", "that ssh command"). Ctrl+J sends the entry (or image) to the sidebar.
 
+- **Using other apps:** Ask Ansai lists open apps, reads their window as text through AT-SPI accessibility
+  (`quickshell/scripts/desktop.py`, from ansai), or takes a screenshot,
+  then clicks buttons, fills fields and types ("search YouTube for lofi in Brave", "reply 'ok' in Telegram").
+  Panels step out of the way while it works and the answer shows again after. Typing uses wtype, or xdotool for X11 apps.
+  Chromium browsers (Brave, Chrome) only show their pages when started with `ACCESSIBILITY_ENABLED=1` in the
+  environment and `--force-renderer-accessibility` (e.g. `Exec=env ACCESSIBILITY_ENABLED=1 …` in a copy of the app's
+  .desktop file in `~/.local/share/applications`, and the flag in `~/.config/<browser>-flags.conf`);
+  otherwise it falls back to screenshots and the mouse.
+- **Learning:** after a task that took many steps or hit a failure, a short review saves one lesson
+  ("YouTube: open the search-results URL instead of typing") to `~/.local/share/ansai-shell/ai-lessons.md`; the agent
+  can also save one itself when it finds a better way. Lessons are added to its instructions next time.
+  **Settings → AI → Learning** turns it off and lists the lessons so you can delete any.
+- **Quick Note:** "add to my quick note: call the bank", "what's in my notes?", "turn my last note into a checklist".
+  Inside Quick Note (Alt+N) the ✦ field asks about the open note; **Add to note** / **Replace note** applies the answer.
+- **Quick Ask** (bottom edge): the same agent in a small field; a quick question starts its own chat, follow-ups continue it.
 - **Connectors (MCP):** in Settings → AI, **Connect** KOOMPI Cloud (`mcp.koompi.cloud`, listed by default) or add
   any MCP server URL. Sign-in opens in your browser (OAuth with PKCE); tokens stay in
   `~/.config/ansai-shell/mcp-tokens.json` (mode 600). Ask Ansai can then use the server's tools ("what's running on my
@@ -151,6 +172,8 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
 qs -c ansai ipc call ai toggle
 qs -c ansai ipc call ai send "ស្វាគមន៍! what can you do?"
 qs -c ansai ipc call ai image ~/Pictures/diagram.png
+qs -c ansai ipc call ai bar          # open the Quick Ask field
+qs -c ansai ipc call shell toggle note
 ```
 
 ## System theme
