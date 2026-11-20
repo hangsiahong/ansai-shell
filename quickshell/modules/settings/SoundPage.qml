@@ -17,7 +17,8 @@ ColumnLayout {
     readonly property var allSinks: devices.filter(n => n.isSink)
     readonly property var sinks: allSinks.filter(n => showAll || !extra(n) || n === Audio.sink)
     readonly property var sources: devices.filter(n => !n.isSink && !/monitor/i.test(n.name))
-    PwObjectTracker { objects: root.devices }
+    readonly property var streams: Pipewire.nodes.values.filter(n => n.isStream && n.isSink)   // playback streams (Quickshell counts them as sinks)
+    PwObjectTracker { objects: root.devices.concat(root.streams) }
 
     function label(n) { return n.description || n.nickname || n.name; }
 
@@ -48,6 +49,44 @@ ColumnLayout {
                 icon: Audio.icon()
                 value: Audio.volume
                 onMoved: v => Audio.setVolume(v)
+            }
+        }
+    }
+    SGroup {
+        title: "Apps"
+        visible: root.streams.length > 0
+        Repeater {
+            model: root.streams
+            SRow {
+                id: st
+                required property var modelData
+                required property int index
+                readonly property var p: modelData.properties ?? ({})
+                readonly property string app: p["application.name"] || modelData.name
+                first: index === 0
+                title: app
+                sub: p["media.name"] && p["media.name"] !== app ? p["media.name"].split("/").pop() : ""
+                Txt { text: Math.round((st.modelData.audio?.volume ?? 0) * 100) + "%"; font.pixelSize: 13; color: Theme.muted; font.features: { "tnum": 1 } }
+                IconButton {
+                    icon: st.modelData.audio?.muted ? "volume_off" : "volume_up"; iconSize: 18
+                    onClicked: if (st.modelData.audio) st.modelData.audio.muted = !st.modelData.audio.muted
+                }
+                below: Row {
+                    width: parent.width
+                    spacing: 10
+                    AppIcon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: 28
+                        icon: st.p["application.icon-name"] || DesktopEntries.heuristicLookup(st.p["application.process.binary"] || st.app)?.icon || ""
+                        label: st.app
+                    }
+                    Slider {
+                        width: parent.width - 38
+                        icon: "music_note"
+                        value: st.modelData.audio?.volume ?? 0
+                        onMoved: v => { if (st.modelData.audio) { st.modelData.audio.muted = false; st.modelData.audio.volume = v; } }
+                    }
+                }
             }
         }
     }
