@@ -5,10 +5,11 @@ import Quickshell.Io
 import qs
 import qs.components
 import qs.services
+import "quickcalc.js" as QC
 
 // Spotlight-style palette, like the web app's "Search or run…" (Ctrl K).
 // Open windows first, then apps ranked by match + launch count.
-// "> cmd" runs a shell command, "= expr" evaluates math, ": word" finds an emoji and types it.
+// "> cmd" runs a shell command, "= expr" evaluates math (plain "2*3" or "10 km to mi" works too), ": word" finds an emoji and types it.
 Sheet {
     id: root
     name: "launcher"
@@ -48,17 +49,20 @@ Sheet {
             return hits;
         }
         if (q.startsWith("=")) {
-            let val = "";
-            try {
-                const expr = q.slice(1).replace(/[^0-9+\-*/().% ^]/g, "").replace(/\^/g, "**");
-                val = expr ? String(Function("return (" + expr + ")")()) : "";
-            } catch (e) {}
-            return val ? [{ kind: "calc", title: val, sub: "Copy result", icon: "calculate" }] : [];
+            const cv = QC.convert(q.slice(1));
+            if (cv) return [{ kind: "calc", title: cv.title, sub: cv.sub + " · Enter copies", copy: cv.copy, icon: "balance" }];
+            const val = QC.calc(q.slice(1), true);
+            return val ? [{ kind: "calc", title: val, sub: "= " + query.trim().slice(1).trim() + " · Enter copies", copy: val.replace(/,/g, ""), icon: "calculate" }] : [];
         }
 
         // ansai: like macOS search, nothing below the field until you type.
         if (!q && !Theme.m3) return [];
         const out = [];
+        // Spotlight-style answer on top: math or a unit conversion typed straight in.
+        const cv = QC.convert(q);
+        const val = cv ? "" : QC.calc(q, false);
+        if (cv) out.push({ kind: "calc", title: cv.title, sub: cv.sub + " · Enter copies", copy: cv.copy, icon: "balance", s: 1000 });
+        else if (val) out.push({ kind: "calc", title: val, sub: "= " + query.trim() + " · Enter copies", copy: val.replace(/,/g, ""), icon: "calculate", s: 1000 });
         const score = (name, extra) => {
             if (!q) return 1;
             const n = name.toLowerCase();
@@ -122,7 +126,7 @@ Sheet {
             // Type it into the window that had focus once the launcher is gone; copy only without wtype.
             Quickshell.execDetached(["sh", "-c", 'sleep 0.15; command -v wtype >/dev/null && exec wtype -- "$1" || printf %s "$1" | wl-copy', "sh", it.glyph]);
         } else if (it.kind === "calc") {
-            Quickshell.execDetached(["wl-copy", it.title]);
+            Quickshell.execDetached(["wl-copy", it.copy ?? it.title]);
         }
         Shell.close();
     }
