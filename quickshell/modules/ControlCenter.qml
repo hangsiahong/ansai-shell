@@ -181,6 +181,7 @@ Sheet {
                         required property var modelData
                         readonly property bool sel: Settings.style === modelData.id
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 1
                         Layout.preferredHeight: 40
                         radius: Theme.m3 ? (sel ? 12 : 20) : 10
                         base: "transparent"
@@ -197,7 +198,8 @@ Sheet {
                     }
                 }
                 Hover {
-                    Layout.preferredWidth: fontLbl.implicitWidth + 40
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
                     Layout.preferredHeight: 40
                     radius: Theme.m3 ? 20 : 10
                     base: Theme.fill
@@ -210,7 +212,7 @@ Sheet {
                         anchors.centerIn: parent
                         spacing: 4
                         Icon { name: "text_fields"; size: 17; color: Theme.text2; anchors.verticalCenter: parent.verticalCenter }
-                        Txt { id: fontLbl; text: Theme.fontName; font.pixelSize: 13; color: Theme.text }
+                        Txt { id: fontLbl; width: Math.min(implicitWidth, parent.parent.width - 36); text: Theme.fontName; font.pixelSize: 13; color: Theme.text }
                     }
                 }
             }
@@ -254,45 +256,72 @@ Sheet {
             }
         }
 
+        // Android 16 QS: labelled tonal tiles, then a footer of battery + round settings/lock/power buttons.
+        GridLayout {
+            Layout.fillWidth: true
+            columns: 3
+            rowSpacing: 8
+            columnSpacing: 8
+            Repeater {
+                model: [
+                    { icon: "screenshot_region", label: "Screenshot", run: () => { Shell.close(); Niri.action("screenshot"); } },
+                    { icon: Recorder.recording ? "stop_circle" : "screen_record", label: Recorder.recording ? "Stop" : "Record", on: Recorder.recording, rec: true, run: () => { Shell.close(); Recorder.toggle(); } },
+                    { icon: "colorize", label: "Colour Picker", run: () => { Shell.close(); ColorPick.pick(); } },
+                    { icon: "auto_awesome", label: "Ask AI", run: () => { Shell.open = "ai"; } },
+                    { icon: "notes", label: "Quick Note", run: () => { Shell.open = "note"; } },
+                    { icon: "content_paste", label: "Clipboard", run: () => { Shell.open = "clipboard"; } }
+                ].filter(b => !b.rec || Recorder.available)
+                Hover {
+                    id: qt
+                    required property var modelData
+                    Layout.fillWidth: true; Layout.preferredWidth: 1
+                    Layout.preferredHeight: 68
+                    radius: pressed ? 14 : 22
+                    Behavior on radius { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
+                    base: modelData.on ? Theme.danger : Theme.fill2
+                    onClicked: modelData.run()
+                    Column {
+                        anchors.centerIn: parent
+                        width: parent.width - 12
+                        spacing: 4
+                        Icon { anchors.horizontalCenter: parent.horizontalCenter; name: qt.modelData.icon; size: 22; filled: !!qt.modelData.on; color: qt.modelData.on ? "#ffffff" : Theme.text }
+                        Txt { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: qt.modelData.label; font.pixelSize: 12; font.weight: Theme.strong; color: qt.modelData.on ? "#ffffff" : Theme.text2 }
+                    }
+                }
+            }
+        }
+
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
-            IconButton {
-                icon: "screenshot_region"
-                onClicked: { Shell.close(); Niri.action("screenshot"); }
-            }
-            IconButton {
-                visible: Recorder.available
-                icon: Recorder.recording ? "stop_circle" : "screen_record"
-                iconColor: Recorder.recording ? Theme.danger : Theme.text
-                onClicked: { Shell.close(); Recorder.toggle(); }
-            }
-            IconButton {
-                icon: "colorize"
-                onClicked: { Shell.close(); ColorPick.pick(); }
-            }
-            IconButton {
-                icon: "tune"
-                onClicked: Shell.openSettings("")
-            }
-            IconButton {
-                icon: "auto_awesome"
-                onClicked: Shell.open = "ai"
+            Hover {
+                visible: Battery.present
+                implicitWidth: m3Bat.implicitWidth + 20; implicitHeight: 40
+                radius: 20
+                onClicked: Shell.openSettings("power")
+                Row {
+                    id: m3Bat
+                    anchors.centerIn: parent
+                    spacing: 6
+                    Icon { anchors.verticalCenter: parent.verticalCenter; name: Battery.icon(); size: 18; filled: true; color: Battery.charging ? Theme.green : Theme.text2 }
+                    Txt { anchors.verticalCenter: parent.verticalCenter; text: Math.round(Battery.pct * 100) + "%" + (Battery.charging ? " · Charging" : ""); font.pixelSize: 13; color: Theme.text2 }
+                }
             }
             Item { Layout.fillWidth: true }
-            Txt {
-                visible: Battery.present
-                text: Math.round(Battery.pct * 100) + "%" + (Battery.charging ? " · charging" : "")
-                font.pixelSize: 12
-                color: Theme.muted
-            }
-            IconButton {
-                icon: "lock"
-                onClicked: { Shell.close(); Lock.lock(); }
-            }
-            IconButton {
-                icon: "power_settings_new"
-                onClicked: Shell.open = "power"
+            Repeater {
+                model: [
+                    { icon: "settings", run: () => Shell.openSettings("") },
+                    { icon: "lock", run: () => { Shell.close(); Lock.lock(); } },
+                    { icon: "power_settings_new", run: () => { Shell.open = "power"; } }
+                ]
+                Hover {
+                    required property var modelData
+                    implicitWidth: 40; implicitHeight: 40
+                    radius: 20
+                    base: Theme.fill2
+                    onClicked: modelData.run()
+                    Icon { anchors.centerIn: parent; name: parent.modelData.icon; size: 19; color: Theme.text }
+                }
             }
         }
     }
