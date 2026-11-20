@@ -497,18 +497,37 @@ Sheet {
             Layout.fillWidth: true
             Layout.leftMargin: 4
             spacing: 2
-            Txt {
-                Layout.fillWidth: true
-                visible: Battery.present
-                text: Math.round(Battery.pct * 100) + "%" + (Battery.charging ? " · Charging" : "")
-                font.pixelSize: 12
-                color: Theme.muted
-            }
             Hover {
-                implicitWidth: editLbl.implicitWidth + 20; implicitHeight: 26
-                radius: 13
+                visible: Battery.present
+                implicitWidth: batRow.implicitWidth + 16; implicitHeight: 30
+                radius: 15
+                onClicked: Shell.openSettings("power")
+                Row {
+                    id: batRow
+                    anchors.centerIn: parent
+                    spacing: 6
+                    Icon { anchors.verticalCenter: parent.verticalCenter; name: Battery.icon(); size: 16; color: Battery.charging ? Theme.green : Theme.muted }
+                    Txt {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Math.round(Battery.pct * 100) + "%" + (Battery.charging ? " · Charging" : "")
+                        font.pixelSize: 12
+                        color: Theme.muted
+                    }
+                }
+            }
+            Item { Layout.fillWidth: true }
+            Hover {
+                implicitWidth: setRow.implicitWidth + 22; implicitHeight: 30
+                radius: 15
+                base: Theme.dark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.06)
                 onClicked: Shell.openSettings("")
-                Txt { id: editLbl; anchors.centerIn: parent; text: "Settings…"; font.pixelSize: 12; color: Theme.text2 }
+                Row {
+                    id: setRow
+                    anchors.centerIn: parent
+                    spacing: 6
+                    Icon { anchors.verticalCenter: parent.verticalCenter; name: "settings"; size: 15; color: Theme.text2 }
+                    Txt { anchors.verticalCenter: parent.verticalCenter; text: "Settings"; font.pixelSize: 12; font.weight: Font.Medium; color: Theme.text2 }
+                }
             }
         }
     }
