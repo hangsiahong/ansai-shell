@@ -142,6 +142,38 @@ PanelWindow {
             }
         }
 
+        Hover {   // privacy: mic (orange) and camera (green) in use; hover names the apps, click opens Sound
+            id: privacy
+            visible: Privacy.mic || Privacy.cam
+            implicitWidth: privRow.implicitWidth + 14
+            implicitHeight: Theme.barH - 8
+            radius: height / 2
+            onClicked: Shell.openSettings("sound")
+            Row {
+                id: privRow
+                anchors.centerIn: parent
+                spacing: 4
+                Repeater {
+                    model: [[Privacy.cam, "videocam", "#30d158"], [Privacy.mic, "mic", "#ff9f0a"]]
+                    Rectangle {
+                        required property var modelData
+                        visible: modelData[0]
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 20; height: 20; radius: 10
+                        color: modelData[2]
+                        Icon { anchors.centerIn: parent; name: parent.modelData[1]; filled: true; size: 13; color: "white" }
+                    }
+                }
+                Txt {
+                    visible: privacy.hovered
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: [...new Set(Privacy.camApps.concat(Privacy.micApps))].join(", ")
+                    font.pixelSize: 12
+                    font.weight: Theme.strong
+                }
+            }
+        }
+
         Repeater {
             // Network and Bluetooth applets duplicate the control center, so they stay hidden.
             model: Shell.nested ? [] : SystemTray.items.values.filter(t => !/nm-applet|network|blueman|bluetooth/i.test(t.id + " " + t.title))
