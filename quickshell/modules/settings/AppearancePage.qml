@@ -34,6 +34,16 @@ ColumnLayout {
             }
         }
         SRow {
+            icon: "widgets"
+            title: "Icons"
+            sub: Theme.phosphor ? "Phosphor: thin, SF Symbols-like line icons" : "Material Symbols Rounded"
+            Seg {
+                model: [{ v: "", l: "Auto" }, { v: "phosphor", l: "Phosphor" }, { v: "material", l: "Material" }]
+                value: Settings.iconSet
+                onPicked: v => Settings.iconSet = v
+            }
+        }
+        SRow {
             icon: "match_case"
             title: "Font"
             sub: "Used by the shell and, with system theme on, GTK apps"

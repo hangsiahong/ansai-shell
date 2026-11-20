@@ -59,6 +59,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
   15 s "keep changes?"), graphics (supergfxctl: integrated / hybrid / dGPU), power and battery (profile, charge
   limit, keyboard light), sound, about.
+- **Icons:** the ansai look uses Phosphor (MIT), thin SF Symbols-like line icons that switch to filled when selected. Android uses Material Symbols Rounded. Settings → Appearance → Icons overrides either.
 - **Fonts:** eight UI fonts with live previews in Settings → Appearance: Inter (ansai default), Google Sans Flex (Android default), Geist, Figtree, Nunito, Roboto, Noto Sans and Kantumruy Pro. They're bundled under the OFL, and Khmer text falls back to Kantumruy Pro.
 - **System theme:** GTK 3/4, libadwaita, Qt and Ghostty follow the shell's colours and font.
 - **Wallpapers:** Drift, Ribbons and Dunes, drawn by `tools/wallpapers.py`, each in light and dark.

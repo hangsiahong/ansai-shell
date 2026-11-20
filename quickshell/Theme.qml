@@ -65,6 +65,11 @@ Singleton {
     readonly property string font: fontName
     readonly property string mono: "monospace"
     readonly property string icons: "Material Symbols Rounded"
+    readonly property bool phosphor: Settings.iconSet ? Settings.iconSet === "phosphor" : !m3
+    readonly property string ph: phLoader.status === FontLoader.Ready ? phLoader.name : ""
+    readonly property string phFill: phFillLoader.status === FontLoader.Ready ? phFillLoader.name : ""
+    property FontLoader phLoader: FontLoader { source: Qt.resolvedUrl("assets/icons/Phosphor.ttf") }
+    property FontLoader phFillLoader: FontLoader { source: Qt.resolvedUrl("assets/icons/Phosphor-Fill.ttf") }
     // Text weights: M3 type scale is lighter than the web's semibold labels.
     readonly property int strong: m3 ? Font.Medium : Font.DemiBold
 

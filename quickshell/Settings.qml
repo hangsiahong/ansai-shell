@@ -10,6 +10,7 @@ Singleton {
     property alias theme: adapter.theme
     property alias style: adapter.style
     property alias font: adapter.font
+    property alias iconSet: adapter.iconSet
     property alias wallpaper: adapter.wallpaper
     property alias terminal: adapter.terminal
     property alias use24h: adapter.use24h
@@ -47,6 +48,7 @@ Singleton {
             property string theme: "dark"
             property string style: "ansai"   // "ansai" | "material"
             property string font: ""   // empty: the style's own font
+            property string iconSet: ""   // "" : per look (ansai Phosphor, Android Material Symbols) | "phosphor" | "material"
             property string wallpaper: ""
             property string terminal: "ghostty"
             property bool use24h: false
