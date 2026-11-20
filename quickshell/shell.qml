@@ -24,6 +24,7 @@ ShellRoot {
     }
 
     Launcher {}
+    Launchpad {}
     Clipboard {}
     AskAI {}
     DockMenu {}

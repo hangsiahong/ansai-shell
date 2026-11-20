@@ -122,11 +122,11 @@ PanelWindow {
                 width: root.size; height: root.size
                 radius: Theme.m3 ? height / 2 : root.size * 0.258
                 base: Theme.m3 ? Theme.accentSoft : Theme.fill2
-                active: Shell.open === "launcher"
+                active: Shell.open === "launchpad"
                 activeColor: Theme.accent
                 onClicked: m => {
                     if (m.button === Qt.RightButton) root.openMenu(null, box.y + col.y + y + height / 2);
-                    else Shell.toggle("launcher");
+                    else Shell.toggle("launchpad");
                 }
                 Icon {
                     anchors.centerIn: parent

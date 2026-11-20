@@ -29,12 +29,14 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 
 - **Top bar:** the focused app, the current workspace's windows left to right (click, scroll, drag to reorder),
   tray, status and clock. In ansai, the `>_` mark opens the system menu.
-- **Dock** on the left: apps button, workspaces (niri stacks them vertically), pinned and running apps;
+- **Dock** on the left: Launchpad button, workspaces (niri stacks them vertically), pinned and running apps;
   auto-hides when a window would cover it. Right-click for windows, actions, pin, quit.
 - **Control Center:** Wi-Fi and Bluetooth with lists to connect, Focus, dark mode, night light, power mode,
   brightness, volume, now playing.
 - **Search** (Super+Space or Alt+Space): apps and windows; an app that is already open is switched to
   (Shift+Enter starts a new one). `>cmd` runs in the terminal, `=1+2` calculates.
+- **Launchpad** (the ⋮⋮⋮ button at the top of the dock): every app as a paged icon grid over the blurred desktop,
+  with a search field. Scroll or ←/→ to flip pages, Enter opens the first match, Esc or a click on empty space closes.
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
 - **AI** on the [KOOMPI AI Gateway](#ai): Ask AI (Super+I), an agent that works on your computer (files, commands,
   apps, windows) and on KOOMPI Cloud, with your OK before it changes anything; ask about part of the screen

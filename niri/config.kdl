@@ -178,7 +178,7 @@ layer-rule {
 }
 
 layer-rule {
-    match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu|clipboard)$"
+    match namespace="^ansai-(launcher|launchpad|control|calendar|power|polkit|toasts|osd|appmenu|clipboard)$"
     shadow {
         on
         softness 50
