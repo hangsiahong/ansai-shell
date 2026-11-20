@@ -106,6 +106,7 @@ Singleton {
                     font.features: { "tnum": 1 }
                     color: "#ffffff"
                 }
+                LockInfo { anchors.horizontalCenter: parent.horizontalCenter }
             }
 
             Column {
