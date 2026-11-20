@@ -161,10 +161,10 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
   (`quickshell/scripts/desktop.py`, from ansai), or takes a screenshot,
   then clicks buttons, fills fields and types ("search YouTube for lofi in Brave", "reply 'ok' in Telegram").
   Panels step out of the way while it works and the answer shows again after. Typing uses wtype, or xdotool for X11 apps.
-  Chromium browsers (Brave, Chrome) only show their pages when started with `ACCESSIBILITY_ENABLED=1` in the
-  environment and `--force-renderer-accessibility` (e.g. `Exec=env ACCESSIBILITY_ENABLED=1 …` in a copy of the app's
-  .desktop file in `~/.local/share/applications`, and the flag in `~/.config/<browser>-flags.conf`);
-  otherwise it falls back to screenshots and the mouse.
+  Web pages go through your own Brave (or Chrome) over DevTools: it reads the page as a list of elements and clicks or
+  types by id, in any tab, without moving your mouse. Turn on brave://inspect/#remote-debugging once; Brave then asks
+  "Allow remote debugging?" once per browser start (a small helper keeps the connection). Without it, it falls back
+  to the accessibility tree, screenshots and the mouse. Page reading follows browser-use-pi (MIT).
 - **Learning:** after a task that took many steps or hit a failure, a short review saves one lesson
   ("YouTube: open the search-results URL instead of typing") to `~/.local/share/ansai-shell/ai-lessons.md`; the agent
   can also save one itself when it finds a better way. Lessons are added to its instructions next time.

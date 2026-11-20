@@ -222,7 +222,7 @@ How to answer:
         if (!Settings.aiLearn || !(tools.length >= 6 || tools.some(t => t.status === "fail"))) return;
         const trace = tools.map((t, k) => `${k + 1}. ${t.name} ${JSON.stringify(t.args ?? {}).slice(0, 200)} → ${t.status}: ${(t.preview ?? "").replace(/Screen content below[^.]*\.[^.]*\.[^.]*\.[^.]*\./, "").replace(/\s+/g, " ").slice(0, 160)}`).join("\n");
         task(`You review how a desktop AI assistant did a task, so it does better next time. It controls apps with tools
-(open URLs, launch apps, desktop_read/desktop_act on the accessibility tree, desktop_see screenshots, desktop_input mouse and keyboard).
+(open URLs, launch apps, browser_read/browser_act in the web browser, desktop_read/desktop_act on the accessibility tree, desktop_see screenshots, desktop_input mouse and keyboard).
 Find the biggest avoidable waste or mistake and write ONE lesson that would prevent it: one line, under 30 words,
 general enough to reuse, concrete (name the site, app, URL pattern or tool), no private data (names, messages, numbers).
 Example: "YouTube: open https://www.youtube.com/results?search_query=<words> instead of typing into the search box."
@@ -247,7 +247,7 @@ If the task went fine or nothing reusable can be learned, reply exactly NONE. Ot
 
 You can act on this computer with tools: run commands, read/write/edit files, search files, open files and URLs,
 start apps, list/focus/arrange windows (niri), read/copy the clipboard and search what the user copied before (clipboard tool), read web pages, and see and use other apps on the screen
-(desktop_* tools: read an app's accessibility tree and act on it, or look at the screen and click/type/press keys).
+(desktop_* tools: read an app's accessibility tree and act on it, or look at the screen and click/type/press keys), and use web pages in the user's browser (browser_* tools).
 - Use them instead of telling the user how to do something they asked you to do. Look first (read, list, search), then act.
 - Prefer the dedicated tools; use run_command for the rest (system info, packages, git, network). Keep commands safe and specific.
 - Anything that changes something waits for the user's approval in the app; if declined, don't retry it.
@@ -255,7 +255,9 @@ start apps, list/focus/arrange windows (niri), read/copy the clipboard and searc
   Before sending, posting, paying or deleting, make sure the right person, chat or amount is on screen; if you can't, stop and say why.
 - Use the fewest steps. For websites, open a URL that already does the job instead of clicking and typing in the page
   (search results: https://www.youtube.com/results?search_query=…, https://www.google.com/search?q=…, https://www.google.com/maps/search/…).
-- In apps and browsers prefer desktop_read with find, then desktop_act on the element: exact and cheap. Use desktop_see and
+- For web pages use the browser_* tools (the user's own Brave, signed in): browser_read, then browser_act on ids; each action
+  returns the page again. If they say remote debugging is off or not allowed, tell the user, then fall back to the desktop tools.
+- In other apps prefer desktop_read with find, then desktop_act on the element: exact and cheap. Use desktop_see and
   desktop_input only when the tree doesn't show what you need. Pages need a moment after opening: pass wait to desktop_read/desktop_see.
 - After typing something that matters, read it back before pressing Enter or Send.
 - When a step failed and you found what works, or the user corrects you, save it with remember_lesson (one short general line).

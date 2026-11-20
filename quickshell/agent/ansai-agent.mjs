@@ -10,10 +10,11 @@
 // A model "provider/id" (e.g. "openai-codex/gpt-6-sol") uses signed-in accounts instead (accounts.mjs); request
 // field "account" pins one account id, else "auto" moves on to the next account when one is rate limited.
 // Other modes: `catalog` (providers, models, accounts as JSON), `login <provider> [oauth|api_key]`
-// (interactive JSON lines), `logout <id>`, `rename <id> <label>`.
+// (interactive JSON lines), `logout <id>`, `rename <id> <label>`; `browserd` is the browser helper (browser.mjs).
 import { Agent } from "@earendil-works/pi-agent-core";
 import { createModels, createProvider } from "@earendil-works/pi-ai";
 import * as Accounts from "./accounts.mjs";
+import { browser, serve as browserd } from "./browser.mjs";
 import { stream, streamSimple } from "@earendil-works/pi-ai/api/openai-completions";
 import { execFile, spawn } from "node:child_process";
 import { mkdtemp, readFile, readdir, rm, stat, writeFile, mkdir } from "node:fs/promises";
@@ -458,6 +459,32 @@ const desktop = [
         }
     },
     {
+        name: "browser_read", title: "Read the browser",
+        description: "The user's own browser (Brave, signed in to their sites) over DevTools: better than desktop_read for web pages. " +
+            "action state (default): the page in order as [id] role \"name\" = value states, ## headings and visible text; * marks ids new since the last look; find keeps matching lines. " +
+            "tabs: the open tabs with ids. see: a screenshot of the tab. tab: work in that tab from now on. The first use may need the user to click Allow in the browser.",
+        parameters: obj({ action: { type: "string", enum: ["state", "tabs", "see"] }, find: S("state: only lines containing this"), tab: S("A tab id from tabs"),
+            max: N("state: most characters (default 8000)") }, []),
+        async run({ action, find, tab, max }) {
+            const r = await browser(action || "state", { find, tab, max });
+            if (r?.image) return { content: [{ type: "text", text: UNTRUSTED }, { type: "image", data: r.image, mimeType: r.mime }], details: {} };
+            return text(`${UNTRUSTED}\n\n${r}`);
+        }
+    },
+    {
+        name: "browser_act", title: "Use the browser", ask: true,
+        description: "Act in the user's browser tab by id from browser_read, without the real mouse: open (url; new_tab), click (id), type (id, text: replaces the field, also picks a select option; enter: press Enter after), " +
+            "key (keys like enter, escape, tab, pagedown, ctrl+a), scroll (down: screens, negative up; or id to scroll to), back, show (bring the tab to the front), close (a tab you opened). " +
+            "Each action reports navigated / page changed / no change and returns the page again, so you rarely need browser_read after it.",
+        parameters: obj({ action: { type: "string", enum: ["open", "click", "type", "key", "scroll", "back", "show", "close"] }, id: N("Element id from browser_read"), url: S("open: the URL"),
+            new_tab: { type: "boolean", description: "open: in a new tab" }, text: S("type: the text"), enter: { type: "boolean", description: "type: press Enter after" },
+            keys: S("key: e.g. enter, escape, ctrl+a"), down: N("scroll: screens down (negative: up)"), tab: S("A tab id from browser_read tabs") }, ["action"]),
+        async run(a) {
+            if (["click", "type"].includes(a.action) && !num(a.id)) throw new Error(`${a.action} needs id, a number from browser_read`);
+            return text(`${UNTRUSTED}\n\n${await browser(a.action, a)}`);
+        }
+    },
+    {
         name: "fetch_url", title: "Read a web page",
         description: "Download a web page or API URL and get its text (HTML is reduced to plain text).",
         parameters: obj({ url: S("http(s) URL") }),
@@ -572,6 +599,7 @@ async function accountModel(req) {
 }
 
 async function main() {
+    if (process.argv[2] === "browserd") return browserd();
     if (process.argv[2]) return accountsMode(process.argv[2], process.argv.slice(3));
     const req0 = await nextLine();
     let req = null;
