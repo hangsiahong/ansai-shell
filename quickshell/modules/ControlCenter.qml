@@ -233,6 +233,7 @@ Sheet {
                     anchors.fill: parent
                     source: root.player?.trackArtUrl ?? ""
                     fillMode: Image.PreserveAspectCrop
+                    sourceSize: Qt.size(112, 112)
                     asynchronous: true
                 }
                 Icon { anchors.centerIn: parent; name: "music_note"; visible: !root.player?.trackArtUrl; color: Theme.muted }
@@ -411,7 +412,7 @@ Sheet {
                 width: 44; height: 44; radius: 9
                 color: Theme.surface3
                 clip: true
-                Image { anchors.fill: parent; source: root.player?.trackArtUrl ?? ""; fillMode: Image.PreserveAspectCrop; asynchronous: true }
+                Image { anchors.fill: parent; source: root.player?.trackArtUrl ?? ""; fillMode: Image.PreserveAspectCrop; sourceSize: Qt.size(88, 88); asynchronous: true }
                 Icon { anchors.centerIn: parent; name: "music_note"; visible: !root.player?.trackArtUrl; color: Theme.muted }
             }
             Column {

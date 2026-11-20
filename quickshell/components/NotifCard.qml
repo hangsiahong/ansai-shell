@@ -131,6 +131,7 @@ Rectangle {
                 Layout.preferredWidth: 40
                 Layout.preferredHeight: 40
                 fillMode: Image.PreserveAspectCrop
+                sourceSize: Qt.size(80, 80)
                 asynchronous: true
             }
         }
