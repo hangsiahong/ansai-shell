@@ -4,6 +4,9 @@
 // Names not listed here keep the Material glyph. Built from @phosphor-icons/web selection.json.
 var map = {
     "add": [0xe3d4, 0xe3d4],
+    "calendar_month": [0xe10a, 0xe10a],
+    "videocam": [0xe4da, 0xe4da],
+    "notifications": [0xe0ce, 0xe0ce],
     "add_link": [0xe2e6, 0xe2e6],
     "admin_panel_settings": [0xe40c, 0xe40c],
     "android": [0xe008, 0xe008],

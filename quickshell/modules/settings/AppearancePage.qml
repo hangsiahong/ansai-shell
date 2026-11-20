@@ -153,6 +153,43 @@ ColumnLayout {
             }
             Btn { text: "Change…"; onClicked: Shell.settingsPage = "wallpaper" }
         }
+        SRow {
+            icon: "widgets"
+            title: "Desktop widgets"
+            sub: "On the wallpaper of an empty workspace. Drag a widget to move it."
+            Btn {
+                visible: Object.keys(Settings.widgetPos).length > 0
+                text: "Reset layout"
+                onClicked: Settings.widgetPos = ({})
+            }
+            below: Flow {
+                width: parent ? parent.width : 300
+                spacing: 8
+                Repeater {
+                    model: [["clock", "schedule", "Clock"], ["weather", "partly_cloudy_day", "Weather"], ["calendar", "calendar_month", "Calendar"],
+                        ["battery", "battery_full", "Battery"], ["media", "music_note", "Now playing"]]
+                    Hover {
+                        id: wc
+                        required property var modelData
+                        readonly property bool on: Settings.widgets.includes(modelData[0])
+                        width: wcRow.implicitWidth + 28
+                        height: 36
+                        radius: 18
+                        base: on ? Theme.accentSoft : (Theme.m3 ? Theme.surface3 : Theme.fill2)
+                        border.width: on ? 1 : 0
+                        border.color: Theme.accent
+                        onClicked: Settings.widgets = on ? Settings.widgets.filter(w => w !== modelData[0]) : Settings.widgets.concat([modelData[0]])
+                        Row {
+                            id: wcRow
+                            anchors.centerIn: parent
+                            spacing: 6
+                            Icon { anchors.verticalCenter: parent.verticalCenter; name: wc.modelData[1]; filled: wc.on; size: 16; color: wc.on ? Theme.accent : Theme.text }
+                            Txt { anchors.verticalCenter: parent.verticalCenter; text: wc.modelData[2]; font.pixelSize: 13; font.weight: Theme.strong; color: wc.on ? Theme.accent : Theme.text }
+                        }
+                    }
+                }
+            }
+        }
     }
     SGroup {
         title: "Desktop"
