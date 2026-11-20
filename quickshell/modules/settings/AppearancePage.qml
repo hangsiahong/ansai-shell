@@ -237,7 +237,7 @@ ColumnLayout {
                         border.color: Theme.accent
                         onClicked: {
                             iconGrid.current = modelData.name;
-                            setIcons.exec(["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", modelData.name]);
+                            setIcons.exec(["sh", "-c", 'gsettings set org.gnome.desktop.interface icon-theme "$1"; kwriteconfig6 --file kdeglobals --group Icons --key Theme "$1"', "sh", modelData.name]);
                         }
                         Column {
                             anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 10 }

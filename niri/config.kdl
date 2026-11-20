@@ -98,7 +98,7 @@ screenshot-path "~/Pictures/Screenshots/Screenshot %Y-%m-%d %H-%M-%S.png"
 
 environment {
     QT_QPA_PLATFORM "wayland;xcb"
-    QT_QPA_PLATFORMTHEME "gtk3"
+    QT_QPA_PLATFORMTHEME "kde"   // Qt/KDE apps read the shell's colour scheme from kdeglobals
     ELECTRON_OZONE_PLATFORM_HINT "auto"
     MOZ_ENABLE_WAYLAND "1"
     XDG_CURRENT_DESKTOP "niri"
