@@ -63,16 +63,43 @@ Singleton {
     // App hotkeys: focus the app's latest window, start it if none is open, and if it's already
     // focused go back to the window used before it. `id` is the desktop entry id (without .desktop).
     function raiseApp(id: string): void {
+        // X11 windows (Brave under XWayland) all share one app_id; their WM_CLASS instance tells
+        // web apps apart (crx_<id>), so look those up first.
+        if (xwin.running) return;
+        xwin.want = id;
+        xwin.running = true;
+    }
+    Process {
+        id: xwin
+        property string want: ""
+        command: ["sh", "-c", "for w in $(xdotool search --onlyvisible --name '' 2>/dev/null); do xprop -id $w -notype WM_CLASS _NET_WM_NAME 2>/dev/null; done"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                // title -> WM_CLASS instance
+                const inst = {};
+                let cur = "";
+                for (const l of text.split("\n")) {
+                    let m = l.match(/^WM_CLASS = "([^"]*)"/);
+                    if (m) { cur = m[1]; continue; }
+                    m = l.match(/^_NET_WM_NAME = "(.*)"$/);
+                    if (m && cur) { inst[m[1].replace(/\\"/g, '"')] = cur; cur = ""; }
+                }
+                root.raiseWith(xwin.want, inst);
+            }
+        }
+    }
+    function raiseWith(id: string, inst: var): void {
         const key = appKey(id);
+        const keyOf = w => appKey(inst[w.title] ?? w.app_id);
         const byTime = l => l.sort((a, b) => stamp(b) - stamp(a));
         const all = Object.values(windows);
         const cur = windows[focusedWindowId];
-        if (cur && appKey(cur.app_id) === key) {
-            const back = byTime(all.filter(w => appKey(w.app_id) !== key))[0];
+        if (cur && keyOf(cur) === key) {
+            const back = byTime(all.filter(w => keyOf(w) !== key))[0];
             if (back) focusWindow(back.id);
             return;
         }
-        const mine = byTime(all.filter(w => appKey(w.app_id) === key))[0];
+        const mine = byTime(all.filter(w => keyOf(w) === key))[0];
         if (mine) { focusWindow(mine.id); return; }
         const e = DesktopEntries.byId(id) ?? DesktopEntries.heuristicLookup(id);
         if (e) e.execute();
