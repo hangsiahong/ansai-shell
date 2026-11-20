@@ -33,7 +33,7 @@ link "$here/quickshell/assets/fonts/ansai-fonts.conf" "$cfg/fontconfig/conf.d/61
 command -v fc-cache >/dev/null && fc-cache "$HOME/.local/share/fonts"
 
 missing=()
-for b in niri qs xwayland-satellite brightnessctl wpctl playerctl swayidle wl-paste cliphist fuzzel wlsunset ghostty node python3 grim slurp wtype; do
+for b in niri qs xwayland-satellite brightnessctl wpctl playerctl swayidle wl-paste cliphist fuzzel wlsunset ghostty node python3 grim slurp wtype tesseract; do
     command -v "$b" >/dev/null || missing+=("$b")
 done
 if [ ${#missing[@]} -gt 0 ]; then
