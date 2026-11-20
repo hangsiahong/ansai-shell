@@ -58,6 +58,24 @@ ColumnLayout {
             sub: "Don't lock or turn off the screen when idle (useful while agents work)"
             Switch { checked: Settings.keepAwake; onToggled: Settings.keepAwake = !Settings.keepAwake }
         }
+        Repeater {
+            model: [["dark_mode", "Dim screen", "idleDim", [[30, "30s"], [60, "1m"], [120, "2m"], [240, "4m"], [0, "Never"]]],
+                    ["lock", "Lock", "idleLock", [[60, "1m"], [300, "5m"], [600, "10m"], [1800, "30m"], [0, "Never"]]],
+                    ["desktop_windows", "Turn off screen", "idleOff", [[120, "2m"], [360, "6m"], [900, "15m"], [1800, "30m"], [0, "Never"]]]]
+            SRow {
+                id: idleRow
+                required property var modelData
+                opacity: Settings.keepAwake ? 0.5 : 1
+                icon: modelData[0]
+                title: modelData[1] + " when idle"
+                sub: Settings.keepAwake ? "Paused while Keep awake is on" : ""
+                Seg {
+                    model: idleRow.modelData[3].map(o => ({ v: o[0], l: o[1] }))
+                    value: Settings[idleRow.modelData[2]]
+                    onPicked: v => Settings[idleRow.modelData[2]] = v
+                }
+            }
+        }
         SRow {
             visible: Brightness.available
             icon: "brightness_6"

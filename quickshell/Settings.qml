@@ -19,6 +19,9 @@ Singleton {
     property alias dnd: adapter.dnd
     property alias nightLight: adapter.nightLight
     property alias keepAwake: adapter.keepAwake
+    property alias idleDim: adapter.idleDim
+    property alias idleLock: adapter.idleLock
+    property alias idleOff: adapter.idleOff
     property alias pinned: adapter.pinned
     property alias usage: adapter.usage
     property alias widgets: adapter.widgets
@@ -61,6 +64,9 @@ Singleton {
             property bool dnd: false
             property bool nightLight: false
             property bool keepAwake: true
+            property int idleDim: 240   // seconds idle before dimming / locking / screens off (services/Idle.qml); 0 = never
+            property int idleLock: 300
+            property int idleOff: 360
             property var usage: ({})
             property list<string> widgets: ["clock", "weather", "battery", "calendar", "media"]   // desktop widgets shown, see modules/Widgets.qml
             property var widgetPos: ({})   // id -> [x, y] as fractions of the screen; missing: default spot

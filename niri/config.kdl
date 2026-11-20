@@ -105,7 +105,8 @@ environment {
 }
 
 spawn-at-startup "qs" "-c" "ansai"
-spawn-sh-at-startup "swayidle -w timeout 300 'qs -c ansai ipc call lock lock' timeout 360 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'qs -c ansai ipc call lock lock'"
+// Idle dim/lock/screen-off timers live in the shell (Settings > Power); swayidle only locks before sleep.
+spawn-sh-at-startup "swayidle -w before-sleep 'qs -c ansai ipc call lock lock'"
 spawn-sh-at-startup "wl-paste --watch cliphist store"
 
 animations {
