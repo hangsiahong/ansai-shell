@@ -96,7 +96,8 @@ Sheet {
 When asked to write, rewrite, fix, summarize, translate, continue or turn it into a list, reply with only the text to put in the note:
 no preamble, no quotes. The note shows Markdown formatted, so write it well: "# Title" for a new note, "## " sections,
 "- " bullets, "- [ ] " to-dos, **bold** for key words, short lines; no tables or HTML. For questions about the note, answer briefly. Match the note's language
-unless asked to translate.\n\nThe note:\n<<<\n${editor.text}\n>>>` }];
+unless asked to translate. The clipboard tool reads what the user copied (now, or search/list older copies); use it when they mention
+the clipboard, "what I copied" or pasting, and put that content into your answer.\n\nThe note:\n<<<\n${editor.text}\n>>>` }];
         if (askLast) msgs.push({ role: "user", content: askLast.q }, { role: "assistant", content: askLast.a });
         msgs.push({ role: "user", content: q });
         askProc = AI.ask(msgs, d => { if (cur === id) askA += d; }, (full, err) => {
@@ -105,7 +106,7 @@ unless asked to translate.\n\nThe note:\n<<<\n${editor.text}\n>>>` }];
             if (err) { askA = err; askErr = true; return; }
             askA = (full ?? askA).trim();
             askLast = { q: q, a: askA };
-        });
+        }, { only: ["clipboard"] });
     }
     function useAnswer(replace: bool): void {
         const t = askA.trim();

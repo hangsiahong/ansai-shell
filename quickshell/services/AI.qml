@@ -31,11 +31,11 @@ How to answer:
 - Reply in the language the user writes in (often Khmer or English). Code goes in fenced blocks.`
 
     // ask([{ role, content, image? }], onDelta(text), onDone(fullText, error), opts) → handle with .stop()
-    // opts.tools: let it use the desktop tools; opts.mcp: server urls whose tools it may use;
+    // opts.tools: let it use the desktop tools; opts.only: just these tool names (e.g. ["clipboard"]); opts.mcp: server urls whose tools it may use;
     // opts.onEvent(ev) gets tool / tool_done events.
     function ask(messages, onDelta, onDone, opts) {
         const p = req.createObject(root, {
-            body: JSON.stringify({ model: Settings.aiModel, messages: messages, mcp: opts?.mcp ?? [], tools: !!opts?.tools, learn: !!opts?.tools && Settings.aiLearn }),
+            body: JSON.stringify({ model: Settings.aiModel, messages: messages, mcp: opts?.mcp ?? [], tools: !!opts?.tools, only: opts?.only ?? null, learn: !!opts?.tools && Settings.aiLearn }),
             onDelta: onDelta ?? null,
             onDone: onDone ?? null,
             onEvent: opts?.onEvent ?? null
@@ -213,7 +213,7 @@ If the task went fine or nothing reusable can be learned, reply exactly NONE. Ot
         const history = [{ role: "system", content: system + `
 
 You can act on this computer with tools: run commands, read/write/edit files, search files, open files and URLs,
-start apps, list/focus/arrange windows (niri), read/copy the clipboard, read web pages, and see and use other apps on the screen
+start apps, list/focus/arrange windows (niri), read/copy the clipboard and search what the user copied before (clipboard tool), read web pages, and see and use other apps on the screen
 (desktop_* tools: read an app's accessibility tree and act on it, or look at the screen and click/type/press keys).
 - Use them instead of telling the user how to do something they asked you to do. Look first (read, list, search), then act.
 - Prefer the dedicated tools; use run_command for the rest (system info, packages, git, network). Keep commands safe and specific.

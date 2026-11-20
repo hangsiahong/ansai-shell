@@ -19227,6 +19227,91 @@ var must = async (cmd, args, o) => {
 `) + `
 `), text("Saved for next time.");
   }
+}, CLIP_TEXT = 12000;
+function runBuf(cmd, args, input) {
+  return new Promise((res) => {
+    let p = execFile(cmd, args, { timeout: 15000, maxBuffer: 33554432, encoding: "buffer" }, (err, stdout) => res(err ? null : stdout));
+    if (input != null)
+      p.stdin.end(input);
+  });
+}
+var clipBin = (l) => /^\[\[ binary data (.+?) \]\]$/.exec(l)?.[1];
+async function clipHistory() {
+  let r = await run("cliphist", ["list"]);
+  return r.code ? [] : r.stdout.split(`
+`).filter(Boolean).map((l) => {
+    let t = l.indexOf("\t");
+    return { id: l.slice(0, t), prev: l.slice(t + 1) };
+  });
+}
+function clipOut(buf, bin) {
+  if (!buf?.length)
+    return text("(clipboard is empty)");
+  let kind = bin ? bin.split(" ")[2] : "";
+  if (bin && IMG["." + kind])
+    return { content: [{ type: "text", text: `Image (${bin}) from the clipboard:` }, { type: "image", data: buf.toString("base64"), mimeType: IMG["." + kind] }], details: {} };
+  if (bin)
+    return text(`Binary data (${bin}), not text or an image.`);
+  let t = buf.toString("utf8");
+  return text(t.length > CLIP_TEXT ? t.slice(0, CLIP_TEXT) + `
+… (${t.length - CLIP_TEXT} more characters cut; ${t.length} in all)` : t);
+}
+var clipboardTool = {
+  name: "clipboard",
+  title: "Read the clipboard",
+  description: "What the user copied. No arguments: what's on the clipboard now (text, or the image itself). " + "list: true → the history, newest first, one short preview line each. search → history entries containing that text, with the text around each match. " + "item: N → the whole entry N from a list/search (1 = newest). Use list/search first; fetch items only as needed.",
+  parameters: obj2({
+    list: { type: "boolean", description: "List the history (previews)" },
+    search: S("Text to find in the history"),
+    item: N("Entry number from list/search, 1 = newest"),
+    limit: N("How many to list, default 15, max 40")
+  }, []),
+  async run({ list, search, item, limit: limit2 }) {
+    if (!list && !search && !item) {
+      let types2 = (await run("wl-paste", ["-l"])).stdout, img = types2.split(`
+`).find((t) => /^image\/(png|jpeg|webp|gif)$/.test(t));
+      if (img && !/^text\/plain/m.test(types2)) {
+        let buf = await runBuf("wl-paste", ["-n", "-t", img]);
+        return clipOut(buf, buf && `${Math.round(buf.length / 1024)} KiB ${img.split("/")[1].replace("jpeg", "jpg")}`);
+      }
+      return clipOut(await runBuf("wl-paste", ["-n", "-t", "text"]));
+    }
+    let h = await clipHistory();
+    if (!h.length)
+      return text("No clipboard history (cliphist isn't running or is empty).");
+    if (item) {
+      let e = h[item - 1];
+      if (!e)
+        return text(`No entry ${item}; the history has ${h.length}.`);
+      return clipOut(await runBuf("cliphist", ["decode"], `${e.id}	
+`), clipBin(e.prev));
+    }
+    let rows = h.map((e, i) => ({ n: i + 1, e }));
+    if (search) {
+      let q = search.toLowerCase(), hit = [];
+      for (let r of rows.slice(0, 200)) {
+        if (clipBin(r.e.prev)) {
+          if (r.e.prev.toLowerCase().includes(q))
+            hit.push(r);
+          continue;
+        }
+        let full = (await runBuf("cliphist", ["decode"], `${r.e.id}	
+`))?.toString("utf8") ?? "", at = full.toLowerCase().indexOf(q);
+        if (at < 0)
+          continue;
+        let flat = (s) => s.replace(/\s+/g, " ");
+        r.snip = (at > 50 ? "…" : "") + flat(full.slice(Math.max(0, at - 50), at + q.length + 70)) + (at + q.length + 70 < full.length ? "…" : ""), hit.push(r);
+      }
+      rows = hit;
+    }
+    let n = Math.min(Math.max(limit2 || 15, 1), 40), line = (r) => {
+      let b = clipBin(r.e.prev);
+      return `${r.n}. ${b ? `[image/binary: ${b}]` : r.snip ?? r.e.prev.replace(/\s+/g, " ").slice(0, 90)}`;
+    };
+    return text(`${rows.length} of ${h.length} entries${rows.length > n ? `, showing ${n}` : ""}:
+` + rows.slice(0, n).map(line).join(`
+`));
+  }
 }, NOTES = join(process.env.XDG_DATA_HOME || join(homedir(), ".local/share"), "ansai-shell", "notes.json");
 async function loadNotes() {
   try {
@@ -19481,16 +19566,7 @@ workspaces: ` + ws.map((w) => `${w.output}:${w.name || w.idx}${w.is_focused ? " 
       return await must("niri", ["msg", "action", action, ...args || []]), text("Done");
     }
   },
-  {
-    name: "read_clipboard",
-    title: "Read the clipboard",
-    description: "Get the text currently on the clipboard.",
-    parameters: obj2({}),
-    async run() {
-      let r = await run("wl-paste", ["-n", "-t", "text"]);
-      return text(cap(r.stdout || "(clipboard is empty or not text)"));
-    }
-  },
+  clipboardTool,
   {
     name: "copy_to_clipboard",
     title: "Copy to clipboard",
@@ -19755,7 +19831,7 @@ async function main() {
   } catch (err) {
     return out({ e: `Couldn't read the image: ${err.message}` });
   }
-  let last = msgs.pop(), local = req.tools === !1 ? [] : [...desktop, ...noteTools, ...req.learn ? [rememberTool] : []].map((t) => ({ ...t, server: "this computer" })), defs = [...local, ...await mcpTools(req.mcp || [], new Set(local.map((t) => t.name)))], byName = new Map(defs.map((t) => [t.name, t])), tools = defs.map((t) => ({
+  let last = msgs.pop(), all = [...desktop, ...noteTools, ...req.learn ? [rememberTool] : []], local = (req.only ? all.filter((t) => req.only.includes(t.name)) : req.tools === !1 ? [] : all).map((t) => ({ ...t, server: "this computer" })), defs = [...local, ...await mcpTools(req.mcp || [], new Set(local.map((t) => t.name)))], byName = new Map(defs.map((t) => [t.name, t])), tools = defs.map((t) => ({
     name: t.name,
     label: t.title || t.name,
     description: t.description,
