@@ -12,14 +12,14 @@ Singleton {
     property var list: []
     readonly property var popups: list.filter(e => e.popup)
 
+    // Cards get a copy of their entry (Repeater modelData), so match entries by their notification.
     function dismiss(entry: var): void {
-        list = list.filter(e => e !== entry);
+        list = list.filter(e => e.n !== entry.n);
         entry.n?.dismiss?.();
     }
 
     function hidePopup(entry: var): void {
-        entry.popup = false;
-        list = list.slice();
+        list = list.map(e => e.n === entry.n ? Object.assign({}, e, { popup: false }) : e);
     }
 
     function clear(): void {
@@ -41,7 +41,7 @@ Singleton {
             onNotification: n => {
                 n.tracked = true;
                 const entry = { n: n, time: new Date(), popup: !Settings.dnd || n.urgency === NotificationUrgency.Critical };
-                n.closed.connect(() => { root.list = root.list.filter(e => e !== entry); });
+                n.closed.connect(() => { root.list = root.list.filter(e => e.n !== n); });
                 root.list = [entry, ...root.list].slice(0, 50);
             }
         }
