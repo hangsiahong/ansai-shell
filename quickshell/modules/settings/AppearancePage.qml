@@ -126,6 +126,73 @@ ColumnLayout {
             Switch { checked: Settings.systemTheme; onToggled: Settings.systemTheme = !Settings.systemTheme }
         }
         SRow {
+            icon: "apps"
+            title: "App icons"
+            sub: "Icon theme for apps (GTK now, the dock and launcher after the shell's next start). ansai pairs with WhiteSur, Android with Papirus or Fluent."
+            below: Flow {
+                id: iconGrid
+                width: parent ? parent.width : 300
+                spacing: 8
+                readonly property real tileW: Math.floor((width - spacing * 3) / 4)
+                property var themes: []
+                property string current: ""
+                Process {
+                    running: true
+                    command: ["sh", "-c", "gsettings get org.gnome.desktop.interface icon-theme; python3 \"$1\"", "sh", Quickshell.shellDir + "/scripts/icon-themes.py"]
+                    stdout: StdioCollector {
+                        onStreamFinished: {
+                            const l = text.split("\n");
+                            iconGrid.current = l[0].replace(/'/g, "").trim();
+                            try { iconGrid.themes = JSON.parse(l[1]); } catch (e) {}
+                        }
+                    }
+                }
+                Process { id: setIcons }
+                Repeater {
+                    model: iconGrid.themes
+                    Hover {
+                        id: it
+                        required property var modelData
+                        readonly property bool on: iconGrid.current === modelData.name
+                        width: iconGrid.tileW
+                        height: 74
+                        radius: Theme.m3 ? 20 : 12
+                        base: Theme.m3 ? Theme.surface3 : Theme.fill2
+                        border.width: on ? 2 : 0
+                        border.color: Theme.accent
+                        onClicked: {
+                            iconGrid.current = modelData.name;
+                            setIcons.exec(["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", modelData.name]);
+                        }
+                        Column {
+                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 10 }
+                            spacing: 6
+                            Row {
+                                spacing: 4
+                                Repeater {
+                                    model: it.modelData.icons
+                                    Image {
+                                        required property string modelData
+                                        width: 26; height: 26
+                                        source: "file://" + modelData
+                                        sourceSize: Qt.size(52, 52)
+                                        asynchronous: true
+                                    }
+                                }
+                            }
+                            Txt {
+                                width: parent.width
+                                text: it.modelData.title
+                                font.pixelSize: 12
+                                font.weight: it.on ? Theme.strong : Font.Normal
+                                color: it.on ? Theme.accent : Theme.text
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        SRow {
             icon: "schedule"
             title: "24-hour clock"
             Switch { checked: Settings.use24h; onToggled: Settings.use24h = !Settings.use24h }
