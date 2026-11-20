@@ -80,7 +80,7 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 ## Settings
 
 The Settings app (control center gear, "ansai Settings" in the launcher, or `qs -c ansai ipc call shell settings <page>`) covers
-appearance, wallpaper, dock, displays, graphics (supergfxctl), power and battery (asusctl, power-profiles-daemon), sound, AI and about.
+appearance, wallpaper, dock, displays, graphics (supergfxctl), power, fan speed curves and battery (asusctl, power-profiles-daemon), sound, AI and about.
 Display changes apply live and revert after 15 s unless kept; kept ones go to `~/.config/niri/ansai-outputs.kdl`.
 GPU mode switches only ask supergfxd; you log out or reboot yourself.
 

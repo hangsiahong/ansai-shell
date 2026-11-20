@@ -22,7 +22,7 @@ FloatingWindow {
         { id: "dock", l: "Dock", icon: "dock_to_left", sub: "Auto-hide, size, pinned apps" },
         { id: "displays", l: "Displays", icon: "desktop_windows", sub: "Resolution, refresh, scale" },
         { id: "graphics", l: "Graphics", icon: "memory", sub: "Integrated, hybrid, dGPU" },
-        { id: "power", l: "Power & Battery", icon: "battery_charging_full", sub: "Profile, charge limit, keyboard" },
+        { id: "power", l: "Power & Battery", icon: "battery_charging_full", sub: "Profile, fans, charge limit, keyboard" },
         { id: "sound", l: "Sound", icon: "volume_up", sub: "Output and input devices" },
         { id: "ai", l: "AI", icon: "auto_awesome", sub: "KOOMPI AI: model, key, languages" },
         { id: "about", l: "About", icon: "info", sub: "This device, advanced" }
