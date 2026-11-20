@@ -18,14 +18,6 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "ansai-toasts"
 
-    // ansai cards draw their own blur (GlassBackdrop); niri blurs only for material.
-    BackgroundEffect.blurRegion: Region {
-        Region { item: Theme.m3 && rep.count > 0 ? rep.itemAt(0) : null; radius: Theme.m3 ? Theme.r : 30 }
-        Region { item: Theme.m3 && rep.count > 1 ? rep.itemAt(1) : null; radius: Theme.m3 ? Theme.r : 30 }
-        Region { item: Theme.m3 && rep.count > 2 ? rep.itemAt(2) : null; radius: Theme.m3 ? Theme.r : 30 }
-        Region { item: Theme.m3 && rep.count > 3 ? rep.itemAt(3) : null; radius: Theme.m3 ? Theme.r : 30 }
-    }
-
     Column {
         id: stack
         width: parent.width

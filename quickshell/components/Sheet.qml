@@ -5,7 +5,7 @@ import qs
 import qs.services
 
 // Full-screen transparent layer that hosts one glass panel. Click outside or Esc closes it.
-// Only the panel gets compositor blur (BackgroundEffect region), so the rest stays see-through.
+// The panel draws its own blur (Glass.ownBlur), so the rest stays see-through.
 PanelWindow {
     id: root
     required property string name
@@ -34,15 +34,6 @@ PanelWindow {
     WlrLayershell.namespace: "ansai-" + name
     WlrLayershell.keyboardFocus: shown ? (exclusiveKeys ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand) : WlrKeyboardFocus.None
 
-    // Blur only once the panel is fully in: a blur region under a fading panel shows as a flash of
-    // blurred wallpaper on open and lingers as a coloured smudge on close.
-    BackgroundEffect.blurRegion: Region {
-        // ansai draws its own blur in the panel (Glass.ownBlur), so niri only blurs for material.
-        item: Theme.m3 && root.shown && panel.opacity > 0.95 ? panel : null
-        // Rounder than the panel: wl_region corners are pixel steps, and a larger radius keeps them
-        // inside the panel's antialiased corner instead of poking out as jaggies.
-        radius: root.panelRadius + (Theme.m3 ? 0 : 8)
-    }
 
     Rectangle {
         anchors.fill: parent

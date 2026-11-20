@@ -17,7 +17,7 @@ Rectangle {
     radius: Theme.m3 ? 24 : 22
     property real screenX: NaN
     property real screenY: NaN
-    readonly property bool ownBlur: popup && !Theme.m3 && !isNaN(screenX)
+    readonly property bool ownBlur: popup && !isNaN(screenX)
     color: ownBlur ? "transparent" : popup ? Theme.glass : Theme.m3 ? Theme.surface2 : Theme.glassTile
     GlassBackdrop { visible: root.ownBlur; anchors.fill: parent; radius: root.radius; screenX: root.screenX; screenY: root.screenY; z: -2 }
     Rectangle { visible: root.ownBlur; anchors.fill: parent; radius: root.radius; color: Theme.glass; z: -1 }
