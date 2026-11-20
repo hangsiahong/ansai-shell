@@ -175,7 +175,13 @@ selection-foreground = ${dark ? "#000000" : "#ffffff"}
                 `gsettings set org.gnome.desktop.interface gtk-theme '${Theme.dark ? "adw-gtk3-dark" : "adw-gtk3"}';` +
                 `gsettings set org.gnome.desktop.interface accent-color '${root.gnomeAccent}';` +
                 `gsettings set org.gnome.desktop.interface font-name '${Theme.fontName} 10';` +
-                `gsettings set org.gnome.desktop.interface document-font-name '${Theme.fontName} 10'`]);
+                `gsettings set org.gnome.desktop.interface document-font-name '${Theme.fontName} 10';` +
+                // settings.ini beats gsettings for GTK3 apps (the GTK file chooser too): pin theme + dark there,
+                // and drop gtk-theme-name for GTK4 so non-libadwaita apps get Default + our gtk.css.
+                `for v in 3 4; do f='${root.cfg}'/gtk-$v.0/settings.ini; [ -f "$f" ] || printf '[Settings]\\n' > "$f";` +
+                ` grep -v -e '^gtk-theme-name' -e '^gtk-application-prefer-dark-theme' "$f" > "$f.tmp";` +
+                ` [ $v = 3 ] && echo 'gtk-theme-name=${Theme.dark ? "adw-gtk3-dark" : "adw-gtk3"}' >> "$f.tmp";` +
+                ` echo 'gtk-application-prefer-dark-theme=${Theme.dark ? 1 : 0}' >> "$f.tmp"; mv "$f.tmp" "$f"; done`]);
         }
     }
 
@@ -187,7 +193,7 @@ set -e
 B='${root.backup}'; C='${root.cfg}'
 if [ ! -e "$B/done" ]; then
   mkdir -p "$B"
-  for f in gtk-3.0/gtk.css gtk-4.0/gtk.css ghostty/config; do
+  for f in gtk-3.0/gtk.css gtk-4.0/gtk.css gtk-3.0/settings.ini gtk-4.0/settings.ini ghostty/config; do
     [ -e "$C/$f" ] && mkdir -p "$B/$(dirname $f)" && cp -a "$C/$f" "$B/$f"
   done
   : > "$B/gsettings.txt"
@@ -198,7 +204,7 @@ if [ ! -e "$B/done" ]; then
 #!/bin/sh
 # Puts back what ansai-shell's system theme replaced. Turn it off first (settings.json "systemTheme": false).
 B="$(cd "$(dirname "$0")" && pwd)"; C="\${XDG_CONFIG_HOME:-$HOME/.config}"
-for f in gtk-3.0/gtk.css gtk-4.0/gtk.css ghostty/config; do [ -e "$B/$f" ] && cp -a "$B/$f" "$C/$f"; done
+for f in gtk-3.0/gtk.css gtk-4.0/gtk.css gtk-3.0/settings.ini gtk-4.0/settings.ini ghostty/config; do [ -e "$B/$f" ] && cp -a "$B/$f" "$C/$f"; done
 while read -r k v; do gsettings set org.gnome.desktop.interface "$k" "$v"; done < "$B/gsettings.txt"
 echo restored
 EOS
@@ -212,6 +218,9 @@ EOS
   fi
   touch "$B/done"
 fi
+for f in gtk-3.0/settings.ini gtk-4.0/settings.ini; do   # added after the first backup round
+  [ -e "$C/$f" ] && [ ! -e "$B/$f" ] && mkdir -p "$B/$(dirname $f)" && cp -a "$C/$f" "$B/$f"
+done
 mkdir -p "$C/gtk-3.0" "$C/gtk-4.0" "$C/ghostty/themes"
 `]
         onExited: (code) => { if (code === 0) root.ready = true; }
