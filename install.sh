@@ -26,6 +26,11 @@ if [ -e /etc/xdg/autostart/xfce-polkit.desktop ] && [ ! -e "$cfg/autostart/xfce-
     sed 's/^NotShowIn=.*/NotShowIn=GNOME;KDE;niri;/' /etc/xdg/autostart/xfce-polkit.desktop > "$cfg/autostart/xfce-polkit.desktop"
 fi
 
+# Bundled UI fonts (OFL) and the Khmer fallback rule, for GTK apps too.
+link "$here/quickshell/assets/fonts" "$HOME/.local/share/fonts/ansai-shell"
+link "$here/quickshell/assets/fonts/ansai-fonts.conf" "$cfg/fontconfig/conf.d/61-ansai-fonts.conf"
+command -v fc-cache >/dev/null && fc-cache "$HOME/.local/share/fonts"
+
 missing=()
 for b in niri qs xwayland-satellite brightnessctl wpctl playerctl swayidle wl-paste cliphist fuzzel wlsunset ghostty node python3 grim slurp wtype; do
     command -v "$b" >/dev/null || missing+=("$b")

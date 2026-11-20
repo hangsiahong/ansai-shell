@@ -203,7 +203,8 @@ Sheet {
                     base: Theme.fill
                     onClicked: m => {
                         const f = Theme.fonts, i = f.indexOf(Theme.fontName);
-                        Settings.font = f[(i + (m.button === Qt.RightButton ? f.length - 1 : 1)) % f.length];
+                        const next = f[(i + (m.button === Qt.RightButton ? f.length - 1 : 1)) % f.length];
+                        Settings.font = next === Theme.defaultFont ? "" : next;
                     }
                     Row {
                         anchors.centerIn: parent

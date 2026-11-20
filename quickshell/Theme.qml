@@ -2,12 +2,14 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.services
 
 // Two styles share one token set:
 //  "ansai"    mirrors ansai/src/web/styles.css (:root and [data-theme="light"]).
 //  "material" is Android 16 Material 3 Expressive: wallpaper-seeded tonal colours, Roboto, big shapes.
 Singleton {
+    id: root
     readonly property bool dark: Settings.theme !== "light"
     readonly property bool m3: Settings.style === "material"
     readonly property var pal: Scheme
@@ -56,9 +58,11 @@ Singleton {
     readonly property int rGroup: m3 ? 28 : 16
     readonly property int barH: m3 ? 40 : 30
 
-    readonly property var fonts: ["Noto Sans", "Roboto", "Inter", "Cantarell"]
-    readonly property string fontName: Settings.font || (m3 ? "Roboto" : "Noto Sans")
-    readonly property string font: fontName === "Inter" ? (inter.status === FontLoader.Ready ? inter.name : "sans-serif") : fontName
+    // Bundled (assets/fonts, OFL) except Roboto and Noto Sans. Khmer falls back to Kantumruy Pro via assets/fonts/ansai-fonts.conf.
+    readonly property var fonts: ["Inter", "Google Sans Flex", "Geist", "Figtree", "Nunito", "Roboto", "Noto Sans", "Kantumruy Pro"]
+    readonly property string defaultFont: m3 ? "Google Sans Flex" : "Inter"
+    readonly property string fontName: Settings.font || defaultFont
+    readonly property string font: fontName
     readonly property string mono: "monospace"
     readonly property string icons: "Material Symbols Rounded"
     // Text weights: M3 type scale is lighter than the web's semibold labels.
@@ -71,7 +75,18 @@ Singleton {
     readonly property int spring: m3 ? Easing.OutBack : Easing.OutCubic
 
 
-    property FontLoader inter: FontLoader {
-        source: Qt.resolvedUrl("assets/fonts/inter-latin.ttf")
+    // Bundled fonts are also linked into ~/.local/share/fonts so GTK apps and fontconfig fallback see them.
+    // FontLoader keeps the shell itself independent of that (and of a stale registration from an older file).
+    readonly property var bundled: ["Inter", "GoogleSansFlex", "Geist", "Figtree", "Nunito", "KantumruyPro"]
+    property Instantiator fontLoaders: Instantiator {
+        model: root.bundled
+        delegate: FontLoader { required property string modelData; source: Qt.resolvedUrl("assets/fonts/" + modelData + ".ttf") }
     }
+    property Process fontInstall: Process {
+        command: ["sh", "-c", `d="$HOME/.local/share/fonts"; c="\${XDG_CONFIG_HOME:-$HOME/.config}/fontconfig/conf.d"; mkdir -p "$d" "$c"
+            [ "$(readlink "$d/ansai-shell")" = "$1" ] && [ -e "$c/61-ansai-fonts.conf" ] && exit 0
+            ln -sfn "$1" "$d/ansai-shell"; ln -sfn "$1/ansai-fonts.conf" "$c/61-ansai-fonts.conf"; fc-cache "$d"`,
+            "sh", Quickshell.shellDir + "/assets/fonts"]
+    }
+    Component.onCompleted: fontInstall.running = true
 }

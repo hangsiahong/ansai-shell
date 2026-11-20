@@ -37,10 +37,49 @@ ColumnLayout {
             icon: "match_case"
             title: "Font"
             sub: "Used by the shell and, with system theme on, GTK apps"
-            below: Chips {
-                model: [{ v: "", l: "Default (" + (Theme.m3 ? "Roboto" : "Noto Sans") + ")" }].concat(Theme.fonts.map(f => ({ v: f, l: f })))
-                value: Settings.font
-                onPicked: v => Settings.font = v
+            below: Flow {
+                id: fontGrid
+                width: parent ? parent.width : 300
+                spacing: 8
+                readonly property real tileW: Math.floor((width - spacing * 3) / 4)
+                readonly property var notes: ({ "Inter": "SF-like, ansai default", "Google Sans Flex": "Android 16, Material default",
+                    "Geist": "crisp, technical", "Figtree": "friendly geometric", "Nunito": "soft and rounded", "Roboto": "classic Android",
+                    "Noto Sans": "widest script coverage", "Kantumruy Pro": "Khmer first" })
+                Repeater {
+                    model: Theme.fonts
+                    Hover {
+                        id: ft
+                        required property string modelData
+                        readonly property bool on: Theme.fontName === modelData
+                        width: fontGrid.tileW
+                        height: 92
+                        radius: Theme.m3 ? 20 : 12
+                        base: Theme.m3 ? Theme.surface3 : Theme.fill2
+                        border.width: on ? 2 : 0
+                        border.color: Theme.accent
+                        onClicked: Settings.font = modelData === Theme.defaultFont ? "" : modelData
+                        Column {
+                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 12 }
+                            spacing: 1
+                            Text {
+                                text: "Aa ក"
+                                font.family: ft.modelData; font.pixelSize: 24; font.weight: Font.DemiBold
+                                color: ft.on ? Theme.accent : Theme.text
+                            }
+                            Text {
+                                width: parent.width; elide: Text.ElideRight
+                                text: ft.modelData
+                                font.family: ft.modelData; font.pixelSize: 13; font.weight: Font.Medium
+                                color: Theme.text
+                            }
+                            Txt {
+                                width: parent.width
+                                text: fontGrid.notes[ft.modelData] ?? ""
+                                font.pixelSize: 11; color: Theme.muted
+                            }
+                        }
+                    }
+                }
             }
         }
     }

@@ -7,7 +7,7 @@ It comes in two looks you can switch between at any time:
 
 - **ansai**: macOS-style Liquid Glass. Transparent menu bar, glass panels with a lit rim, a Control Center made of
   modules, a floating search bar, menu-bar volume/brightness, a left dock.
-- **Android**: Material 3 Expressive. Colours taken from your wallpaper, big rounded shapes, Roboto.
+- **Android**: Material 3 Expressive. Colours taken from your wallpaper, big rounded shapes, Google Sans Flex.
 
 Both come in light and dark, and the built-in wallpapers switch with them.
 
@@ -59,6 +59,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
   15 s "keep changes?"), graphics (supergfxctl: integrated / hybrid / dGPU), power and battery (profile, charge
   limit, keyboard light), sound, about.
+- **Fonts:** eight UI fonts with live previews in Settings → Appearance: Inter (ansai default), Google Sans Flex (Android default), Geist, Figtree, Nunito, Roboto, Noto Sans and Kantumruy Pro. They're bundled under the OFL, and Khmer text falls back to Kantumruy Pro.
 - **System theme:** GTK 3/4, libadwaita, Qt and Ghostty follow the shell's colours and font.
 - **Wallpapers:** Drift, Ribbons and Dunes, drawn by `tools/wallpapers.py`, each in light and dark.
   Any `name-light` / `name-dark` pair (and GNOME's `-l` / `-d`) follows the theme.
