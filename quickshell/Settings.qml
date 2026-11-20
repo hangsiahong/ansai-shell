@@ -21,6 +21,8 @@ Singleton {
     property alias keepAwake: adapter.keepAwake
     property alias pinned: adapter.pinned
     property alias usage: adapter.usage
+    property alias widgets: adapter.widgets
+    property alias widgetPos: adapter.widgetPos
     property alias padTab: adapter.padTab
     property alias dockMode: adapter.dockMode
     property alias dockSize: adapter.dockSize
@@ -60,6 +62,8 @@ Singleton {
             property bool nightLight: false
             property bool keepAwake: true
             property var usage: ({})
+            property list<string> widgets: ["clock", "weather", "battery", "calendar", "media"]   // desktop widgets shown, see modules/Widgets.qml
+            property var widgetPos: ({})   // id -> [x, y] as fractions of the screen; missing: default spot
             property string padTab: "frequent"   // Launchpad's category tab
             property string dockMode: "smart"   // "smart": hide when a window covers it | "auto": always hide | "always": never hide
             property int dockSize: 44

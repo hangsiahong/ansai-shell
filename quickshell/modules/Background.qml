@@ -14,4 +14,5 @@ PanelWindow {
     color: "black"
 
     Wallpaper { anchors.fill: parent }
+    Widgets { anchors.fill: parent }
 }
