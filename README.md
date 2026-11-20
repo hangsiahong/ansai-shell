@@ -80,6 +80,17 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+Shift+←/→ | Move the current window left/right |
 | Super+Shift+/ | All shortcuts |
 
+**App hotkeys.** Put your own in `~/.config/niri/ansai-keys.kdl` (included by the config, not part of the repo).
+`shell app <desktop-id>` switches to the app, starts it if it isn't open, and if it's already in front goes back
+to the window you were on:
+
+```kdl
+binds {
+    Alt+Shift+T { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "app" "org.telegram.desktop"; }
+}
+```
+
+
 ## Settings
 
 The Settings app (control center gear, "ansai Settings" in the launcher, or `qs -c ansai ipc call shell settings <page>`) covers

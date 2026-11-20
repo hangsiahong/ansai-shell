@@ -307,6 +307,8 @@ binds {
 
 // Style-dependent borders and radii, written by the shell (quickshell/services/NiriStyle.qml). Keep this last.
 include optional=true "ansai-style.kdl"
+// Your own app hotkeys, e.g. Alt+T { spawn "qs" "-c" "ansai" "ipc" "call" "shell" "app" "org.telegram.desktop"; }
+include optional=true "ansai-keys.kdl"
 
 // Render on the Radeon that drives the built-in panel. Left alone, niri picked the NVIDIA dGPU and
 // copied every frame across to the Radeon: extra latency, CPU in the driver, and the dGPU never sleeps.

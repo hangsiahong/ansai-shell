@@ -60,6 +60,25 @@ Singleton {
         action("focus-window", "--id", String(id));
     }
 
+    // App hotkeys: focus the app's latest window, start it if none is open, and if it's already
+    // focused go back to the window used before it. `id` is the desktop entry id (without .desktop).
+    function raiseApp(id: string): void {
+        const key = appKey(id);
+        const byTime = l => l.sort((a, b) => stamp(b) - stamp(a));
+        const all = Object.values(windows);
+        const cur = windows[focusedWindowId];
+        if (cur && appKey(cur.app_id) === key) {
+            const back = byTime(all.filter(w => appKey(w.app_id) !== key))[0];
+            if (back) focusWindow(back.id);
+            return;
+        }
+        const mine = byTime(all.filter(w => appKey(w.app_id) === key))[0];
+        if (mine) { focusWindow(mine.id); return; }
+        const e = DesktopEntries.byId(id) ?? DesktopEntries.heuristicLookup(id);
+        if (e) e.execute();
+        else Quickshell.execDetached(["notify-send", "ansai", "No app called " + id]);
+    }
+
     function handle(ev: var): void {
         if (ev.WorkspacesChanged) {
             workspaces = ev.WorkspacesChanged.workspaces;
