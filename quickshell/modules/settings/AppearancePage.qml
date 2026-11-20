@@ -301,11 +301,5 @@ ColumnLayout {
             sub: "Warmer colours (wlsunset)"
             Switch { checked: Settings.nightLight; onToggled: Settings.nightLight = !Settings.nightLight }
         }
-        SRow {
-            icon: "do_not_disturb_on"
-            title: "Do not disturb"
-            sub: "Hide notification pop-ups"
-            Switch { checked: Settings.dnd; onToggled: Settings.dnd = !Settings.dnd }
-        }
     }
 }

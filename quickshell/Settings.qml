@@ -17,6 +17,10 @@ Singleton {
     property alias terminal: adapter.terminal
     property alias use24h: adapter.use24h
     property alias dnd: adapter.dnd
+    property alias dndSchedule: adapter.dndSchedule
+    property alias dndFrom: adapter.dndFrom
+    property alias dndTo: adapter.dndTo
+    property alias notifApps: adapter.notifApps
     property alias nightLight: adapter.nightLight
     property alias keepAwake: adapter.keepAwake
     property alias idleDim: adapter.idleDim
@@ -62,6 +66,10 @@ Singleton {
             property string terminal: "ghostty"
             property bool use24h: false
             property bool dnd: false
+            property bool dndSchedule: false   // quiet every day from dndFrom to dndTo (minutes after midnight)
+            property int dndFrom: 1320
+            property int dndTo: 420
+            property var notifApps: ({})   // app name -> "on" | "silent" (no pop-up) | "off" (dropped); every app that has notified is listed
             property bool nightLight: false
             property bool keepAwake: true
             property int idleDim: 240   // seconds idle before dimming / locking / screens off (services/Idle.qml); 0 = never

@@ -24,6 +24,7 @@ FloatingWindow {
         { id: "graphics", l: "Graphics", icon: "memory", sub: "Integrated, hybrid, dGPU" },
         { id: "power", l: "Power & Battery", icon: "battery_charging_full", sub: "Profile, fans, charge limit, keyboard" },
         { id: "sound", l: "Sound", icon: "volume_up", sub: "Output and input devices" },
+        { id: "notifications", l: "Notifications", icon: "notifications", sub: "Do Not Disturb, schedule, apps" },
         { id: "ai", l: "AI", icon: "auto_awesome", sub: "KOOMPI AI: model, key, languages" },
         { id: "about", l: "About", icon: "info", sub: "This device, advanced" }
     ]
@@ -85,7 +86,7 @@ FloatingWindow {
                             Rectangle {
                                 visible: !Theme.m3
                                 width: 26; height: 26; radius: 7
-                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#32ade6", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#5e5ce6", "#8e8e93"][nav.index]
+                                color: nav.on ? Qt.rgba(1, 1, 1, 0.22) : ["#0a84ff", "#32ade6", "#ff9f0a", "#30d158", "#bf5af2", "#34c759", "#ff375f", "#ff3b30", "#5e5ce6", "#8e8e93"][nav.index]
                                 Icon { anchors.centerIn: parent; name: nav.modelData.icon; size: 18; filled: true; color: "#ffffff" }
                             }
                             Icon {

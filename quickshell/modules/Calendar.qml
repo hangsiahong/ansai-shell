@@ -167,7 +167,7 @@ Sheet {
             Layout.fillWidth: true
             Layout.preferredHeight: 60
             horizontalAlignment: Text.AlignHCenter
-            text: Settings.dnd ? "Focus is on · notifications are silent" : "No notifications"
+            text: Notifs.quiet ? "Focus is on · notifications are silent" : "No notifications"
             color: Theme.faint
             font.pixelSize: 13
         }
