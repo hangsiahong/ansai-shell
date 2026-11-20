@@ -178,7 +178,7 @@ PanelWindow {
 
         Txt {
             visible: Niri.layoutNames.length > 1
-            text: Niri.keyboardLayout.slice(0, 2).toUpperCase()
+            text: /khmer/i.test(Niri.keyboardLayout) ? "ខ្មែរ" : Niri.keyboardLayout.slice(0, 2).toUpperCase()
             color: Theme.muted
             font.pixelSize: 12
             font.weight: Theme.strong
