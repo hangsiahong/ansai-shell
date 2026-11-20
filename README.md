@@ -43,8 +43,9 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   streams right above it ("Open in Ask Ansai" continues in the sidebar). Always shown on an empty workspace; with windows open it hides when the pointer leaves, unless you're typing.
 - **AI** on the [KOOMPI AI Gateway](#ai): Ask Ansai (Super+I), an agent that works on your computer (files, commands,
   apps, windows, and other apps' screens: it reads them through accessibility or looks, then clicks and types) and on KOOMPI Cloud, with your OK before it changes anything; ask about part of the screen
-  Chromium browsers (Brave, Chrome) only show their pages to it when started with `--force-renderer-accessibility`
-  (e.g. a line in `~/.config/brave-origin-flags.conf`); otherwise it falls back to screenshots and the mouse.
+  Chromium browsers (Brave, Chrome) only show their pages to it when started with `ACCESSIBILITY_ENABLED=1` in the
+  environment and `--force-renderer-accessibility` (e.g. `Exec=env ACCESSIBILITY_ENABLED=1 …` in a copy of the app's
+  .desktop file in `~/.local/share/applications`); otherwise it falls back to screenshots and the mouse.
   (Super+Shift+S or Alt+Shift+S), and translate / summarize / fix / find-by-description in the clipboard panel.
 - **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
