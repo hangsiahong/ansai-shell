@@ -33,6 +33,16 @@ layout {
 window-rule {
     geometry-corner-radius ${r}
 }
+// niri's own Alt+Tab switcher (live previews): highlight in the shell's accent, rounded like the windows.
+recent-windows {
+    open-delay-ms 120
+    highlight {
+        active-color "${hex(Theme.accent, m3 ? 0.9 : 0.75)}"
+        urgent-color "${hex(Theme.danger, 0.9)}"
+        padding 24
+        corner-radius ${r + 12}
+    }
+}
 layer-rule {
     match namespace="^ansai-(launcher|control|calendar|power|polkit|toasts|osd|appmenu|clipboard)$"
     geometry-corner-radius ${m3 ? 28 : 24}
