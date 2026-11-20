@@ -16,6 +16,7 @@ link() { # src dst
 
 link "$here/niri/config.kdl" "$cfg/niri/config.kdl"
 link "$here/quickshell" "$cfg/quickshell/ansai"
+link "$here/niri/niri-portals.conf" "$cfg/xdg-desktop-portal/niri-portals.conf"
 mkdir -p "$cfg/ansai-shell" "$HOME/Pictures/Screenshots" "$HOME/.local/share/applications"
 # Display settings are machine-specific: seed once, then Settings > Displays owns the file.
 [ -e "$cfg/niri/ansai-outputs.kdl" ] || cp "$here/niri/outputs.default.kdl" "$cfg/niri/ansai-outputs.kdl"
