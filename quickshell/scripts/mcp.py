@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MCP client (Streamable HTTP + OAuth 2.1 with PKCE and dynamic client registration) for Ask AI.
+# MCP client (Streamable HTTP + OAuth 2.1 with PKCE and dynamic client registration) for Ask Ansai.
 # CLI, used by services/AI.qml (one JSON line per event on stdout):
 #   mcp.py login URL     opens the browser to sign in, waits for the redirect, saves the token
 #   mcp.py logout URL    forgets the token

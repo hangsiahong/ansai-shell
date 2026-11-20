@@ -2,7 +2,7 @@
   "name": "ansai-agent",
   "private": true,
   "type": "module",
-  "description": "Ask AI's agent (pi-mono). `npm run build` bundles it into ansai-agent.js, which the shell runs with node.",
+  "description": "Ask Ansai's agent (pi-mono). `npm run build` bundles it into ansai-agent.js, which the shell runs with node.",
   "scripts": {
     "build": "bun build ansai-agent.mjs --target=node --format=esm --minify-syntax --outfile=ansai-agent.js"
   },

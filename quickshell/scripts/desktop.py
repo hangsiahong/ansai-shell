@@ -1,4 +1,4 @@
-"""From ansai (github.com/hangsiahong/ansai, MIT), used by Ask AI's desktop_* tools (agent/ansai-agent.mjs).
+"""From ansai (github.com/hangsiahong/ansai, MIT), used by Ask Ansai's desktop_* tools (agent/ansai-agent.mjs).
 
 Drive this machine's Wayland desktop (GNOME or niri) for src/server/desktop.ts.
 

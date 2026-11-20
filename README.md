@@ -39,10 +39,12 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   sorted into tabs (Frequent: what you open, pin or have running; All; then Internet, Develop, Media, Office, System…;
   Tab/Shift+Tab switches) and a search field that covers every app. Swipe with two fingers, drag, scroll or ←/→ to flip pages, Enter opens the first match, Esc or a click on empty space closes.
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
-- **Quick Ask:** point at the middle of the bottom edge and an Ask AI field slides up; Enter asks and the answer
-  streams right above it ("Open in Ask AI" continues in the sidebar). Hides when the pointer leaves, unless you're typing.
-- **AI** on the [KOOMPI AI Gateway](#ai): Ask AI (Super+I), an agent that works on your computer (files, commands,
+- **Quick Ask:** point at the middle of the bottom edge and an Ask Ansai field slides up; Enter asks and the answer
+  streams right above it ("Open in Ask Ansai" continues in the sidebar). Always shown on an empty workspace; with windows open it hides when the pointer leaves, unless you're typing.
+- **AI** on the [KOOMPI AI Gateway](#ai): Ask Ansai (Super+I), an agent that works on your computer (files, commands,
   apps, windows, and other apps' screens: it reads them through accessibility or looks, then clicks and types) and on KOOMPI Cloud, with your OK before it changes anything; ask about part of the screen
+  Chromium browsers (Brave, Chrome) only show their pages to it when started with `--force-renderer-accessibility`
+  (e.g. a line in `~/.config/brave-origin-flags.conf`); otherwise it falls back to screenshots and the mouse.
   (Super+Shift+S or Alt+Shift+S), and translate / summarize / fix / find-by-description in the clipboard panel.
 - **Notifications, calendar, OSD, lock screen, polkit prompts, power menu.**
 - **Settings app:** appearance, wallpaper, dock, displays (resolution, refresh, scale, rotation, VRR, with a
@@ -73,7 +75,7 @@ Log out, choose **Niri** in the login screen's session menu. Your old desktop st
 | Super+Return | Terminal |
 | Super+E / Super+B | Files / browser |
 | Super+Shift+C (or Super+Shift+V, Alt+Shift+C) | Clipboard history: type to filter, Enter copies, Delete removes |
-| Super+I / Alt+A | Ask AI sidebar |
+| Super+I / Alt+A | Ask Ansai sidebar |
 | Super+Shift+S / Alt+Shift+S | Pick part of the screen and ask AI about it |
 | Clipboard: Ctrl+T / Ctrl+S / Ctrl+E / Ctrl+J / Tab | Translate / summarize / fix writing / ask in sidebar / AI find |
 | Super+O | Overview |
@@ -113,7 +115,7 @@ Uses the [KOOMPI AI Gateway](https://ai.koompi.cloud) (OpenAI-compatible). Paste
 **Settings → AI**; it is saved to `~/.config/ansai-shell/ai-key` (mode 600) and only the agent reads it.
 The default model is `koompi-luna` (Mekong: Khmer and images); pick another there or set `"aiModel"` in settings.json.
 
-- **Ask AI** (Super+I or Alt+A, or ✦ in Control Center): an agent built on [pi-mono](https://github.com/badlogic/pi-mono)
+- **Ask Ansai** (Super+I or Alt+A, or ✦ in Control Center): an agent built on [pi-mono](https://github.com/badlogic/pi-mono)
   (`pi-agent-core` loop, `pi-ai` streaming), in English or Khmer. It can run commands, read, write, edit and search files,
   open files, URLs and apps, list, focus and arrange windows, read or copy the clipboard, look at the screen and read web pages
   ("free up space in Downloads", "move Telegram to workspace 2", "what's using my CPU?"). Looking things up runs
@@ -130,7 +132,7 @@ The default model is `koompi-luna` (Mekong: Khmer and images); pick another ther
 
 - **Connectors (MCP):** in Settings → AI, **Connect** KOOMPI Cloud (`mcp.koompi.cloud`, listed by default) or add
   any MCP server URL. Sign-in opens in your browser (OAuth with PKCE); tokens stay in
-  `~/.config/ansai-shell/mcp-tokens.json` (mode 600). Ask AI can then use the server's tools ("what's running on my
+  `~/.config/ansai-shell/mcp-tokens.json` (mode 600). Ask Ansai can then use the server's tools ("what's running on my
   KOOMPI Cloud?"). Read-only tools run directly; anything that may change something shows **Allow / Always allow / Deny** first.
 - **Always allow** (or turning off "Ask before actions" in Settings → AI) lets every action run without asking, including
   commands and file changes on this computer.

@@ -1,4 +1,4 @@
-// Ask AI's agent, built on pi-mono (pi-agent-core's loop over pi-ai's OpenAI-compatible API) with the
+// Ask Ansai's agent, built on pi-mono (pi-agent-core's loop over pi-ai's OpenAI-compatible API) with the
 // KOOMPI AI Gateway as provider. Desktop tools (files, commands, apps, windows, clipboard, screen) plus
 // the tools of connected MCP servers (bridged through scripts/mcp.py serve, which owns OAuth tokens).
 // Protocol with services/AI.qml, one JSON line each way:
@@ -67,7 +67,7 @@ async function desk(cmd, args) {
     if (!o.ok) throw new Error(o.error || "desktop helper failed");
     return o;
 }
-// Ask AI's own panels sit on top of everything and hold the keyboard: move them aside before clicking or typing.
+// Ask Ansai's own panels sit on top of everything and hold the keyboard: move them aside before clicking or typing.
 let yielded = false;
 async function yieldScreen() {
     if (yielded) return;

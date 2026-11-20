@@ -6,7 +6,7 @@ import qs
 import qs.components
 import qs.services
 
-// "Ask AI" sidebar on the right (Mod+I). The conversation lives in services/AI.qml, so closing
+// "Ask Ansai" sidebar on the right (Mod+I). The conversation lives in services/AI.qml, so closing
 // and reopening keeps it. Attach a screenshot (pick an area) or paste the clipboard into the question.
 Sheet {
     id: root
@@ -184,7 +184,7 @@ Sheet {
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 0
-                        Txt { text: "Ask AI"; font.pixelSize: 15; font.weight: Theme.strong }
+                        Txt { text: "Ask Ansai"; font.pixelSize: 15; font.weight: Theme.strong }
                         Txt {
                             text: Settings.aiModel + " · this computer" + (AI.mcpLive.length ? ", " + AI.mcpServers.filter(s => AI.mcpLive.includes(s.url)).map(s => s.name).join(", ") : "")
                             font.pixelSize: 11; color: Theme.muted

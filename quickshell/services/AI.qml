@@ -6,7 +6,7 @@ import Quickshell.Io
 import qs
 
 // KOOMPI AI Gateway via agent/ansai-agent.js (pi-mono agent loop: desktop tools + MCP connectors), which holds the key.
-// ask() runs one request; the Ask AI sidebar's conversation lives here so it survives closing it.
+// ask() runs one request; the Ask Ansai sidebar's conversation lives here so it survives closing it.
 Singleton {
     id: root
 

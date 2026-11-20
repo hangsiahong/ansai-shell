@@ -6,9 +6,9 @@ import qs.components
 import qs.services
 import qs.modules.settings
 
-// Quick Ask AI at the bottom edge: point at the middle of the bottom edge and a field slides up.
-// Enter asks (same conversation as the Ask AI sidebar) and the answer streams above the field.
-// It hides once the pointer leaves, unless you're typing or it's answering.
+// Quick Ask Ansai at the bottom edge: point at the middle of the bottom edge and a field slides up.
+// Enter asks (same conversation as the Ask Ansai sidebar) and the answer streams above the field.
+// On an empty workspace it stays up; otherwise it hides once the pointer leaves, unless you're typing or it's answering.
 PanelWindow {
     id: root
     screen: Quickshell.screens.find(s => s.name === Niri.focusedOutput) ?? Quickshell.screens[0]
@@ -25,7 +25,10 @@ PanelWindow {
     property int from: -1   // index in AI.chat of the answer asked from here; -1: none to show
     readonly property var answer: from >= 0 ? AI.chat[from] ?? null : null
     readonly property bool waiting: (answer?.tools ?? []).some(t => t.status === "wait")
-    readonly property bool open: Shell.open === "" && !AI.driving && (hot || peek || AI.bar || input.text !== "" || (from >= 0 && AI.busy && input.activeFocus))
+    // Always there on an empty workspace; with windows open it waits at the edge for the pointer.
+    readonly property var ws: Niri.workspaces.find(w => w.is_active && w.output === root.screen?.name) ?? null
+    readonly property bool empty: !!ws && Niri.windowsOn(ws.id).length === 0
+    readonly property bool open: Shell.open === "" && !AI.driving && (hot || peek || empty || AI.bar || input.text !== "" || (from >= 0 && AI.busy && input.activeFocus))
 
     onOpenChanged: if (!open) { input.focus = false; AI.bar = false; }
     Connections {
@@ -125,7 +128,7 @@ PanelWindow {
                         kind: "filled"
                         onClicked: root.openSidebar()
                     }
-                    Btn { text: "Open in Ask AI"; kind: "tonal"; onClicked: root.openSidebar() }
+                    Btn { text: "Open in Ask Ansai"; kind: "tonal"; onClicked: root.openSidebar() }
                     Btn { text: "Clear"; kind: "tonal"; onClicked: { root.from = -1; root.peek = false; } }
                 }
             }
@@ -160,7 +163,7 @@ PanelWindow {
                     Txt {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: !input.text
-                        text: AI.busy ? "Answering…" : root.answer ? "Ask a follow-up" : "Ask AI anything"
+                        text: AI.busy ? "Answering…" : root.answer ? "Ask a follow-up" : "Ask Ansai anything"
                         color: Theme.faint
                         font.pixelSize: 15
                     }

@@ -37,13 +37,13 @@ Sheet {
     property string resultErr: ""
     property bool resultBusy: false
     property var handle: null
-    property var aiIds: null        // ids picked by "Ask AI to find", in its order
+    property var aiIds: null        // ids picked by "Ask Ansai to find", in its order
     property bool finding: false
     readonly property var actions: [
         { k: "translate", l: "Translate", i: "translate", key: "Ctrl+T", t: "Translation" },
         { k: "summarize", l: "Summarize", i: "summarize", key: "Ctrl+S", t: "Summary" },
         { k: "fix", l: "Fix writing", i: "spellcheck", key: "Ctrl+E", t: "Fixed writing" },
-        { k: "ask", l: "Ask AI", i: "auto_awesome", key: "Ctrl+J", t: "" }
+        { k: "ask", l: "Ask Ansai", i: "auto_awesome", key: "Ctrl+J", t: "" }
     ]
     function prompt(k) {
         const lang = Settings.aiLang;
@@ -328,7 +328,7 @@ Sheet {
             Layout.preferredHeight: 32
             spacing: 4
 
-            // AI actions on the selected entry (images: only Ask AI)
+            // AI actions on the selected entry (images: only Ask Ansai)
             Repeater {
                 model: root.mode === "result" ? [] : root.actions.filter(a => !root.items[root.sel]?.image || a.k === "ask")
                 Hover {

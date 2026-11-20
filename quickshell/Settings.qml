@@ -58,9 +58,9 @@ Singleton {
             property int dockSize: 44
             property bool dockMagnify: true
             property string aiModel: "koompi-luna"   // KOOMPI AI Gateway model (services/AI.qml)
-            property var mcpServers: [{ name: "KOOMPI Cloud", url: "https://mcp.koompi.cloud", on: true }]   // MCP connectors for Ask AI
-            property bool aiAllowAll: false   // Ask AI runs connector actions without asking first
-            property string aiLayout: "side"   // Ask AI: "side" panel on the right | "center" big, in the middle
+            property var mcpServers: [{ name: "KOOMPI Cloud", url: "https://mcp.koompi.cloud", on: true }]   // MCP connectors for Ask Ansai
+            property bool aiAllowAll: false   // Ask Ansai runs connector actions without asking first
+            property string aiLayout: "side"   // Ask Ansai: "side" panel on the right | "center" big, in the middle
             property string aiLang: "Khmer"   // the other language for Translate (English <-> this)
             property bool systemTheme: true   // theme GTK/Qt apps and Ghostty to match (services/SystemTheme.qml)
             property list<string> pinned: ["org.gnome.Nautilus", "com.mitchellh.ghostty", "zen", "firefox", "code"]

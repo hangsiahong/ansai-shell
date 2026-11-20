@@ -71,12 +71,12 @@ ColumnLayout {
 
     SGroup {
         title: "Connectors (MCP)"
-        note: "Ask AI can already work on this computer (files, commands, apps, windows). Connected services add their own tools. Anything that changes something asks you first. Sign-in happens in your browser; tokens stay on this computer."
+        note: "Ask Ansai can already work on this computer (files, commands, apps, windows). Connected services add their own tools. Anything that changes something asks you first. Sign-in happens in your browser; tokens stay on this computer."
         SRow {
             first: true
             icon: Settings.aiAllowAll ? "lock_open" : "verified_user"
             title: "Ask before actions"
-            sub: Settings.aiAllowAll ? "Off: Ask AI runs commands, edits files and does connector actions (deploy, delete) without asking"
+            sub: Settings.aiAllowAll ? "Off: Ask Ansai runs commands, edits files and does connector actions (deploy, delete) without asking"
                                      : "Commands, file changes and connector actions wait for Allow; looking things up never asks"
             Switch { checked: !Settings.aiAllowAll; onToggled: Settings.aiAllowAll = !Settings.aiAllowAll }
         }
@@ -180,7 +180,7 @@ ColumnLayout {
 
     SGroup {
         title: "Where to find it"
-        SRow { first: true; icon: "auto_awesome"; title: "Ask AI sidebar"; sub: "Super+I or Alt+A, or the ✦ button in Control Center" }
+        SRow { first: true; icon: "auto_awesome"; title: "Ask Ansai sidebar"; sub: "Super+I or Alt+A, or the ✦ button in Control Center" }
         SRow { icon: "screenshot_region"; title: "Ask about part of the screen"; sub: "Super+Shift+S or Alt+Shift+S: pick an area, then ask about it" }
         SRow { icon: "content_paste"; title: "Clipboard"; sub: "Super+Shift+C, then Ctrl+T translate · Ctrl+S summarize · Ctrl+E fix writing · Ctrl+J ask · Tab: describe what you copied and let AI find it" }
     }
