@@ -4,6 +4,8 @@
 // Names not listed here keep the Material glyph. Built from @phosphor-icons/web selection.json.
 var map = {
     "public": [0xe288, 0xe288],
+    "wb_sunny": [0xe472, 0xe472],
+    "thermostat": [0xe5cc, 0xe5cc],
     "mail": [0xe218, 0xe218],
     "folder": [0xe25a, 0xe25a],
     "description": [0xe23a, 0xe23a],

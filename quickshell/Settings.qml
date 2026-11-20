@@ -22,6 +22,10 @@ Singleton {
     property alias dndTo: adapter.dndTo
     property alias notifApps: adapter.notifApps
     property alias nightLight: adapter.nightLight
+    property alias nightSchedule: adapter.nightSchedule
+    property alias nightFrom: adapter.nightFrom
+    property alias nightTo: adapter.nightTo
+    property alias nightTemp: adapter.nightTemp
     property alias keepAwake: adapter.keepAwake
     property alias idleDim: adapter.idleDim
     property alias idleLock: adapter.idleLock
@@ -70,7 +74,11 @@ Singleton {
             property int dndFrom: 1320
             property int dndTo: 420
             property var notifApps: ({})   // app name -> "on" | "silent" (no pop-up) | "off" (dropped); every app that has notified is listed
-            property bool nightLight: false
+            property bool nightLight: false   // warm now, whatever the schedule
+            property string nightSchedule: "off"   // "off" | "sun" (sunset to sunrise) | "custom" (nightFrom..nightTo, minutes)
+            property int nightFrom: 1260
+            property int nightTo: 420
+            property int nightTemp: 4000   // kelvin
             property bool keepAwake: true
             property int idleDim: 240   // seconds idle before dimming / locking / screens off (services/Idle.qml); 0 = never
             property int idleLock: 300

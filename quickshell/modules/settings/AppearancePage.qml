@@ -295,11 +295,5 @@ ColumnLayout {
             title: "24-hour clock"
             Switch { checked: Settings.use24h; onToggled: Settings.use24h = !Settings.use24h }
         }
-        SRow {
-            icon: "nightlight"
-            title: "Night light"
-            sub: "Warmer colours (wlsunset)"
-            Switch { checked: Settings.nightLight; onToggled: Settings.nightLight = !Settings.nightLight }
-        }
     }
 }

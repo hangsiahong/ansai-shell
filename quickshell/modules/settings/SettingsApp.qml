@@ -22,7 +22,7 @@ FloatingWindow {
         { id: "appearance", l: "Appearance", icon: "palette", sub: "Style, theme, wallpaper, font", c: "#636366" },
         { id: "wallpaper", l: "Wallpaper", icon: "wallpaper", sub: "Pick a picture", c: "#32ade6" },
         { id: "dock", l: "Dock", icon: "dock_to_left", sub: "Auto-hide, size, pinned apps", c: "#ff9f0a" },
-        { id: "displays", l: "Displays", icon: "desktop_windows", sub: "Resolution, refresh, scale", c: "#30d158" },
+        { id: "displays", l: "Displays", icon: "desktop_windows", sub: "Resolution, scale, night light", c: "#30d158" },
         { id: "graphics", l: "Graphics", icon: "memory", sub: "Integrated, hybrid, dGPU", c: "#bf5af2" },
         { id: "power", l: "Power & Battery", icon: "battery_charging_full", sub: "Profile, fans, charge limit, keyboard", c: "#34c759" },
         { id: "sound", l: "Sound", icon: "volume_up", sub: "Output and input devices", c: "#ff375f" },

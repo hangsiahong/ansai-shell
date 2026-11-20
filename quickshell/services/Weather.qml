@@ -11,12 +11,13 @@ Singleton {
     id: root
     readonly property bool enabled: (Settings.weatherCity ?? "").trim() !== ""
     property string place: ""
+    property var coords: null    // [lat, lon] of the city
     property var current: null   // { temp, code, day }
     property var days: []        // [{ date, max, min, code }]
     property string error: ""
 
     function refresh(): void {
-        if (!enabled) { current = null; days = []; place = ""; return; }
+        if (!enabled) { current = null; days = []; place = ""; coords = null; return; }
         if (!fetch.running) fetch.running = true;
     }
 
@@ -45,7 +46,7 @@ Singleton {
         id: fetch
         command: ["sh", "-c", `g=$(curl -sfG --max-time 10 https://geocoding-api.open-meteo.com/v1/search --data-urlencode "name=$1" -d count=1) || exit 1
             set -- $(printf %s "$g" | python3 -c 'import json,sys; r=json.load(sys.stdin)["results"][0]; print(r["latitude"], r["longitude"], (r["name"]+", "+r.get("country_code","")).replace(" ","_"))') || exit 2
-            echo "$3"
+            echo "$3 $1 $2"
             curl -sf --max-time 10 "https://api.open-meteo.com/v1/forecast?latitude=$1&longitude=$2&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5"`,
             "sh", Settings.weatherCity ?? ""]
         stdout: StdioCollector {
@@ -53,7 +54,9 @@ Singleton {
                 const nl = text.indexOf("\n");
                 try {
                     const d = JSON.parse(text.slice(nl + 1));
-                    root.place = text.slice(0, nl).replace(/_/g, " ");
+                    const hd = text.slice(0, nl).split(" ");
+                    root.place = hd[0].replace(/_/g, " ");
+                    root.coords = hd.length > 2 ? [+hd[1], +hd[2]] : null;
                     root.current = { temp: Math.round(d.current.temperature_2m), code: d.current.weather_code, day: d.current.is_day === 1 };
                     root.days = d.daily.time.map((t, i) => ({ date: t, max: Math.round(d.daily.temperature_2m_max[i]), min: Math.round(d.daily.temperature_2m_min[i]), code: d.daily.weather_code[i] }));
                     root.error = "";

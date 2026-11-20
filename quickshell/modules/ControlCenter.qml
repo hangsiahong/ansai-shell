@@ -20,11 +20,6 @@ Sheet {
     property string detail: ""   // "", "wifi", "bt": the list open under the tiles
     onShownChanged: if (shown) Brightness.refresh(); else detail = ""
 
-    Process {
-        running: Settings.nightLight
-        command: ["wlsunset", "-T", "6500", "-t", "4000", "-S", "00:00", "-s", "00:01", "-d", "1"]
-    }
-
     ColumnLayout {
         id: col
         visible: Theme.m3
@@ -96,11 +91,11 @@ Sheet {
             }
             RoundToggle {
                 Layout.fillWidth: true
-                on: Settings.nightLight
+                on: NightLight.active
                 icon: "nightlight"
                 label: "Night"
                 onColor: Theme.warn
-                onClicked: Settings.nightLight = !Settings.nightLight
+                onClicked: NightLight.toggle()
             }
             RoundToggle {
                 Layout.fillWidth: true
@@ -475,12 +470,12 @@ Sheet {
             spacing: 10
             MacToggle {
                 Layout.fillWidth: true; Layout.preferredWidth: 1
-                on: Settings.nightLight
+                on: NightLight.active
                 icon: "nightlight"
                 label: "Night Shift"
-                sub: Settings.nightLight ? "On" : "Off"
+                sub: NightLight.status
                 onColor: Theme.warn
-                onClicked: Settings.nightLight = !Settings.nightLight
+                onClicked: NightLight.toggle()
             }
             MacToggle {
                 Layout.fillWidth: true; Layout.preferredWidth: 1

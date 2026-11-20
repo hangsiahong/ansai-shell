@@ -20,20 +20,6 @@ ColumnLayout {
         for (const e of Notifs.list) if (e.n?.appName && !(e.n.appName in Settings.notifApps)) Notifs.setAppMode(e.n.appName, "on");
     }
 
-    component TimeStep: Row {
-        id: ts
-        property string key
-        spacing: 2
-        IconButton { icon: "remove"; iconSize: 15; implicitWidth: 28; implicitHeight: 28; onClicked: Settings[ts.key] = (Settings[ts.key] + 1410) % 1440 }
-        Txt {
-            anchors.verticalCenter: parent.verticalCenter
-            width: 70; horizontalAlignment: Text.AlignHCenter
-            text: root.hm(Settings[ts.key])
-            font.pixelSize: 13; font.weight: Font.DemiBold; font.features: { "tnum": 1 }
-        }
-        IconButton { icon: "add"; iconSize: 15; implicitWidth: 28; implicitHeight: 28; onClicked: Settings[ts.key] = (Settings[ts.key] + 30) % 1440 }
-    }
-
     SGroup {
         title: "Focus"
         note: "Critical alerts (low battery and the like) still pop up."

@@ -278,6 +278,52 @@ ColumnLayout {
     }
 
     SGroup {
+        title: "Night light"
+        note: Settings.nightSchedule === "sun" ? (NightLight.sun.length === 2
+            ? `Sunset ${NightLight.clock(NightLight.sun[1])}, sunrise ${NightLight.clock(NightLight.sun[0])} in ${Weather.coords ? Weather.place : "your time zone"}. It fades in over twilight.`
+            : "Can't work out sun times for your location; set a city in Weather.") : ""
+        SRow {
+            first: true
+            icon: "nightlight"
+            title: "Night light"
+            sub: NightLight.status === "On" ? "On until you turn it off" : NightLight.status
+            Switch { checked: NightLight.active; onToggled: NightLight.toggle() }
+        }
+        SRow {
+            icon: "schedule"
+            title: "Schedule"
+            Seg {
+                small: true
+                model: [{ v: "off", l: "Off" }, { v: "sun", l: "Sunset to sunrise" }, { v: "custom", l: "Custom" }]
+                value: Settings.nightSchedule
+                onPicked: v => Settings.nightSchedule = v
+            }
+        }
+        SRow {
+            visible: Settings.nightSchedule === "custom"
+            icon: "bedtime"
+            title: "From"
+            TimeStep { key: "nightFrom" }
+        }
+        SRow {
+            visible: Settings.nightSchedule === "custom"
+            icon: "wb_sunny"
+            title: "To"
+            TimeStep { key: "nightTo" }
+        }
+        SRow {
+            icon: "thermostat"
+            title: "Warmth"
+            Seg {
+                small: true
+                model: [{ v: 5000, l: "Less" }, { v: 4000, l: "Medium" }, { v: 3200, l: "More" }]
+                value: Settings.nightTemp
+                onPicked: v => Settings.nightTemp = v
+            }
+        }
+    }
+
+    SGroup {
         SRow {
             first: true
             icon: "cable"

@@ -52,6 +52,7 @@ ShellRoot {
 
     Component.onCompleted: {
         Idle.dimmedFrom; // idle timers, see services/Idle.qml
+        NightLight.active; // wlsunset, see services/NightLight.qml
         Lock.locked; // instantiate the lock singleton so its IPC handler registers
         AI.hasKey; // registers the `ai` IPC target
         SystemTheme.stamp; // GTK/Qt/Ghostty colours, see services/SystemTheme.qml
