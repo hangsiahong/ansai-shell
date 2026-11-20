@@ -118,6 +118,30 @@ PanelWindow {
         anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
         spacing: 4
 
+        Hover {   // recording: a red pill with the running time, click to stop
+            visible: Recorder.recording
+            implicitWidth: recRow.implicitWidth + 16
+            implicitHeight: Theme.barH - 8
+            radius: height / 2
+            base: Theme.danger
+            onClicked: Recorder.stop()
+            Row {
+                id: recRow
+                anchors.centerIn: parent
+                spacing: 5
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 7; height: 7; radius: 3.5; color: "white"
+                    SequentialAnimation on opacity {
+                        running: Recorder.recording; loops: Animation.Infinite
+                        NumberAnimation { to: 0.3; duration: 700 }
+                        NumberAnimation { to: 1; duration: 700 }
+                    }
+                }
+                Txt { text: Recorder.elapsed; font.pixelSize: 12; font.weight: Font.DemiBold; font.features: { "tnum": 1 }; color: "white" }
+            }
+        }
+
         Repeater {
             // Network and Bluetooth applets duplicate the control center, so they stay hidden.
             model: Shell.nested ? [] : SystemTray.items.values.filter(t => !/nm-applet|network|blueman|bluetooth/i.test(t.id + " " + t.title))

@@ -63,6 +63,7 @@ ShellRoot {
         function close(): void { Shell.close(); }
         function app(id: string): void { Niri.raiseApp(id); }
         function settings(page: string): void { Shell.openSettings(page); }
+        function record(): void { Recorder.toggle(); }
         function theme(mode: string): void { Settings.theme = mode; }
         function wallpaper(path: string): void { Settings.wallpaper = path; }
         function testNotify(): void {

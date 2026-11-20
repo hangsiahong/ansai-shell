@@ -262,6 +262,12 @@ Sheet {
                 onClicked: { Shell.close(); Niri.action("screenshot"); }
             }
             IconButton {
+                visible: Recorder.available
+                icon: Recorder.recording ? "stop_circle" : "screen_record"
+                iconColor: Recorder.recording ? Theme.danger : Theme.text
+                onClicked: { Shell.close(); Recorder.toggle(); }
+            }
+            IconButton {
                 icon: "tune"
                 onClicked: Shell.openSettings("")
             }
@@ -459,6 +465,7 @@ Sheet {
             Repeater {
                 model: [
                     { icon: "screenshot_region", run: () => { Shell.close(); Niri.action("screenshot"); } },
+                    { icon: Recorder.recording ? "stop_circle" : "screen_record", run: () => { Shell.close(); Recorder.toggle(); } },
                     { icon: "auto_awesome", run: () => { Shell.open = "ai"; } },
                     { icon: "android", run: () => { Settings.style = "material"; Settings.font = ""; } },
                     { icon: "lock", run: () => { Shell.close(); Lock.lock(); } },

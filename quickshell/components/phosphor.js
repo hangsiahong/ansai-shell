@@ -160,5 +160,10 @@ var map = {
     "wifi_find": [0xe4f0, 0xe4f0],
     "wifi_off": [0xe4f2, 0xe4f2],
     "zoom_in": [0xe310, 0xe310],
-    "zoom_out_map": [0xe0a2, 0xe0a2]
+    "zoom_out_map": [0xe0a2, 0xe0a2],
+    "screen_record": [0xe3ee, 0xe3ee],
+    "stop_circle": [0xe46e, 0xe46e],
+    "graphic_eq": [0xebbc, 0xebbc],
+    "mood": [0xe436, 0xe436],
+    "apps_outage": [0xe5da, 0xe5da]
 };
