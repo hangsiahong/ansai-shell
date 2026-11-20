@@ -27,6 +27,7 @@ ShellRoot {
     Launchpad {}
     Clipboard {}
     AskAI {}
+    AskBar {}
     DockMenu {}
     ControlCenter {}
     Calendar {}

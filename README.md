@@ -39,6 +39,8 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
   sorted into tabs (Frequent: what you open, pin or have running; All; then Internet, Develop, Media, Office, System…;
   Tab/Shift+Tab switches) and a search field that covers every app. Swipe with two fingers, drag, scroll or ←/→ to flip pages, Enter opens the first match, Esc or a click on empty space closes.
 - **Clipboard history** (Super+Shift+C): text and images with thumbnails, search, Enter to copy, Delete to remove.
+- **Quick Ask:** point at the middle of the bottom edge and an Ask AI field slides up; Enter asks and the answer
+  streams right above it ("Open in Ask AI" continues in the sidebar). Hides when the pointer leaves, unless you're typing.
 - **AI** on the [KOOMPI AI Gateway](#ai): Ask AI (Super+I), an agent that works on your computer (files, commands,
   apps, windows) and on KOOMPI Cloud, with your OK before it changes anything; ask about part of the screen
   (Super+Shift+S or Alt+Shift+S), and translate / summarize / fix / find-by-description in the clipboard panel.

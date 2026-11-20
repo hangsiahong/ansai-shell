@@ -110,6 +110,8 @@ How to answer:
     property bool busy: false
     property int gen: 0   // bumped by reset(): a stopped request must not write into the new chat
     property var current: null
+    signal barAsked(string text)
+    property bool bar: false   // quick Ask bar at the bottom edge, opened from a key (modules/AskBar.qml)
     property string draft: ""      // text waiting in the sidebar's input
     property string attachment: "" // image path to send with the next message
 
@@ -301,6 +303,11 @@ Tools from the user's connected services (${names}):
     IpcHandler {
         target: "ai"
         function toggle(): void { Shell.toggle("ai"); }
+        function bar(): void { Shell.close(); root.bar = !root.bar; }
+        function barAsk(text: string): void { Shell.close(); root.bar = true; root.barAsked(text); }
+        function chatId(): string { return root.chatId; }
+        function open(id: string): void { root.openChat(id); }
+        function forget(id: string): void { root.deleteChat(id); }
         function screenshot(): void { root.screenshot(); }
         function image(path: string): void { root.askAbout(path, ""); }
         function ask(text: string): void { root.askAbout("", text); }
