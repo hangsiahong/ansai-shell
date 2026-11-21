@@ -17,7 +17,7 @@ COPY --chown=abc:abc . /opt/ansai-shell
 COPY docker/selkies/startwm.sh /defaults/startwm.sh
 COPY docker/selkies/run.sh /usr/local/bin/ansai-web
 ENV TITLE="ansai shell" TZ=Asia/Phnom_Penh QS_ICON_THEME=Papirus GSK_RENDERER=cairo \
-    SELKIES_ENABLE_RESIZE=true SELKIES_VIDEO_CRF=20 \
+    SELKIES_ENABLE_RESIZE=true SELKIES_USE_CSS_SCALING="true|locked" SELKIES_VIDEO_CRF=20 \
     SELKIES_FRAMERATE=30 SELKIES_AUDIO_ENABLED=false SELKIES_ENABLE_CLIPBOARD=in \
     SELKIES_GAMEPAD_ENABLED=false SELKIES_FILE_TRANSFERS="" SELKIES_COMMAND_ENABLED=false \
     SELKIES_UI_SIDEBAR_SHOW_FILES=false SELKIES_UI_SIDEBAR_SHOW_APPS=false SELKIES_UI_SIDEBAR_SHOW_GAMEPADS=false
