@@ -5,6 +5,7 @@ import qs
 import qs.components
 import qs.services
 import qs.modules.settings
+import "notemd.js" as Md
 
 // Quick Ask Ansai at the bottom edge: point at the middle of the bottom edge and a field slides up.
 // Enter asks (same conversation as the Ask Ansai sidebar) and the answer streams above the field.
@@ -105,7 +106,7 @@ PanelWindow {
                 screenY: root.screen.height - root.height + card.y + y
                 width: parent.width
                 // Status line only while nothing is written yet; no empty text line under it.
-                readonly property real textH: txt.text || !statusRow.visible ? Math.min(276, txt.contentHeight) : 0
+                readonly property real textH: root.answer?.content || !statusRow.visible ? Math.min(276, txt.contentHeight) : 0
                 height: (statusRow.visible ? statusRow.height + 10 + (textH ? 6 : 0) : 12) + textH + 12 + (actions.visible ? actions.height + 6 : 0)
                 radius: Theme.m3 ? 24 : 20
 
@@ -156,14 +157,20 @@ PanelWindow {
                         readOnly: true
                         selectByMouse: true
                         wrapMode: TextEdit.Wrap
-                        textFormat: TextEdit.MarkdownText
-                        text: root.answer?.content || ""
+                        textFormat: TextEdit.RichText
+                        text: Md.render(root.answer?.content || "", {
+                            text: Theme.text.toString(), muted: Theme.muted.toString(),
+                            accent: (Theme.m3 ? Theme.accent : Theme.dark ? "#4da3ff" : "#0a6cdc").toString(),
+                            code: Qt.rgba(Theme.muted.r, Theme.muted.g, Theme.muted.b, 0.16).toString(),
+                            line: Theme.line.toString(), codePx: 13 }).html
+                        onLinkActivated: link => Qt.openUrlExternally(link)
+                        HoverHandler { cursorShape: txt.hoveredLink ? Qt.PointingHandCursor : Qt.IBeamCursor }
                         color: root.answer?.error ? Theme.danger : Theme.text
                         selectionColor: Theme.accent
                         selectedTextColor: Theme.accentInk
                         font.family: Theme.font
                         font.pixelSize: 14
-                        TypingDots { visible: !txt.text && !root.status && AI.busy; y: (txt.contentHeight - height) / 2; color: txt.color }
+                        TypingDots { visible: !root.answer?.content && !root.status && AI.busy; y: (txt.contentHeight - height) / 2; color: txt.color }
                     }
                 }
                 Row {

@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs
 import qs.components
 import qs.services
+import "notemd.js" as Md
 
 // "Ask Ansai" sidebar on the right (Mod+I). The conversation lives in services/AI.qml, so closing
 // and reopening keeps it. Attach a screenshot (pick an area) or paste the clipboard into the question.
@@ -30,22 +31,13 @@ Sheet {
         AI.refreshMcp();
     }
 
-    // Qt's Markdown lists indent 40 px per level, which wastes a narrow panel: render bullets and
-    // numbered items as tight lines instead (code blocks left alone).
-    function tight(md) {
-        if (!md) return "";
-        let fence = false;
-        return md.split("\n").map(l => {
-            if (/^\s*```/.test(l)) { fence = !fence; return l; }
-            if (fence) return l;
-            const b = l.match(/^(\s*)[-*+]\s+(.*)$/);
-            // Trailing double space = hard line break, so items don't merge into the line above.
-            if (b) return "\u2003".repeat(Math.floor(b[1].length / 2)) + (b[1].length >= 2 ? "◦ " : "• ") + b[2] + "  ";
-            const n = l.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
-            if (n) return "\u2003".repeat(Math.floor(n[1].length / 2)) + n[2] + "\\. " + n[3] + "  ";
-            return l.trim() && !/^\s*\|/.test(l) ? l + "  " : l;
-        }).join("\n");
-    }
+    // Replies render through Quick Note's Markdown (notemd.js): spaced paragraphs, hanging bullets, readable links, tables.
+    readonly property var mdColors: ({
+        text: Theme.text.toString(), muted: Theme.muted.toString(),
+        accent: (Theme.m3 ? Theme.accent : Theme.dark ? "#4da3ff" : "#0a6cdc").toString(),
+        code: Qt.rgba(Theme.muted.r, Theme.muted.g, Theme.muted.b, 0.16).toString(),
+        line: Theme.line.toString(), codePx: 13
+    })
 
     function send() {
         if (AI.busy) return;
@@ -170,6 +162,7 @@ Sheet {
                 // ---- header
                 RowLayout {
                     Layout.fillWidth: true
+                    Layout.preferredWidth: parent.width   // fillWidth alone left it at its implicit width
                     z: 10
                     Layout.leftMargin: 6
                     spacing: 8
@@ -216,6 +209,12 @@ Sheet {
                         icon: "edit_square"; iconSize: 19; iconColor: Theme.text2
                         visible: AI.chat.length > 0 && !root.big
                         onClicked: { AI.reset(); input.forceActiveFocus(); }
+                    }
+                    IconButton {   // chat actions: new chat, continue in a new chat, compact
+                        id: chatMenuBtn
+                        visible: AI.chat.length > 0
+                        icon: AI.compacting ? "progress_activity" : "more_horiz"; iconSize: 20; iconColor: Theme.text2
+                        onClicked: chatMenu.toggle()
                     }
                     IconButton {
                         icon: root.big ? "close_fullscreen" : "open_in_full"; iconSize: 18; iconColor: Theme.text2
@@ -279,6 +278,19 @@ Sheet {
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
                                 }
+                            }
+
+                            RowLayout {   // a summary that stands in for what came before (Compact, or Continue in a new chat)
+                                visible: !!msg.modelData.compact
+                                Layout.fillWidth: true
+                                spacing: 8
+                                Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Theme.line }
+                                Icon { name: msg.modelData.handoff ? "arrow_forward" : "summarize"; size: 14; color: Theme.muted }
+                                Txt {
+                                    text: msg.modelData.handoff ? "Continued from an earlier chat. The AI picks up from this summary" : "Earlier messages compacted. The AI continues from this summary"
+                                    font.pixelSize: 12; color: Theme.muted
+                                }
+                                Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Theme.line }
                             }
 
                             ColumnLayout {   // the model's reasoning: streams in while it thinks, then folds to one line
@@ -470,8 +482,8 @@ Sheet {
                             }
 
                             Rectangle {   // bubble (user) or plain text (assistant); typing dots while the answer is on its way
-                                readonly property bool waiting: !msg.mine && !body.text && AI.busy && msg.last && !msg.tools.length && !msg.reasoning
-                                visible: !!body.text || waiting
+                                readonly property bool waiting: !msg.mine && !msg.modelData.content && AI.busy && msg.last && !msg.tools.length && !msg.reasoning
+                                visible: !!msg.modelData.content || waiting
                                 Layout.alignment: msg.mine ? Qt.AlignRight : Qt.AlignLeft
                                 Layout.preferredWidth: msg.mine ? body.width + 28 : list.width
                                 Layout.preferredHeight: Math.max(body.implicitHeight, waiting ? 22 : 0) + (msg.mine ? 18 : 0)
@@ -486,8 +498,10 @@ Sheet {
                                     readOnly: true
                                     selectByMouse: true
                                     wrapMode: TextEdit.Wrap
-                                    textFormat: msg.mine ? TextEdit.PlainText : TextEdit.MarkdownText
-                                    text: msg.mine ? msg.modelData.content : root.tight(msg.modelData.content)
+                                    textFormat: msg.mine ? TextEdit.PlainText : TextEdit.RichText
+                                    text: msg.mine ? msg.modelData.content : Md.render(msg.modelData.content ?? "", root.mdColors).html
+                                    onLinkActivated: link => Qt.openUrlExternally(link)
+                                    HoverHandler { cursorShape: body.hoveredLink ? Qt.PointingHandCursor : Qt.IBeamCursor }
                                     color: msg.modelData.error ? Theme.danger : msg.mine ? (Theme.m3 ? Theme.accentSoftInk : "#ffffff") : Theme.text
                                     selectionColor: Theme.accent
                                     selectedTextColor: Theme.accentInk
@@ -505,7 +519,7 @@ Sheet {
                             }
 
                             Row {   // actions under a finished answer
-                                visible: !msg.mine && !(AI.busy && msg.last) && !msg.modelData.error && !!msg.modelData.content
+                                visible: !msg.mine && !(AI.busy && msg.last) && !!msg.modelData.content && !msg.modelData.compact
                                 spacing: 2
                                 Layout.leftMargin: 2
                                 IconButton {
@@ -697,6 +711,48 @@ Sheet {
         }
     }
 
+    MouseArea {
+        anchors.fill: parent
+        z: 99
+        visible: chatMenu.visible
+        onClicked: chatMenu.visible = false
+    }
+    Rectangle {
+        id: chatMenu
+        z: 100
+        visible: false
+        function toggle(): void {
+            if (visible) { visible = false; return; }
+            const p = chatMenuBtn.mapToItem(parent, chatMenuBtn.width, chatMenuBtn.height + 6);
+            x = Math.max(12, p.x - width);
+            y = p.y;
+            visible = true;
+        }
+        width: 260
+        height: chatCol.implicitHeight + 12
+        radius: Theme.m3 ? 20 : 12
+        color: Theme.surface2
+        border.width: 1
+        border.color: Theme.dark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.10)
+        MouseArea { anchors.fill: parent }
+        ColumnLayout {
+            id: chatCol
+            anchors { left: parent.left; right: parent.right; top: parent.top; margins: 6 }
+            spacing: 2
+            MenuItem { icon: "edit_square"; label: "New chat"; onClicked: { chatMenu.visible = false; AI.reset(); input.forceActiveFocus(); } }
+            MenuItem {
+                icon: "arrow_forward"; label: "Continue in a new chat"; hint: "summary"
+                opacity: AI.busy || AI.compacting ? 0.4 : 1
+                onClicked: { chatMenu.visible = false; AI.handoff(); input.forceActiveFocus(); }
+            }
+            MenuItem {
+                icon: "summarize"; label: "Compact this chat"
+                opacity: AI.busy || AI.compacting || AI.chat.length < 2 ? 0.4 : 1
+                onClicked: { chatMenu.visible = false; AI.compact(); input.forceActiveFocus(); }
+            }
+        }
+    }
+
     // Model picker under the model name: provider tabs (KOOMPI, then each signed-in account's provider),
     // then that provider's models. Above everything in the panel; a click outside closes it.
     MouseArea {
@@ -777,4 +833,5 @@ Sheet {
             MenuItem { label: "Accounts and more models…"; onClicked: { picker.visible = false; Shell.openSettings("ai"); } }
         }
     }
+
 }

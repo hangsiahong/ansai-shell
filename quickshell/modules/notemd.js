@@ -2,7 +2,7 @@
 
 // Quick Note's reading view: a note's Markdown as Qt rich text. Line-based on purpose: every non-blank source line
 // becomes exactly one text block, so `lines[block]` maps a click back to the source line (to edit or tick it).
-// c: { text, muted, accent, code } colour strings.
+// c: { text, muted, accent, code } colour strings; optional line (table borders) and codePx (code font size).
 
 function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
@@ -17,18 +17,33 @@ function inline(s, c) {
         .replace(/(^|[^_\w])_(?!\s)(.+?)_(?!\w)/g, "$1<i>$2</i>")
         .replace(/~~(.+?)~~/g, "<s>$1</s>")
         .replace(/==(.+?)==/g, `<span style="background-color:${c.code}">$1</span>`);
-    return s.replace(/\u0001(\d+)\u0001/g, (m, i) => `<span style="font-family:monospace;background-color:${c.code}">&nbsp;${esc(codes[+i])}&nbsp;</span>`);
+    return s.replace(/\u0001(\d+)\u0001/g, (m, i) => `<span style="font-family:monospace;${c.codePx ? `font-size:${c.codePx}px;` : ""}background-color:${c.code}">&nbsp;${esc(codes[+i])}&nbsp;</span>`);
 }
 
 function render(src, c) {
     const out = [], lines = [];
-    let gap = false, fence = false;
+    let gap = false, fence = false, opened = false;
     const block = (i, html) => { lines.push(i); out.push(html); gap = false; };
     const top = px => `margin-bottom:0;margin-top:${gap ? px + 8 : px}px;`;
+    let rows = [];   // a pipe table being collected: [line, text]
+    const table = () => {
+        if (!rows.length) return;
+        const cells = t => t.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(x => x.trim());
+        const body = rows.filter(r => !/^\s*\|?\s*:?-{2,}/.test(r[1]));
+        const html = body.map((r, k) => "<tr>" + cells(r[1]).map(x =>
+            `<td style="padding:4px 8px">${k === 0 ? `<b>${inline(x, c)}</b>` : inline(x, c)}</td>`).join("") + "</tr>").join("");
+        const at = rows[0][0];
+        rows = [];
+        block(at, `<table cellspacing="0" cellpadding="5" border="1" style="${top(6)}border-color:${c.line ?? c.code};border-style:solid">${html}</table>`);
+    };
     src.split("\n").forEach((raw, i) => {
-        if (/^\s*```/.test(raw)) { fence = !fence; gap = false; return; }
+        if (!fence && /^\s*\|/.test(raw)) { rows.push([i, raw]); return; }
+        table();
+        if (/^\s*```/.test(raw)) { fence = !fence; opened = fence && out.length > 0; gap = false; return; }
         if (fence) {
-            block(i, `<p style="margin-top:0;font-family:monospace;font-size:13px;background-color:${c.code};white-space:pre">${esc(raw) || "&nbsp;"}</p>`);
+            const first = opened;
+            opened = false;
+            block(i, `<p style="margin-top:${first ? 8 : 0}px;font-family:monospace;font-size:${c.codePx ?? 13}px;background-color:${c.code};white-space:pre">${esc(raw) || "&nbsp;"}</p>`);
             return;
         }
         const t = raw.replace(/\s+$/, "");
@@ -55,6 +70,7 @@ function render(src, c) {
             block(i, `<p style="${top(5)}">${inline(t, c)}</p>`);
         }
     });
+    table();
     return { html: out.join(""), lines: lines };
 }
 

@@ -196,10 +196,43 @@ No quotes, no period, no emoji. Reply with only the name.`,
                 if (chatId === id) chatTitle = t;
             });
     }
+    // ---- Compact (summary replaces the context, messages stay visible) and Continue in a new chat (handoff).
+    property bool compacting: false
+    function brief(cb): void {
+        compacting = true;
+        const text = chat.filter(m => !m.error).map(m => (m.compact ? "Earlier summary" : m.role === "user" ? "User" : "Assistant") + ": "
+            + (m.content || "") + (m.image ? ` (image file: ${m.image})` : "")).join("\n\n").slice(-60000);
+        task(`Summarize this conversation so another assistant can continue it without the transcript. Keep the user's goal,
+decisions, facts found (names, paths, URLs, IDs, numbers), what was done with its results, and what is still open.
+Short bullets under 250 words, in the language the user wrote in. No preamble.`, text, (full, err) => {
+            compacting = false;
+            cb(err ? "" : (full ?? "").trim());
+        });
+    }
+    function compact(): void {
+        if (busy || compacting || chat.length < 2) return;
+        const id = chatId;
+        brief(s => { if (!s || busy || chatId !== id) return; chat = [...chat, { role: "assistant", content: s, compact: true }]; save(); });
+    }
+    function handoff(): void {
+        if (busy || compacting || !chat.length) return;
+        const title = chatTitle || (chat.find(m => m.role === "user")?.content ?? "").replace(/\s+/g, " ").trim().slice(0, 50);
+        brief(s => {
+            if (!s || busy) return;
+            reset();
+            chat = [{ role: "assistant", content: s, compact: true, handoff: true }];
+            chatTitle = (title || "Chat") + " (continued)";
+            save();
+        });
+    }
     function openChat(id: string): void {
         const c = chats.find(x => x.id === id);
         if (!c || busy) return;
-        chat = c.messages;
+        // A reply cut off by a shell restart was saved empty: say so, so the retry button shows.
+        const msgs = Array.from(c.messages), z = msgs[msgs.length - 1];
+        if (z?.role === "assistant" && !z.content && !(z.tools ?? []).length && !z.compact)
+            msgs[msgs.length - 1] = Object.assign({}, z, { content: "Interrupted before it answered (the shell restarted). Retry to ask again.", error: true });
+        chat = msgs;
         chatId = id;
         chatTitle = c.named ? c.title : "";
         attachment = "";
@@ -292,17 +325,22 @@ Tools from the user's connected services (${names}):
   (per-service metrics, traffic, usage, logs) before saying it isn't available.
 - If it truly isn't available, say so in one line and give the closest numbers you did find.
 - Only say you did something if the tool succeeded. Actions that change things need the user's approval, which the app asks for.` : "") }];
-        // Older images are dropped from the context: only the newest one is sent.
-        const prior = chat.filter(m => !m.error).map(m => ({ role: m.role, content: m.image ? `${m.content}\n\n(Attached image file: ${m.image})` : m.content }));
+        // A compact summary stands in for everything before it. Older images are dropped: only the newest one is sent.
+        const k = chat.map(m => !!m.compact).lastIndexOf(true);
+        if (k >= 0) history[0].content += `\n\nSummary of the earlier conversation (continue from it):\n${chat[k].content}`;
+        const prior = chat.slice(k + 1).filter(m => !m.error).map(m => ({ role: m.role, content: m.image ? `${m.content}\n\n(Attached image file: ${m.image})` : m.content }));
         chat = [...chat, user, { role: "assistant", content: "" }];
         save();
         busy = true;
         const i = chat.length - 1, g = gen;
         const edit = f => { if (g !== gen) return; const c = Array.from(chat); c[i] = Object.assign({}, c[i]); f(c[i]); chat = c; };
         // Tokens are batched (flushT): replacing chat per token re-rendered the whole chat and froze the shell.
-        const p = { d: "", t: "", ts: 0, edit: edit };
+        // Thinking time counts only while it thinks (seg: current stretch, done: earlier ones), not tool runs between.
+        const p = { d: "", t: "", seg: 0, done: 0, thought: false, edit: edit };
+        const pause = () => { if (!p.seg) return; p.done += Date.now() - p.seg; p.seg = 0; p.thought = p.dirty = true; flushT.start(); };
         pending = p;
-        current = ask([...history, ...prior, user], d => { p.d += d; flushT.start(); }, (full, err) => {
+        current = ask([...history, ...prior, user], d => { pause(); p.d += d; flushT.start(); }, (full, err) => {
+            pause();
             flush(p);
             edit(m => {
                 (m.tools ?? []).forEach((t, k) => { if (t.status === "wait" || t.status === "run") m.tools[k] = Object.assign({}, t, { status: "fail", preview: "Stopped" }); });
@@ -318,11 +356,12 @@ Tools from the user's connected services (${names}):
             tools: true,
             onEvent: ev => {
                 if (ev.t !== undefined) {   // reasoning: kept with the answer (not sent back to the model)
-                    p.ts = p.ts || Date.now();
+                    if (!p.seg) { p.seg = Date.now(); if (p.thought) p.t += "\n\n"; }
                     p.t += ev.t;
                     flushT.start();
                     return;
                 }
+                pause();
                 flush(p);
                 edit(m => {
                 const tools = Array.from(m.tools ?? []);
@@ -340,15 +379,13 @@ Tools from the user's connected services (${names}):
     }
     property var pending: null
     function flush(p): void {
-        if (!p || (!p.d && !p.t)) return;
+        if (!p || (!p.d && !p.t && !p.dirty)) return;
         const d = p.d, t = p.t;
         p.d = p.t = "";
+        p.dirty = false;
         p.edit(m => {
-            if (t) {
-                m.thinkStart = m.thinkStart || p.ts;
-                m.reasoning = (m.reasoning ?? "") + t;
-                m.thinkMs = Date.now() - m.thinkStart;
-            }
+            if (t) m.reasoning = (m.reasoning ?? "") + t;
+            if (p.seg || p.done) m.thinkMs = p.done + (p.seg ? Date.now() - p.seg : 0);
             if (d) m.content += d;
         });
     }
