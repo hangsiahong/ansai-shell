@@ -17,6 +17,8 @@ Sheet {
     // "side": a panel on the right; "center": big in the middle, with the chat list beside it.
     readonly property bool big: Settings.aiLayout === "center"
     property bool showHistory: false
+    property string pane: "chats"   // sidebar list: "chats" | "sched"
+    property var editing: null      // scheduled task open in the editor (a copy), or null
     dim: big
     panelWidth: big ? Math.min(1200, width - 96) : Math.min(440, width - 24)
     panelX: big ? (width - panelWidth) / 2 : width - panelWidth - 10
@@ -39,6 +41,17 @@ Sheet {
         line: Theme.line.toString(), codePx: 13
     })
 
+    function when(t): string {
+        const at = t.time ?? "08:00";
+        return t.kind === "hourly" ? "Every hour" : t.kind === "daily" ? "Daily at " + at : t.kind === "weekdays" ? "Weekdays at " + at
+             : t.kind === "weekly" ? (t.day ?? "Mon") + "s at " + at : (t.cron ?? "");
+    }
+    function ago(ms: real): string {   // "in 3 h" / "5 min ago" / a date
+        const d = (ms - Date.now()) / 60000, a = Math.abs(d);
+        const s = a < 1 ? "now" : a < 60 ? Math.round(a) + " min" : a < 48 * 60 ? Math.round(a / 60) + " h" : "";
+        if (!s) return Qt.formatDate(new Date(ms), "d MMM");
+        return s === "now" ? s : d > 0 ? "in " + s : s + " ago";
+    }
     function send() {
         if (AI.busy) return;
         AI.send(input.text);
@@ -71,7 +84,7 @@ Sheet {
 
         // ---- chat history
         ColumnLayout {
-            visible: root.big || root.showHistory
+            visible: (root.big || root.showHistory) && !(root.editing && !root.big)
             Layout.preferredWidth: root.big ? 250 : -1
             Layout.fillWidth: !root.big
             Layout.fillHeight: true
@@ -85,14 +98,119 @@ Sheet {
                     icon: "arrow_back"; iconSize: 19; iconColor: Theme.text2
                     onClicked: root.showHistory = false
                 }
-                Txt { Layout.fillWidth: true; text: "Chats"; font.pixelSize: 15; font.weight: Theme.strong }
+                Row {
+                    Layout.fillWidth: true
+                    spacing: 4
+                    Repeater {
+                        model: [{ v: "chats", l: "Chats" }, { v: "sched", l: "Scheduled" }]
+                        Hover {
+                            id: ptab
+                            required property var modelData
+                            readonly property bool on: root.pane === modelData.v
+                            width: ptabT.implicitWidth + 20
+                            height: 28
+                            radius: 14
+                            active: on
+                            activeColor: Theme.m3 ? Theme.accentSoft : Theme.fill
+                            onClicked: root.pane = modelData.v
+                            Txt {
+                                id: ptabT
+                                anchors.centerIn: parent
+                                text: ptab.modelData.l
+                                font.pixelSize: 13
+                                font.weight: ptab.on ? Theme.strong : Font.Normal
+                                color: ptab.on ? (Theme.m3 ? Theme.accentSoftInk : Theme.text) : Theme.muted
+                            }
+                        }
+                    }
+                }
                 IconButton {
-                    icon: "edit_square"; iconSize: 19; iconColor: Theme.text2
-                    onClicked: { AI.reset(); root.showHistory = false; input.forceActiveFocus(); }
+                    icon: root.pane === "sched" ? "add" : "edit_square"; iconSize: 19; iconColor: Theme.text2
+                    onClicked: {
+                        if (root.pane === "sched") { root.editing = AI.newSchedule(); return; }
+                        AI.reset(); root.showHistory = false; input.forceActiveFocus();
+                    }
+                }
+            }
+            ListView {
+                id: sched
+                visible: root.pane === "sched"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                spacing: 2
+                model: AI.schedules
+                boundsBehavior: Flickable.StopAtBounds
+                delegate: Hover {
+                    id: srow
+                    required property var modelData
+                    readonly property var info: AI.schedInfo[modelData.id] ?? ({})
+                    readonly property bool running: !!AI.schedRunning[modelData.id]
+                    width: sched.width
+                    height: scol.implicitHeight + 16
+                    radius: Theme.m3 ? 20 : 10
+                    active: root.editing?.id === modelData.id
+                    activeColor: Theme.m3 ? Theme.accentSoft : Theme.fill
+                    onClicked: root.editing = Object.assign({}, modelData)
+                    ColumnLayout {
+                        id: scol
+                        anchors { left: parent.left; right: sw.left; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 6 }
+                        spacing: 1
+                        Txt { Layout.fillWidth: true; text: srow.modelData.name; font.pixelSize: 13; opacity: srow.modelData.on ? 1 : 0.55 }
+                        Txt {
+                            Layout.fillWidth: true
+                            font.pixelSize: 11
+                            color: srow.info.e ? Theme.danger : Theme.faint
+                            text: srow.info.e ? srow.info.e : root.when(srow.modelData) + (srow.modelData.on && srow.info.at ? " · next " + root.ago(srow.info.at) : srow.modelData.on ? "" : " · off")
+                        }
+                        RowLayout {
+                            spacing: 6
+                            Hover {
+                                visible: !!srow.modelData.last || srow.running
+                                implicitWidth: lastT.implicitWidth + 10
+                                implicitHeight: lastT.implicitHeight + 4
+                                Layout.leftMargin: -5
+                                radius: 6
+                                onClicked: if (srow.modelData.last?.chat) { root.pane = "chats"; AI.openChat(srow.modelData.last.chat); root.showHistory = false; root.editing = null; }
+                                Txt {
+                                    id: lastT
+                                    anchors.centerIn: parent
+                                    font.pixelSize: 11
+                                    color: srow.running ? Theme.accent : srow.modelData.last?.ok ? Theme.green : Theme.danger
+                                    text: srow.running ? "Running…" : (srow.modelData.last?.ok ? "✓ " : "✗ ") + "ran " + root.ago(srow.modelData.last?.at ?? 0)
+                                }
+                            }
+                            IconButton {
+                                implicitWidth: 24; implicitHeight: 24
+                                visible: !srow.running
+                                opacity: srow.hovered || hovered ? 1 : 0
+                                icon: "play_arrow"; iconSize: 16; iconColor: Theme.muted
+                                onClicked: AI.runSchedule(srow.modelData.id)
+                            }
+                        }
+                    }
+                    Switch {
+                        id: sw
+                        anchors { right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
+                        scale: 0.8
+                        checked: srow.modelData.on
+                        onToggled: AI.setSchedule(srow.modelData.id, { on: !srow.modelData.on })
+                    }
+                }
+                Txt {
+                    anchors.centerIn: parent
+                    width: parent.width - 32
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.Wrap
+                    visible: sched.count === 0
+                    text: "Nothing scheduled yet.\nPress + to have Ask Ansai do something every hour, day or week."
+                    color: Theme.faint
+                    font.pixelSize: 13
                 }
             }
             ListView {
                 id: hist
+                visible: root.pane === "chats"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
@@ -150,11 +268,18 @@ Sheet {
         }
 
         Item {
-            visible: root.big || !root.showHistory
+            visible: root.big || !root.showHistory || !!root.editing
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            ScheduleEditor {
+                anchors.fill: parent
+                visible: !!root.editing
+                task: root.editing
+                onClosed: root.editing = null
+            }
             ColumnLayout {
+                visible: !root.editing
                 anchors { top: parent.top; bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
                 width: Math.min(parent.width, 860)
                 spacing: 10
@@ -833,5 +958,6 @@ Sheet {
             MenuItem { label: "Accounts and more models…"; onClicked: { picker.visible = false; Shell.openSettings("ai"); } }
         }
     }
+
 
 }

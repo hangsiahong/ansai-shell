@@ -52,15 +52,17 @@ Singleton {
         keyWriter.running = true;
     }
 
-    readonly property string system: `You are the assistant built into ansai, the user's Linux desktop (niri + Quickshell). ` +
-        `Today is ${Qt.formatDate(new Date(), "dddd d MMMM yyyy")}.
+    function head(today: string): string {
+        return `You are the assistant built into ansai, the user's Linux desktop (niri + Quickshell). Today is ${today}.
 
 How to answer:
 - First line: the direct answer (the number, yes/no, the fix, the result). No preamble, don't restate the question.
 - Then only the details that matter: a few short bullets or a small table. Bold the key numbers and names.
 - Aim for under 100 words unless the user asks for more. No closing offers or filler.
 - Get facts right before writing: count lists carefully, never write "Correction:"; if unsure, say what you'd check.
-- Reply in the language the user writes in (often Khmer or English). Code goes in fenced blocks.`
+- Reply in the language the user writes in (often Khmer or English). Code goes in fenced blocks.`;
+    }
+    readonly property string system: head(Qt.formatDate(new Date(), "dddd d MMMM yyyy"))
 
     // ask([{ role, content, image? }], onDelta(text), onDone(fullText, error), opts) → handle with .stop()
     // opts.tools: let it use the desktop tools; opts.only: just these tool names (e.g. ["clipboard"]); opts.mcp: server urls whose tools it may use;
@@ -252,6 +254,105 @@ Short bullets under 250 words, in the language the user wrote in. No preamble.`,
         blockLoading: true   // text() is the file's content as soon as it's asked for
     }
 
+    // ---- Scheduled tasks: agent/schedule.mjs turns them into systemd user timers; each run comes back as a chat.
+    // ai-schedules.json is written only here; runs land in ai-runs/ and are imported (then deleted) by importRun().
+    readonly property string schedScript: Quickshell.shellDir + "/agent/schedule.mjs"
+    property var schedules: []     // [{ id, name, prompt, kind: hourly|daily|weekdays|weekly|custom, time, day, cron, model, account, act, on, last: { at, ok, chat } }]
+    property var schedInfo: ({})   // id → { cal, next } | { e }
+    property var schedRunning: ({}) // id → true while a "Run now" is out
+    property bool schedRead: false
+    function newSchedule() {
+        return { id: "", name: "", prompt: "", kind: "daily", time: "08:00", day: "Mon", cron: "", model: Settings.aiModel, account: Settings.aiAccount, act: false, on: true };
+    }
+    function saveSchedule(t): string {
+        const id = t.id || Date.now().toString(36);
+        const n = Object.assign({}, t, { id: id });
+        schedules = schedules.some(x => x.id === id) ? schedules.map(x => x.id === id ? n : x) : [...schedules, n];
+        writeSchedules(true);
+        return id;
+    }
+    function setSchedule(id: string, v): void { schedules = schedules.map(x => x.id === id ? Object.assign({}, x, v) : x); writeSchedules(true); }
+    function deleteSchedule(id: string): void { schedules = schedules.filter(x => x.id !== id); writeSchedules(true); }
+    function runSchedule(id: string): void {
+        const r = Object.assign({}, schedRunning); r[id] = true; schedRunning = r;
+        Quickshell.execDetached(["systemctl", "--user", "start", "--no-block", "ansai-task-" + id + ".service"]);
+    }
+    function writeSchedules(sync: bool): void {
+        if (!schedRead) return;
+        schedFile.setText(JSON.stringify({ system: desk("{{today}}"), mcp: mcpLive, tasks: schedules }, null, 1));
+        if (sync) { schedSync.running = false; schedSync.running = true; }
+    }
+    // The prompt holds the lessons and connected services: keep the file's copy fresh.
+    onLessonsChanged: if (schedules.length) schedRefresh.restart()
+    onMcpLiveChanged: if (schedules.length) schedRefresh.restart()
+    Timer { id: schedRefresh; interval: 3000; onTriggered: root.writeSchedules(false) }
+    FileView {
+        id: schedFile
+        path: root.dataDir + "/ai-schedules.json"
+        printErrors: false
+        atomicWrites: true
+        blockLoading: true
+        Component.onCompleted: {
+            const t = text();
+            if (t) { try { root.schedules = JSON.parse(t).tasks ?? []; } catch (e) { console.warn("ai-schedules.json unreadable; not overwriting it"); return; } }
+            root.schedRead = true;
+            if (root.schedules.length) { schedSync.running = true; runList.running = true; }
+        }
+    }
+    Process {
+        id: schedSync
+        command: ["node", root.schedScript, "sync"]
+        stdout: StdioCollector { onStreamFinished: { try { root.schedInfo = JSON.parse(text); } catch (e) {} } }
+    }
+    // Runs that finished while the shell wasn't there to take them.
+    Process {
+        id: runList
+        command: ["sh", "-c", 'for f in "$1"/ai-runs/*.json; do [ -f "$f" ] && echo "$f"; done; true', "sh", root.dataDir]
+        stdout: SplitParser { onRead: f => root.importRun(f, false) }
+    }
+    function importRun(file: string, notify: bool): void {
+        if (!file.startsWith(dataDir + "/ai-runs/") || !file.endsWith(".json")) return;
+        runRead.createObject(root, { file: file, notify: notify, command: ["cat", file] }).running = true;
+    }
+    Component {
+        id: runRead
+        Process {
+            property string file
+            property bool notify
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    let r = null;
+                    try { r = JSON.parse(text); } catch (e) { console.warn("bad scheduled run", file); }
+                    if (r) root.takeRun(r, notify);
+                    if (r || !text) Quickshell.execDetached(["rm", "-f", file]);
+                }
+            }
+            onExited: destroy()
+        }
+    }
+    function takeRun(r, notify: bool): void {
+        readChats();
+        if (!chatsRead) return;
+        const id = "s" + r.started.toString(36);
+        if (!chats.some(c => c.id === id)) {
+            const when = Qt.formatDateTime(new Date(r.started), Settings.use24h ? "d MMM HH:mm" : "d MMM h:mm AP");
+            const c = { id: id, title: `⏰ ${r.name} · ${when}`, named: true, updated: r.ended, scheduled: r.task,
+                        messages: [{ role: "user", content: r.prompt }, r.message] };
+            chats = [c, ...chats].slice(0, 200);
+            histFile.setText(JSON.stringify(chats));
+        }
+        const run = Object.assign({}, schedRunning); delete run[r.task]; schedRunning = run;
+        if (schedules.some(x => x.id === r.task)) {
+            schedules = schedules.map(x => x.id === r.task ? Object.assign({}, x, { last: { at: r.started, ok: r.ok, chat: id } }) : x);
+            writeSchedules(false);
+        }
+        if (notify) {
+            const line = ((r.message?.content ?? "").split("\n").find(l => l.trim()) ?? "Done").replace(/[*#`]/g, "").slice(0, 200);
+            Quickshell.execDetached(["sh", "-c", 'a=$(notify-send -a "Ask Ansai" -i alarm -A open=Open "$1" "$2") && [ "$a" = open ] && qs -c ansai ipc call ai show "$3"',
+                                     "sh", (r.ok ? "⏰ " : "⚠ ") + r.name, line, id]);
+        }
+    }
+
     // ---- lessons: one line each in ai-lessons.md, written by the agent's remember_lesson tool and by audit() below,
     // read into every desktop conversation's instructions. Settings → AI lists and deletes them.
     property var lessons: []
@@ -289,14 +390,10 @@ If the task went fine or nothing reusable can be learned, reply exactly NONE. Ot
             });
     }
 
-    function send(text: string): void {
-        text = text.trim();
-        if ((!text && !attachment) || busy) return;
-        const user = { role: "user", content: text || "What's in this screenshot?" };
-        if (attachment) user.image = attachment;
-        attachment = "";
+    // The desktop-agent prompt (send() and scheduled tasks, which get "{{today}}" filled in when they run).
+    function desk(today: string): string {
         const names = mcpServers.filter(s => mcpLive.includes(s.url)).map(s => s.name).join(", ");
-        const history = [{ role: "system", content: system + `
+        return head(today) + `
 
 You can act on this computer with tools: run commands, read/write/edit files, search files, open files and URLs,
 start apps, list/focus/arrange windows (niri), read/copy the clipboard and search what the user copied before (clipboard tool), read web pages, and see and use other apps on the screen
@@ -324,7 +421,15 @@ Tools from the user's connected services (${names}):
 - Call independent tools together in one step. If the first tool lacks the data, look for a more specific one
   (per-service metrics, traffic, usage, logs) before saying it isn't available.
 - If it truly isn't available, say so in one line and give the closest numbers you did find.
-- Only say you did something if the tool succeeded. Actions that change things need the user's approval, which the app asks for.` : "") }];
+- Only say you did something if the tool succeeded. Actions that change things need the user's approval, which the app asks for.` : "");
+    }
+    function send(text: string): void {
+        text = text.trim();
+        if ((!text && !attachment) || busy) return;
+        const user = { role: "user", content: text || "What's in this screenshot?" };
+        if (attachment) user.image = attachment;
+        attachment = "";
+        const history = [{ role: "system", content: desk(Qt.formatDate(new Date(), "dddd d MMMM yyyy")) }];
         // A compact summary stands in for everything before it. Older images are dropped: only the newest one is sent.
         const k = chat.map(m => !!m.compact).lastIndexOf(true);
         if (k >= 0) history[0].content += `\n\nSummary of the earlier conversation (continue from it):\n${chat[k].content}`;
@@ -574,6 +679,8 @@ Tools from the user's connected services (${names}):
         function barAsk(text: string): void { Shell.close(); root.bar = true; root.barAsked(text); }
         function chatId(): string { return root.chatId; }
         function open(id: string): void { root.openChat(id); }
+        function show(id: string): void { root.openChat(id); Shell.open = "ai"; }
+        function scheduled(file: string): void { root.importRun(file, true); }
         function forget(id: string): void { root.deleteChat(id); }
         function screenshot(): void { root.screenshot(); }
         function image(path: string): void { root.askAbout(path, ""); }
