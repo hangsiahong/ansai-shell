@@ -22,6 +22,11 @@ import { createInterface } from "node:readline";
 import { homedir, tmpdir } from "node:os";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
+
+// Node tries each address (IPv6, then IPv4) for only 250 ms. Where IPv6 is broken and IPv4 takes longer than
+// that to connect (api.kimi.com here: ~470 ms), every request failed with "AggregateError (ETIMEDOUT)".
+setDefaultAutoSelectFamilyAttemptTimeout(2500);
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MCP_PY = join(HERE, "..", "scripts", "mcp.py");

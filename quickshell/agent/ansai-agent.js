@@ -73062,6 +73062,8 @@ import { createInterface as createInterface2 } from "node:readline";
 import { homedir as homedir2, tmpdir } from "node:os";
 import { dirname as dirname3, extname, join as join4, resolve as resolve2 } from "node:path";
 import { fileURLToPath } from "node:url";
+import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
+setDefaultAutoSelectFamilyAttemptTimeout(2500);
 var HERE = dirname3(fileURLToPath(import.meta.url)), MCP_PY = join4(HERE, "..", "scripts", "mcp.py"), CFG = join4(process.env.XDG_CONFIG_HOME || join4(homedir2(), ".config"), "ansai-shell"), BASE = process.env.ANSAI_AI_BASE || "https://ai.koompi.cloud/v1", MAX_TURNS = 20, OUT_CAP = 24000, out = (o) => process.stdout.write(JSON.stringify(o) + `
 `), lines = [], waiters = [], rl = createInterface2({ input: process.stdin });
 rl.on("line", (l) => waiters.length ? waiters.shift()(l) : lines.push(l));
