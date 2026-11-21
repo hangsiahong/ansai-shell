@@ -193,7 +193,7 @@ Sheet {
                             Layout.leftMargin: -4
                             radius: 6
                             active: picker.visible
-                            onClicked: picker.visible = !picker.visible
+                            onClicked: picker.toggle()
                             Row {
                                 id: modelRow
                                 anchors.centerIn: parent
@@ -204,51 +204,6 @@ Sheet {
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
                                 Icon { name: "expand_more"; size: 13; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-                            }
-                            Rectangle {
-                                id: picker
-                                visible: false
-                                // KOOMPI (with a key) first, then each signed-in provider with its models.
-                                readonly property var groups: (AI.hasKey ? [{ name: "KOOMPI", models: AI.models.map(m => ({ v: m, l: m })) }] : [])
-                                    .concat([...new Set(AI.accounts.map(a => a.provider))].map(p => ({ name: AI.providerName(p), models: (AI.catalogModels[p] ?? []).slice(0, 12).map(m => ({ v: p + "/" + m.id, l: m.id })) })))
-                                anchors { top: parent.bottom; topMargin: 6; left: parent.left }
-                                width: 280
-                                height: Math.min(pickCol.implicitHeight + 12, 440)
-                                radius: Theme.m3 ? 18 : 12
-                                color: Theme.surface2
-                                border.width: 1
-                                border.color: Theme.dark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.10)
-                                Flickable {
-                                    anchors { fill: parent; margins: 6 }
-                                    contentHeight: pickCol.implicitHeight
-                                    clip: true
-                                    ColumnLayout {
-                                        id: pickCol
-                                        width: parent.width
-                                        spacing: 0
-                                        Repeater {
-                                            model: picker.groups
-                                            ColumnLayout {
-                                                id: grp
-                                                required property var modelData
-                                                Layout.fillWidth: true
-                                                spacing: 0
-                                                Txt { Layout.leftMargin: 9; Layout.topMargin: 4; Layout.bottomMargin: 2; text: grp.modelData.name; font.pixelSize: 11; font.weight: Theme.strong; color: Theme.muted }
-                                                Repeater {
-                                                    model: grp.modelData.models
-                                                    MenuItem {
-                                                        required property var modelData
-                                                        label: modelData.l
-                                                        hint: Settings.aiModel === modelData.v ? "✓" : ""
-                                                        onClicked: { Settings.aiModel = modelData.v; picker.visible = false; input.forceActiveFocus(); }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        MenuSep {}
-                                        MenuItem { label: "Accounts and more models…"; onClicked: { picker.visible = false; Shell.openSettings("ai"); } }
-                                    }
-                                }
                             }
                         }
                     }
@@ -669,6 +624,87 @@ Sheet {
                     }
                 }
             }
+        }
+    }
+
+    // Model picker under the model name: provider tabs (KOOMPI, then each signed-in account's provider),
+    // then that provider's models. Above everything in the panel; a click outside closes it.
+    MouseArea {
+        anchors.fill: parent
+        z: 99
+        visible: picker.visible
+        onClicked: picker.visible = false
+    }
+    Rectangle {
+        id: picker
+        z: 100
+        visible: false
+        property string tab: ""
+        readonly property var tabs: (AI.hasKey || !AI.provider ? [""] : []).concat([...new Set(AI.accounts.map(a => a.provider))])
+        readonly property var models: tab === "" ? AI.models.map(m => ({ v: m, l: m })) : (AI.catalogModels[tab] ?? []).map(m => ({ v: tab + "/" + m.id, l: m.id }))
+        function toggle(): void {
+            if (visible) { visible = false; return; }
+            const p = modelBtn.mapToItem(parent, 0, modelBtn.height + 6);
+            x = Math.min(p.x, parent.width - width - 12);
+            y = p.y;
+            tab = tabs.includes(AI.provider) ? AI.provider : (tabs[0] ?? "");
+            visible = true;
+        }
+        width: 300
+        height: pickCol.implicitHeight + 12
+        radius: Theme.m3 ? 20 : 12
+        color: Theme.surface2
+        border.width: 1
+        border.color: Theme.dark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.10)
+        MouseArea { anchors.fill: parent }   // clicks on the card's padding don't fall through to close it
+        ColumnLayout {
+            id: pickCol
+            anchors { left: parent.left; right: parent.right; top: parent.top; margins: 6 }
+            spacing: 4
+            Flow {
+                Layout.fillWidth: true
+                Layout.margins: 3
+                spacing: 6
+                visible: picker.tabs.length > 1
+                Repeater {
+                    model: picker.tabs
+                    Hover {
+                        id: tb
+                        required property string modelData
+                        readonly property bool on: picker.tab === modelData
+                        width: tbTxt.implicitWidth + 22
+                        height: 26
+                        radius: 13
+                        base: on ? Theme.accent : Theme.fill2
+                        onClicked: picker.tab = modelData
+                        Txt { id: tbTxt; anchors.centerIn: parent; text: AI.providerName(tb.modelData); font.pixelSize: 12; font.weight: Theme.strong; color: tb.on ? Theme.accentInk : Theme.text }
+                    }
+                }
+            }
+            Flickable {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.min(modelCol.implicitHeight, 300)
+                contentHeight: modelCol.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                ColumnLayout {
+                    id: modelCol
+                    width: parent.width
+                    spacing: 0
+                    Repeater {
+                        model: picker.models
+                        MenuItem {
+                            required property var modelData
+                            label: modelData.l
+                            hint: Settings.aiModel === modelData.v ? "✓" : ""
+                            onClicked: { Settings.aiModel = modelData.v; picker.visible = false; input.forceActiveFocus(); }
+                        }
+                    }
+                    Txt { visible: !picker.models.length; Layout.margins: 9; text: "No models listed for this account"; font.pixelSize: 12; color: Theme.muted }
+                }
+            }
+            MenuSep {}
+            MenuItem { label: "Accounts and more models…"; onClicked: { picker.visible = false; Shell.openSettings("ai"); } }
         }
     }
 }
