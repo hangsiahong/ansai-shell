@@ -93,11 +93,16 @@ Singleton {
         return Object.keys(dots).map(k => `${sel.split("%").join(k)} { background-color: ${dots[k]}; }`).join("\n");
     }
     readonly property string grey: Theme.dark ? "#4a4a4d" : "#d4d4d8"
-    readonly property string tl4: !mac ? "" : `
-headerbar { padding-left: 10px; padding-right: 10px; }
+    // niri draws window shadows and rounds corners; a GTK decoration shadow/outline only adds a band inside that
+    // (Chromium/Brave with its own title bar sizes its frame from it).
+    readonly property string deco: !mac ? "" : `
+window.csd > decoration, window.csd decoration, decoration { box-shadow: none; border: none; outline: none; margin: 0; }
+`
+    readonly property string tl4: !mac ? "" : deco + `
 windowcontrols { border-spacing: 0; margin: 0; }
 windowcontrols > button, windowcontrols > button:hover, windowcontrols > button:active {
-  min-width: 14px; min-height: 14px; padding: 0; margin: 0 4px; background: none; box-shadow: none; }
+  min-width: 14px; min-height: 14px; padding: 0 4px; margin: 0; background: none; box-shadow: none; }
+windowcontrols > button.close { padding-left: 12px; }
 windowcontrols > button > image {
   min-width: 14px; min-height: 14px; padding: 0; -gtk-icon-size: 10px; border-radius: 50%;
   color: transparent; background-image: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); }
@@ -107,8 +112,8 @@ windowcontrols:hover > button > image { color: rgba(0,0,0,0.55); }
 windowcontrols > button:active > image { filter: brightness(0.82); }
 windowcontrols:backdrop:not(:hover) > button > image { background-color: ${grey}; box-shadow: none; }
 `
-    // Chromium/Brave (GTK mode, GTK4 or 3) takes its inset from the headerbar padding and the gaps from button margins.
-    readonly property string tl3: !mac ? "" : `
+    // Spacing is button padding (close is first, so its left padding is the inset): Brave's GTK4 frame ignores headerbar padding and margins.
+    readonly property string tl3: !mac ? "" : deco + `
 headerbar, .titlebar { padding-left: 12px; padding-right: 12px; }
 headerbar button.titlebutton, .titlebar button.titlebutton {
   min-width: 14px; min-height: 14px; padding: 0; margin: 0 3px; border: none; border-radius: 50%;
