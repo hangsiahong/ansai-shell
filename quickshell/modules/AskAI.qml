@@ -252,6 +252,9 @@ Sheet {
                         readonly property var tools: modelData.tools ?? []
                         readonly property var running: tools.find(t => t.status === "run" || t.status === "wait")
                         property bool toolsOpen: false
+                        property bool thinkOpen: false
+                        readonly property string reasoning: (modelData.reasoning ?? "").trim()
+                        readonly property bool reasoningNow: last && AI.busy && AI.thinking
                         width: list.width
                         height: col.implicitHeight
 
@@ -275,6 +278,66 @@ Sheet {
                                     sourceSize.width: 480
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
+                                }
+                            }
+
+                            ColumnLayout {   // the model's reasoning: streams in while it thinks, then folds to one line
+                                visible: !msg.mine && !!msg.reasoning
+                                Layout.fillWidth: true
+                                spacing: 6
+                                Hover {
+                                    Layout.preferredWidth: thinkRow.implicitWidth + 24
+                                    Layout.preferredHeight: 30
+                                    radius: 15
+                                    base: Theme.m3 ? Theme.surface3 : Theme.glassTile
+                                    onClicked: msg.thinkOpen = !msg.thinkOpen
+                                    Row {
+                                        id: thinkRow
+                                        anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
+                                        spacing: 6
+                                        Icon {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            name: "lightbulb"; size: 16; filled: true
+                                            color: msg.reasoningNow ? Theme.accent : Theme.muted
+                                            SequentialAnimation on opacity {
+                                                running: msg.reasoningNow; loops: Animation.Infinite
+                                                onRunningChanged: if (!running) parent.opacity = 1
+                                                NumberAnimation { to: 0.35; duration: 650; easing.type: Easing.InOutSine }
+                                                NumberAnimation { to: 1; duration: 650; easing.type: Easing.InOutSine }
+                                            }
+                                        }
+                                        Txt {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            font.pixelSize: 12
+                                            color: Theme.text2
+                                            text: msg.reasoningNow ? "Thinking…" : "Thought for " + Math.max(1, Math.round((msg.modelData.thinkMs ?? 0) / 1000)) + " s"
+                                        }
+                                        Icon { anchors.verticalCenter: parent.verticalCenter; name: msg.thinkOpen || msg.reasoningNow ? "expand_less" : "expand_more"; size: 16; color: Theme.muted }
+                                    }
+                                }
+                                Item {   // live: the last lines, following the text; opened: all of it
+                                    visible: msg.thinkOpen || msg.reasoningNow
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: msg.thinkOpen ? thinkText.implicitHeight : Math.min(thinkText.implicitHeight, 96)
+                                    clip: true
+                                    Rectangle { width: 2; height: parent.height; radius: 1; x: 12; color: Theme.line }
+                                    TextEdit {
+                                        id: thinkText
+                                        x: 24
+                                        width: parent.width - 30
+                                        y: Math.min(0, parent.height - implicitHeight)
+                                        readOnly: true
+                                        selectByMouse: true
+                                        wrapMode: TextEdit.Wrap
+                                        textFormat: TextEdit.PlainText
+                                        text: msg.reasoning
+                                        color: Theme.text2
+                                        selectionColor: Theme.accent
+                                        selectedTextColor: Theme.accentInk
+                                        font.family: Theme.font
+                                        font.pixelSize: 13
+                                        font.italic: true
+                                    }
                                 }
                             }
 
@@ -406,11 +469,12 @@ Sheet {
                                 }
                             }
 
-                            Rectangle {   // bubble (user) or plain text (assistant)
-                                visible: !!body.text
+                            Rectangle {   // bubble (user) or plain text (assistant); typing dots while the answer is on its way
+                                readonly property bool waiting: !msg.mine && !body.text && AI.busy && msg.last && !msg.tools.length && !msg.reasoning
+                                visible: !!body.text || waiting
                                 Layout.alignment: msg.mine ? Qt.AlignRight : Qt.AlignLeft
                                 Layout.preferredWidth: msg.mine ? body.width + 28 : list.width
-                                Layout.preferredHeight: body.implicitHeight + (msg.mine ? 18 : 0)
+                                Layout.preferredHeight: Math.max(body.implicitHeight, waiting ? 22 : 0) + (msg.mine ? 18 : 0)
                                 radius: Theme.m3 ? 20 : 18
                                 color: msg.mine ? (Theme.m3 ? Theme.accentSoft : Theme.accent) : "transparent"
                                 TextEdit {
@@ -429,7 +493,13 @@ Sheet {
                                     selectedTextColor: Theme.accentInk
                                     font.family: Theme.font
                                     font.pixelSize: 14
-                                    TypingDots { visible: !msg.mine && !body.text && AI.busy && msg.last && !msg.tools.length; y: (body.contentHeight - height) / 2; color: body.color }
+                                    Row {
+                                        visible: parent.parent.waiting
+                                        spacing: 8
+                                        height: 22
+                                        TypingDots { anchors.verticalCenter: parent.verticalCenter; color: body.color }
+                                        Txt { anchors.verticalCenter: parent.verticalCenter; visible: AI.thinking; text: "Thinking…"; font.pixelSize: 13; color: Theme.text2 }
+                                    }
                                     TextMetrics { id: metrics; font: body.font; text: msg.modelData.content.split("\n").reduce((a, b) => a.length > b.length ? a : b, "") }
                                 }
                             }

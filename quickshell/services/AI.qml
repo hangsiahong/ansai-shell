@@ -141,6 +141,7 @@ How to answer:
     // [{ role: "user"|"assistant", content, image?, error?, tools?: [{ id, name, title, server, args, ask, status, preview }] }]
     property var chat: []
     property bool busy: false
+    property bool thinking: false  // the model is reasoning before it answers (or between steps)
     property int gen: 0   // bumped by reset(): a stopped request must not write into the new chat
     property var current: null
     signal barAsked(string text)
@@ -148,7 +149,7 @@ How to answer:
     // The agent is using the mouse and keyboard: shell panels stay out of the way until the answer is done.
     property bool driving: false
     property string reopen: ""
-    onBusyChanged: if (!busy && driving) { driving = false; if (reopen) Shell.open = reopen; reopen = ""; }   // quick Ask bar at the bottom edge, opened from a key (modules/AskBar.qml)
+    onBusyChanged: { thinking = false; if (!busy && driving) { driving = false; if (reopen) Shell.open = reopen; reopen = ""; } }   // quick Ask bar at the bottom edge, opened from a key (modules/AskBar.qml)
     property string draft: ""      // text waiting in the sidebar's input
     property string attachment: "" // image path to send with the next message
 
@@ -312,6 +313,12 @@ Tools from the user's connected services (${names}):
             mcp: mcpLive,
             tools: true,
             onEvent: ev => edit(m => {
+                if (ev.t !== undefined) {   // reasoning: kept with the answer (not sent back to the model)
+                    m.thinkStart = m.thinkStart || Date.now();
+                    m.reasoning = (m.reasoning ?? "") + ev.t;
+                    m.thinkMs = Date.now() - m.thinkStart;
+                    return;
+                }
                 const tools = Array.from(m.tools ?? []);
                 const auto = ev.tool?.ask && Settings.aiAllowAll;
                 if (auto) current.write("y\n");
@@ -379,8 +386,9 @@ Tools from the user's connected services (${names}):
                     let ev;
                     try { ev = JSON.parse(line); } catch (e) { return; }
                     if (ev.e) p.err = ev.e;
-                    else if (ev.d) { p.full += ev.d; if (p.onDelta) p.onDelta(ev.d); }
-                    else if ((ev.tool || ev.tool_done) && p.onEvent) p.onEvent(ev);
+                    else if (ev.t !== undefined) { root.thinking = true; if (p.onEvent) p.onEvent(ev); }
+                    else if (ev.d) { root.thinking = false; p.full += ev.d; if (p.onDelta) p.onDelta(ev.d); }
+                    else if ((ev.tool || ev.tool_done) && p.onEvent) { root.thinking = false; p.onEvent(ev); }
                     else if (ev.via) { root.via = ev.via; if (ev.via.after) root.refreshAccounts(); }
                 }
             }

@@ -73819,10 +73819,13 @@ async function chat2(req, { model: model2, streamFn, e: e2 }) {
       return;
     return declined.add(toolCall.id), out({ tool_done: { id: toolCall.id, ok: !1, preview: "Declined" } }), { block: !0, reason: "The user declined this action. Don't retry it; ask them what to do instead." };
   };
-  let turns = 0, wrote = !1, failed = "";
+  let turns = 0, wrote = !1, failed = "", thinking = !1;
   agent2.subscribe((ev) => {
-    if (ev.type === "message_update" && ev.assistantMessageEvent.type === "text_delta")
-      out({ d: ev.assistantMessageEvent.delta }), wrote = !0;
+    let kind = ev.type === "message_update" && ev.assistantMessageEvent.type;
+    if (kind === "text_delta")
+      out({ d: ev.assistantMessageEvent.delta }), wrote = !0, thinking = !1;
+    else if (kind === "thinking_delta")
+      out({ t: ev.assistantMessageEvent.delta }), thinking = !0;
     else if (ev.type === "tool_execution_end" && !declined.has(ev.toolCallId)) {
       let r2 = ev.result?.content?.map((c) => c.type === "text" ? c.text : `[${c.type}]`).join(`
 `) || "";

@@ -676,11 +676,15 @@ async function chat(req, { model, streamFn, e }) {
         return { block: true, reason: "The user declined this action. Don't retry it; ask them what to do instead." };
     };
 
-    let turns = 0, wrote = false, failed = "";
+    let turns = 0, wrote = false, failed = "", thinking = false;
     agent.subscribe(ev => {
-        if (ev.type === "message_update" && ev.assistantMessageEvent.type === "text_delta") {
+        const kind = ev.type === "message_update" && ev.assistantMessageEvent.type;
+        if (kind === "text_delta") {
             out({ d: ev.assistantMessageEvent.delta });
-            wrote = true;
+            wrote = true; thinking = false;
+        } else if (kind === "thinking_delta") {
+            out({ t: ev.assistantMessageEvent.delta });   // the model's reasoning, shown folded above the answer
+            thinking = true;
         } else if (ev.type === "tool_execution_end" && !declined.has(ev.toolCallId)) {
             const r = ev.result?.content?.map(c => c.type === "text" ? c.text : `[${c.type}]`).join("\n") || "";
             out({ tool_done: { id: ev.toolCallId, ok: !ev.isError, preview: r.slice(0, 300) } });
