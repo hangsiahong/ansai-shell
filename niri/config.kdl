@@ -145,6 +145,13 @@ window-rule {
     opacity 0.97
 }
 
+// Chromium browsers with their own title bar (traffic lights) draw a frame border and resize band unless told
+// they're tiled; that band left square corners inside the rounded clip.
+window-rule {
+    match app-id=r#"(?i)^(brave|chrom|google-chrome|vivaldi|microsoft-edge)"#
+    tiled-state true
+}
+
 window-rule {
     match app-id=r#"firefox$"# title="^Picture-in-Picture$"
     match title="^Picture in picture$"
