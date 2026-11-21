@@ -23,7 +23,7 @@ Sheet {
     panelHeight: height - panelY - (big ? 32 : 10)
     panelRadius: Theme.m3 ? 28 : 22
 
-    onShownChanged: if (shown) {
+    onShownChanged: if (!shown) picker.visible = false; else {
         if (AI.draft) { input.text = AI.draft; AI.draft = ""; input.cursorPosition = input.text.length; }
         input.forceActiveFocus();
         AI.checkKey();
@@ -170,6 +170,7 @@ Sheet {
                 // ---- header
                 RowLayout {
                     Layout.fillWidth: true
+                    z: 10
                     Layout.leftMargin: 6
                     spacing: 8
                     Rectangle {
@@ -185,9 +186,70 @@ Sheet {
                         Layout.fillWidth: true
                         spacing: 0
                         Txt { text: "Ask Ansai"; font.pixelSize: 15; font.weight: Theme.strong }
-                        Txt {
-                            text: AI.modelLabel + (AI.via && AI.provider && AI.accounts.filter(a => a.provider === AI.provider).length > 1 ? " (" + AI.via.label + ")" : "") + " · this computer" + (AI.mcpLive.length ? ", " + AI.mcpServers.filter(s => AI.mcpLive.includes(s.url)).map(s => s.name).join(", ") : "")
-                            font.pixelSize: 11; color: Theme.muted
+                        Hover {   // the model in use; click to switch model or provider here
+                            id: modelBtn
+                            implicitWidth: modelRow.implicitWidth + 8
+                            implicitHeight: modelRow.implicitHeight + 2
+                            Layout.leftMargin: -4
+                            radius: 6
+                            active: picker.visible
+                            onClicked: picker.visible = !picker.visible
+                            Row {
+                                id: modelRow
+                                anchors.centerIn: parent
+                                spacing: 2
+                                Txt {
+                                    text: AI.modelLabel + (AI.provider ? " · " + AI.providerName(AI.provider) : "") + (AI.via && AI.provider && AI.accounts.filter(a => a.provider === AI.provider).length > 1 ? " (" + AI.via.label + ")" : "") + " · this computer" + (AI.mcpLive.length ? ", " + AI.mcpServers.filter(s => AI.mcpLive.includes(s.url)).map(s => s.name).join(", ") : "")
+                                    font.pixelSize: 11; color: Theme.muted
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                Icon { name: "expand_more"; size: 13; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+                            }
+                            Rectangle {
+                                id: picker
+                                visible: false
+                                // KOOMPI (with a key) first, then each signed-in provider with its models.
+                                readonly property var groups: (AI.hasKey ? [{ name: "KOOMPI", models: AI.models.map(m => ({ v: m, l: m })) }] : [])
+                                    .concat([...new Set(AI.accounts.map(a => a.provider))].map(p => ({ name: AI.providerName(p), models: (AI.catalogModels[p] ?? []).slice(0, 12).map(m => ({ v: p + "/" + m.id, l: m.id })) })))
+                                anchors { top: parent.bottom; topMargin: 6; left: parent.left }
+                                width: 280
+                                height: Math.min(pickCol.implicitHeight + 12, 440)
+                                radius: Theme.m3 ? 18 : 12
+                                color: Theme.surface2
+                                border.width: 1
+                                border.color: Theme.dark ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.10)
+                                Flickable {
+                                    anchors { fill: parent; margins: 6 }
+                                    contentHeight: pickCol.implicitHeight
+                                    clip: true
+                                    ColumnLayout {
+                                        id: pickCol
+                                        width: parent.width
+                                        spacing: 0
+                                        Repeater {
+                                            model: picker.groups
+                                            ColumnLayout {
+                                                id: grp
+                                                required property var modelData
+                                                Layout.fillWidth: true
+                                                spacing: 0
+                                                Txt { Layout.leftMargin: 9; Layout.topMargin: 4; Layout.bottomMargin: 2; text: grp.modelData.name; font.pixelSize: 11; font.weight: Theme.strong; color: Theme.muted }
+                                                Repeater {
+                                                    model: grp.modelData.models
+                                                    MenuItem {
+                                                        required property var modelData
+                                                        label: modelData.l
+                                                        hint: Settings.aiModel === modelData.v ? "✓" : ""
+                                                        onClicked: { Settings.aiModel = modelData.v; picker.visible = false; input.forceActiveFocus(); }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        MenuSep {}
+                                        MenuItem { label: "Accounts and more models…"; onClicked: { picker.visible = false; Shell.openSettings("ai"); } }
+                                    }
+                                }
+                            }
                         }
                     }
                     IconButton {
@@ -568,7 +630,7 @@ Sheet {
                                     Keys.onEnterPressed: e => { if (e.modifiers & Qt.ShiftModifier) e.accepted = false; else root.send(); }
                                     Txt {
                                         visible: !input.text
-                                        text: AI.attachment ? "Ask about this screenshot…" : "Ask KOOMPI AI…"
+                                        text: AI.attachment ? "Ask about this screenshot…" : "Ask " + (AI.provider ? AI.providerName(AI.provider) : "KOOMPI AI") + "…"
                                         color: Theme.faint
                                         font.pixelSize: 14
                                     }
