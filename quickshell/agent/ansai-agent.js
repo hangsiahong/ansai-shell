@@ -73064,7 +73064,7 @@ import { dirname as dirname3, extname, join as join4, resolve as resolve2 } from
 import { fileURLToPath } from "node:url";
 import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 setDefaultAutoSelectFamilyAttemptTimeout(2500);
-var HERE = dirname3(fileURLToPath(import.meta.url)), MCP_PY = join4(HERE, "..", "scripts", "mcp.py"), CFG = join4(process.env.XDG_CONFIG_HOME || join4(homedir2(), ".config"), "ansai-shell"), BASE = process.env.ANSAI_AI_BASE || "https://ai.koompi.cloud/v1", MAX_TURNS = 20, OUT_CAP = 24000, out = (o) => process.stdout.write(JSON.stringify(o) + `
+var HERE = dirname3(fileURLToPath(import.meta.url)), MCP_PY = join4(HERE, "..", "scripts", "mcp.py"), CFG = join4(process.env.XDG_CONFIG_HOME || join4(homedir2(), ".config"), "ansai-shell"), BASE = process.env.ANSAI_AI_BASE || "https://ai.koompi.cloud/v1", MAX_TURNS = 60, OUT_CAP = 24000, out = (o) => process.stdout.write(JSON.stringify(o) + `
 `), lines = [], waiters = [], rl = createInterface2({ input: process.stdin });
 rl.on("line", (l) => waiters.length ? waiters.shift()(l) : lines.push(l));
 rl.on("close", () => {
@@ -73839,8 +73839,12 @@ async function chat2(req, { model: model2, streamFn, e: e2 }) {
         out({ d: `
 
 ` }), wrote = !1;
-      if (++turns >= MAX_TURNS && ev.toolResults?.length)
-        failed = "Stopped after too many tool steps", agent2.abort();
+      if (!ev.toolResults?.length)
+        return;
+      if (++turns === MAX_TURNS)
+        agent2.steer({ role: "user", content: `You've used ${MAX_TURNS} tool steps, the limit for one request. Stop using tools now: give what you found and what's left to do, so the user can ask you to continue.`, timestamp: Date.now() });
+      else if (turns >= MAX_TURNS + 3)
+        failed = 'Stopped after too many tool steps (send "continue" to go on)', agent2.abort();
     }
   }), await agent2.prompt(last);
   let said = /"message"\s*:\s*"([^"]+)"/.exec(failed)?.[1];

@@ -32,7 +32,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const MCP_PY = join(HERE, "..", "scripts", "mcp.py");
 const CFG = join(process.env.XDG_CONFIG_HOME || join(homedir(), ".config"), "ansai-shell");
 const BASE = process.env.ANSAI_AI_BASE || "https://ai.koompi.cloud/v1";
-const MAX_TURNS = 20;
+const MAX_TURNS = 60;   // tool steps per request; at the limit the model is told to wrap up (3 more steps, then stop)
 const OUT_CAP = 24000;
 
 const out = o => process.stdout.write(JSON.stringify(o) + "\n");
@@ -693,7 +693,10 @@ async function chat(req, { model, streamFn, e }) {
             failed = ev.message.errorMessage || "AI request failed";
         } else if (ev.type === "turn_end") {
             if (wrote && ev.toolResults?.length) { out({ d: "\n\n" }); wrote = false; }
-            if (++turns >= MAX_TURNS && ev.toolResults?.length) { failed = "Stopped after too many tool steps"; agent.abort(); }
+            if (!ev.toolResults?.length) return;
+            if (++turns === MAX_TURNS)
+                agent.steer({ role: "user", content: `You've used ${MAX_TURNS} tool steps, the limit for one request. Stop using tools now: give what you found and what's left to do, so the user can ask you to continue.`, timestamp: Date.now() });
+            else if (turns >= MAX_TURNS + 3) { failed = "Stopped after too many tool steps (send \"continue\" to go on)"; agent.abort(); }
         }
     });
 
