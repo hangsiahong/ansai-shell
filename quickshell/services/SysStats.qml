@@ -9,7 +9,7 @@ import qs
 // Control Center is open, or the menu bar figures or the System desktop widget are on; disk (df) once a minute.
 Singleton {
     id: root
-    readonly property bool active: Shell.open === "control" || Settings.barStats || Settings.widgets.includes("system")
+    readonly property bool active: Shell.open === "control" || Shell.open === "procs" || Settings.barStats || Settings.widgets.includes("system")
     property real cpu: 0          // 0..1
     property real memUsed: 0      // bytes
     property real memTotal: 0

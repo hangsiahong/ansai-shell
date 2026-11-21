@@ -26,6 +26,7 @@ ShellRoot {
     Launcher {}
     Launchpad {}
     Clipboard {}
+    Processes {}
     AskAI {}
     AskBar {}
     QuickNote {}
