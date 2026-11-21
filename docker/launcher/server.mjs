@@ -25,7 +25,7 @@ async function start(id) {
     const name = PREFIX + id.slice(0, 12), s = { name, ip: "", ready: false, born: Date.now(), last: Date.now(), socks: 0 };
     sessions.set(id, s);
     try {
-        await docker("run", "-d", "--rm", "--name", name, "--network", NET, "--shm-size", "1g", "--memory", "1200m", "--cpus", "1.5",
+        await docker("run", "-d", "--rm", "--init", "--name", name, "--network", NET, "--shm-size", "1g", "--memory", "1200m", "--cpus", "1.5",
             "--pids-limit", "512", "--label", "ansai-desk=1", "-e", "GATE_OPEN=1", IMAGE);
         s.ip = await docker("inspect", "-f", `{{(index .NetworkSettings.Networks "${NET}").IPAddress}}`, name);
         for (let i = 0; i < 120 && sessions.get(id) === s; i++) {

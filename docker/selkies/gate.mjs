@@ -5,7 +5,7 @@
 // token counts. GATE_PASSWORD instead (or as well) shows a password form. With neither set, nobody gets in.
 //   env: GATE_PORT=8080 ALLOWED="email or id, …" GATE_PASSWORD= (not PASSWORD: Selkies takes that for its own basic auth) SECRET= (sessions survive restarts only with SECRET)
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { createReadStream, statSync } from "node:fs";
+import { createReadStream, readFileSync, statSync } from "node:fs";
 import http from "node:http";
 import { extname, join, normalize } from "node:path";
 import net from "node:net";
@@ -102,3 +102,12 @@ server.on("upgrade", (req, sock, head) => {
     up.on("error", done); sock.on("error", done); up.on("close", done); sock.on("close", done);
 });
 server.listen(PORT, () => console.log(`[gate] :${PORT} → Selkies :${UP.port} (${OPEN ? "OPEN, no sign-in; " : ""}KOOMPI ID ${LOGIN && USERINFO ? "on" : "off"}, password ${PASSWORD ? "on" : "off"}, ${ALLOWED.length} allowed)`));
+// Container thread cap (KOOMPI Cloud: ~256): when it's nearly used up, new apps and tabs silently fail to start.
+const cg = f => { try { return readFileSync("/sys/fs/cgroup/" + f, "utf8").trim(); } catch { return ""; } };
+console.log(`[gate] limits: cpu.max ${cg("cpu.max")}, threads ${cg("pids.current")} of ${cg("pids.max")}`);
+let warned = 0;
+setInterval(() => {
+    const now = +cg("pids.current"), max = +cg("pids.max");
+    if (!max || now < max * 0.85) return void (warned = 0);
+    if (Date.now() - warned > 300e3) { warned = Date.now(); console.log(`[gate] threads ${now} of ${max}: close tabs or apps`); }
+}, 15e3).unref();
