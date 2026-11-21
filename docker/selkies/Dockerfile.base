@@ -1,0 +1,9 @@
+# Packages for the Selkies web image, cached as ansai-web-base:selkies-1 (the Selkies base is pinned by digest):
+#   docker build -f docker/selkies/Dockerfile.base -t ansai-web-base:selkies-1 docker/selkies
+FROM ghcr.io/linuxserver/baseimage-selkies@sha256:b8195fe16b7caa71d1fa9650252bee2cbef86028bd0d762e715b5b31c4e43586
+RUN printf 'Server = %s/$repo/os/$arch\n' https://geo.mirror.pkgbuild.com https://mirror.rackspace.com/archlinux https://mirrors.kernel.org/archlinux https://mirror.sg.gs/archlinux > /etc/pacman.d/mirrorlist \
+    && sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads = 8/' /etc/pacman.conf \
+    && pacman -Syu --noconfirm --needed niri quickshell nodejs grim slurp cliphist fuzzel playerctl ttf-material-symbols-variable \
+       papirus-icon-theme nautilus gnome-text-editor gnome-calculator loupe \
+    && pacman -Scc --noconfirm && rm -rf /var/cache/pacman/pkg/*
+# Additions go in new layers below (never edit the ones above: that would download everything again).
