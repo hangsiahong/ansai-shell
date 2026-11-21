@@ -56,7 +56,9 @@ Rectangle {
                 readonly property bool dragged: root.dragFrom === index
 
                 height: root.height - (Theme.m3 ? 6 : 0)
-                width: on ? Math.min(180, label.implicitWidth + height + 14) : height + (modelData.wins.length > 1 ? 8 : 0)
+                width: on ? Math.min(186, label.implicitWidth + height + 14 + pad * 2) : height + (modelData.wins.length > 1 ? 8 : 0)
+                // The square icon sits a little in from the round end of the active pill instead of touching its curve.
+                readonly property real pad: on && !Theme.m3 ? 3 : 0
                 radius: height / 2
                 color: on ? (Theme.m3 ? Theme.accent : Theme.dark ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(0, 0, 0, 0.08)) : ma.containsMouse ? Theme.hover : "transparent"
                 z: dragged ? 2 : 0
@@ -76,7 +78,8 @@ Rectangle {
 
                 AppIcon {
                     id: ic
-                    x: (pill.height - size) / 2
+                    x: (pill.height - size) / 2 + pill.pad
+                    Behavior on x { NumberAnimation { duration: Theme.med; easing.type: Theme.spring } }
                     anchors.verticalCenter: parent.verticalCenter
                     size: pill.height - (Theme.m3 ? 8 : 6)
                     opacity: pill.on || Theme.m3 ? 1 : 0.8
