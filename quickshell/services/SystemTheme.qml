@@ -106,9 +106,11 @@ windowcontrols:hover > button > image { color: rgba(0,0,0,0.55); }
 windowcontrols > button:active > image { filter: brightness(0.82); }
 windowcontrols:backdrop:not(:hover) > button > image { background-color: ${grey}; box-shadow: none; }
 `
+    // Chromium/Brave (GTK mode) takes its leading inset from the headerbar padding: keep the red dot clear of the rounded corner.
     readonly property string tl3: !mac ? "" : `
+headerbar, .titlebar { padding-left: 12px; padding-right: 12px; }
 headerbar button.titlebutton, .titlebar button.titlebutton {
-  min-width: 14px; min-height: 14px; padding: 0; margin: 0 4px; border: none; border-radius: 50%;
+  min-width: 14px; min-height: 14px; padding: 0; margin: 0 3px; border: none; border-radius: 50%;
   color: transparent; background-image: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); -gtk-icon-shadow: none; }
 headerbar button.titlebutton image, .titlebar button.titlebutton image { -gtk-icon-transform: scale(0.65); }
 ${dotRules("headerbar button.titlebutton.%, .titlebar button.titlebutton.%, headerbar button.titlebutton.%:disabled, .titlebar button.titlebutton.%:disabled")}
