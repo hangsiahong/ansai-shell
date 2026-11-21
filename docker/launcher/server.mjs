@@ -26,10 +26,10 @@ async function start(id) {
     sessions.set(id, s);
     try {
         await docker("run", "-d", "--rm", "--name", name, "--network", NET, "--shm-size", "1g", "--memory", "1200m", "--cpus", "1.5",
-            "--pids-limit", "512", "--label", "ansai-desk=1", IMAGE);
+            "--pids-limit", "512", "--label", "ansai-desk=1", "-e", "GATE_OPEN=1", IMAGE);
         s.ip = await docker("inspect", "-f", `{{(index .NetworkSettings.Networks "${NET}").IPAddress}}`, name);
         for (let i = 0; i < 120 && sessions.get(id) === s; i++) {
-            const ok = await new Promise(r => http.get({ host: s.ip, port: 3000, path: "/", timeout: 1000 }, x => { x.resume(); r(x.statusCode === 200); }).on("error", () => r(false)).on("timeout", function () { this.destroy(); r(false); }));
+            const ok = await new Promise(r => http.get({ host: s.ip, port: 8080, path: "/", timeout: 1000 }, x => { x.resume(); r(x.statusCode === 200); }).on("error", () => r(false)).on("timeout", function () { this.destroy(); r(false); }));
             if (ok) { s.ready = true; s.last = Date.now(); return; }
             await new Promise(r => setTimeout(r, 500));
         }
@@ -58,7 +58,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (!s.ready) return page(res, 200, "Starting your desktop…", "This takes about 15 seconds.", 2);
     s.last = Date.now();
-    const up = http.request({ host: s.ip, port: 3000, method: req.method, path: req.url, headers: req.headers }, r => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
+    const up = http.request({ host: s.ip, port: 8080, method: req.method, path: req.url, headers: req.headers }, r => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
     up.on("error", () => { if (!res.headersSent) page(res, 502, "Desktop not reachable", `<a style="color:#d0bcff" href="/">Try again</a>`); else res.destroy(); });
     req.pipe(up);
 });
@@ -66,7 +66,7 @@ const server = http.createServer(async (req, res) => {
 server.on("upgrade", (req, sock, head) => {
     const s = sessions.get(cookie(req));
     if (!s?.ready) return sock.destroy();
-    const up = net.connect(3000, s.ip, () => {
+    const up = net.connect(8080, s.ip, () => {
         up.write(`${req.method} ${req.url} HTTP/1.1\r\n` + Object.entries(req.headers).map(([k, v]) => `${k}: ${v}\r\n`).join("") + "\r\n");
         if (head?.length) up.write(head);
         sock.pipe(up).pipe(sock);

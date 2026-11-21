@@ -1,14 +1,28 @@
 #!/usr/bin/env node
-// Sign-in gate in front of the Selkies desktop (nginx on :3000): only ALLOWED people get through.
+// Sign-in gate in front of the Selkies desktop (its web client and WebSocket): only ALLOWED people get through.
 // KOOMPI ID through KOOMPI Cloud's add_koompi_login (it sets KOOMPI_ID_LOGIN_URL and KOOMPI_ID_USERINFO_URL);
 // the person comes back to /api/auth/callback?access_token=…, and only what KOOMPI_ID_USERINFO_URL says about that
 // token counts. GATE_PASSWORD instead (or as well) shows a password form. With neither set, nobody gets in.
 //   env: GATE_PORT=8080 ALLOWED="email or id, …" GATE_PASSWORD= (not PASSWORD: Selkies takes that for its own basic auth) SECRET= (sessions survive restarts only with SECRET)
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createReadStream, statSync } from "node:fs";
 import http from "node:http";
+import { extname, join, normalize } from "node:path";
 import net from "node:net";
 
-const PORT = +(process.env.GATE_PORT || 8080), UP = { host: "127.0.0.1", port: 3000 };
+// The Selkies web client is served from WEB here; /api (its WebSocket) goes to Selkies itself.
+const PORT = +(process.env.GATE_PORT || 8080), UP = { host: "127.0.0.1", port: +(process.env.SELKIES_PORT || 8082) };
+const WEB = "/usr/share/selkies/web", OPEN = process.env.GATE_OPEN === "1";   // GATE_OPEN: no sign-in (private networks only)
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml",
+    ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".wasm": "application/wasm", ".webmanifest": "application/manifest+json" };
+function file(res, path) {
+    let f = normalize(join(WEB, decodeURIComponent(path)));
+    if (!f.startsWith(WEB)) { res.writeHead(400); return res.end(); }
+    try { if (statSync(f).isDirectory()) f = join(f, "index.html"); statSync(f); }
+    catch { res.writeHead(404); return res.end(); }
+    res.writeHead(200, { "content-type": TYPES[extname(f)] || "application/octet-stream" });
+    createReadStream(f).pipe(res);
+}
 const LOGIN = process.env.KOOMPI_ID_LOGIN_URL || "", USERINFO = process.env.KOOMPI_ID_USERINFO_URL || "";
 const ALLOWED = (process.env.ALLOWED || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 const PASSWORD = process.env.GATE_PASSWORD || "", SECRET = process.env.SECRET || randomBytes(32).toString("hex");
@@ -71,13 +85,14 @@ const server = http.createServer((req, res) => {
         req.on("end", () => same(sign(new URLSearchParams(body).get("p") || ""), sign(PASSWORD)) ? grant(res, "password") : setTimeout(() => loginPage(res, "Wrong password."), 800));
         return;
     }
-    if (!session(req)) return loginPage(res);
+    if (!OPEN && !session(req)) return loginPage(res);
+    if (!url.pathname.startsWith("/api")) return file(res, url.pathname);
     const up = http.request({ ...UP, method: req.method, path: req.url, headers: req.headers }, r => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
     up.on("error", () => { if (!res.headersSent) page(res, 502, "Starting…", "<p>The desktop is still starting. Reload in a few seconds.</p>"); else res.destroy(); });
     req.pipe(up);
 });
 server.on("upgrade", (req, sock, head) => {
-    if (!session(req)) return sock.destroy();
+    if (!OPEN && !session(req)) return sock.destroy();
     const up = net.connect(UP.port, UP.host, () => {
         up.write(`${req.method} ${req.url} HTTP/1.1\r\n` + Object.entries(req.headers).map(([k, v]) => `${k}: ${v}\r\n`).join("") + "\r\n");
         if (head?.length) up.write(head);
@@ -86,4 +101,4 @@ server.on("upgrade", (req, sock, head) => {
     const done = () => { up.destroy(); sock.destroy(); };
     up.on("error", done); sock.on("error", done); up.on("close", done); sock.on("close", done);
 });
-server.listen(PORT, () => console.log(`[gate] :${PORT} → :3000 (KOOMPI ID ${LOGIN && USERINFO ? "on" : "off"}, password ${PASSWORD ? "on" : "off"}, ${ALLOWED.length} allowed)`));
+server.listen(PORT, () => console.log(`[gate] :${PORT} → Selkies :${UP.port} (${OPEN ? "OPEN, no sign-in; " : ""}KOOMPI ID ${LOGIN && USERINFO ? "on" : "off"}, password ${PASSWORD ? "on" : "off"}, ${ALLOWED.length} allowed)`));

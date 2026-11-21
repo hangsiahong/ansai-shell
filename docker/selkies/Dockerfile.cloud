@@ -8,15 +8,18 @@ RUN printf 'Server = %s/$repo/os/$arch\n' https://geo.mirror.pkgbuild.com https:
 ADD --checksum=sha256:f3c842a13659a221876801bc63dcdec5d5db6fcb0735dfd1ed76d98c254d393f https://mirror.cachyos.org/repo/x86_64/cachyos/brave-origin-bin-1%3A1.100.58-1-x86_64.pkg.tar.zst /tmp/brave-origin.pkg.tar.zst
 RUN pacman -U --noconfirm --needed /tmp/brave-origin.pkg.tar.zst && rm -rf /tmp/brave-origin.pkg.tar.zst /var/cache/pacman/pkg/*
 RUN pacman -S --noconfirm --needed bun tmux git && rm -rf /var/cache/pacman/pkg/*
-RUN d=/etc/s6-overlay/s6-rc.d/svc-gate && mkdir -p $d/dependencies.d && echo longrun > $d/type && touch $d/dependencies.d/init-services \
-    && printf '#!/usr/bin/with-contenv bash\nexec s6-setuidgid abc node /opt/ansai-shell/docker/selkies/gate.mjs\n' > $d/run && chmod +x $d/run \
-    && touch /etc/s6-overlay/s6-rc.d/user/contents.d/svc-gate
+RUN chmod 666 /etc/passwd && chmod 1777 /config \
+    && rm -rf /usr/share/selkies/web && cp -a /usr/share/selkies/selkies-dashboard /usr/share/selkies/web \
+    && cp /usr/share/selkies/www/icon.png /usr/share/selkies/web/favicon.ico && cp /usr/share/selkies/www/icon.png /usr/share/selkies/web/icon.png
 ADD --chown=abc:abc https://github.com/hangsiahong/ansai.git#main /opt/ansai
 RUN cd /opt/ansai && s6-setuidgid abc bun install --frozen-lockfile && chown -R abc:abc /opt/ansai
 COPY --chown=abc:abc . /opt/ansai-shell
 COPY docker/selkies/startwm.sh /defaults/startwm.sh
+COPY docker/selkies/run.sh /usr/local/bin/ansai-web
 ENV TITLE="ansai shell" TZ=Asia/Phnom_Penh QS_ICON_THEME=Papirus GSK_RENDERER=cairo \
     SELKIES_ENABLE_RESIZE=true SELKIES_VIDEO_CRF=20 \
     SELKIES_FRAMERATE=30 SELKIES_AUDIO_ENABLED=false SELKIES_ENABLE_CLIPBOARD=in \
-    HARDEN_DESKTOP=true NO_GAMEPAD=true NO_WEBCAM=true
+    SELKIES_GAMEPAD_ENABLED=false SELKIES_FILE_TRANSFERS="" SELKIES_COMMAND_ENABLED=false \
+    SELKIES_UI_SIDEBAR_SHOW_FILES=false SELKIES_UI_SIDEBAR_SHOW_APPS=false SELKIES_UI_SIDEBAR_SHOW_GAMEPADS=false
 EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/ansai-web"]
