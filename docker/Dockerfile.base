@@ -1,0 +1,18 @@
+# Base for docker/Dockerfile: every package and noVNC, downloaded once. Rebuild only to update packages, under a new tag:
+#   docker build -f docker/Dockerfile.base -t ansai-web-base:1 .   (then bump BASE in docker/Dockerfile)
+FROM archlinux:latest
+RUN printf 'Server = %s/$repo/os/$arch\n' https://geo.mirror.pkgbuild.com https://mirror.rackspace.com/archlinux https://mirrors.kernel.org/archlinux https://mirror.sg.gs/archlinux > /etc/pacman.d/mirrorlist \
+    && sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads = 8/' /etc/pacman.conf
+RUN pacman -Syu --noconfirm --needed \
+        niri quickshell xorg-server-xvfb x11vnc mesa dbus \
+        nodejs python python-gobject python-pip at-spi2-core \
+        cliphist fuzzel grim slurp wtype playerctl wl-clipboard \
+        noto-fonts noto-fonts-emoji ttf-dejavu adwaita-icon-theme curl \
+    && pip install --break-system-packages --no-cache-dir websockify==0.12.0 \
+    && mkdir -p /opt/novnc \
+    && curl -fsSL https://github.com/novnc/noVNC/archive/refs/tags/v1.5.0.tar.gz | tar -xz -C /opt/novnc --strip-components=1 \
+    && ln -s vnc.html /opt/novnc/index.html \
+    && pacman -Scc --noconfirm && rm -rf /var/cache/pacman/pkg/*
+RUN useradd -m -s /bin/sh ansai
+# Additions go in new layers below (never edit the ones above: that would download everything again).
+RUN pacman -S --noconfirm --needed libxcursor libxi libxrandr libxkbcommon-x11 && rm -rf /var/cache/pacman/pkg/*
