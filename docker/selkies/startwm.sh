@@ -10,7 +10,7 @@ if [ ! -e "$HOME/.config/ansai-shell/settings.json" ]; then
     printf '%s\n' '{"wallpaper": "/opt/ansai-shell/quickshell/assets/wallpapers/drift-dark.jpg", "style": "material", "accent": "purple", "barStats": false, "widgets": ["clock", "calendar", "weather"], "pinned": ["ansai", "brave-origin", "org.gnome.Nautilus", "org.gnome.TextEditor", "org.gnome.Calculator", "org.gnome.Loupe"]}' > "$HOME/.config/ansai-shell/settings.json"
     mkdir -p "$HOME/.local/share/applications"
     # Docker's seccomp blocks Chromium's namespace sandbox; the per-visitor container is the sandbox here.
-    printf '%s\n' --no-sandbox --test-type --ozone-platform=wayland --no-first-run --no-default-browser-check > "$HOME/.config/brave-origin-flags.conf"
+    printf '%s\n' --no-sandbox --test-type --ozone-platform=wayland --no-first-run --no-default-browser-check --disable-gpu --renderer-process-limit=4 > "$HOME/.config/brave-origin-flags.conf"
     mkdir -p "$HOME/.config/BraveSoftware/Brave-Origin"   # skip Origin's free-tier welcome screen
     printf '%s\n' '{"brave": {"origin": {"free_tier_accepted": true}}}' > "$HOME/.config/BraveSoftware/Brave-Origin/Local State"
     printf '%s\n' '[Desktop Entry]' 'Type=Application' 'Name=ansai' 'Comment=Control room for coding agents' 'Icon=utilities-terminal' \
