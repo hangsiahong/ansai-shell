@@ -12,7 +12,8 @@ const PORT = +(process.env.GATE_PORT || 8080), UP = { host: "127.0.0.1", port: 3
 const LOGIN = process.env.KOOMPI_ID_LOGIN_URL || "", USERINFO = process.env.KOOMPI_ID_USERINFO_URL || "";
 const ALLOWED = (process.env.ALLOWED || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 const PASSWORD = process.env.GATE_PASSWORD || "", SECRET = process.env.SECRET || randomBytes(32).toString("hex");
-const DAYS = 14, NAME = "ansai_gate";
+// __Host-: other *.public.koompi.cloud apps can't set it for this host.
+const DAYS = 14, NAME = "__Host-ansai_gate";
 
 const sign = v => createHmac("sha256", SECRET).update(v).digest("base64url");
 const same = (a, b) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -62,8 +63,9 @@ async function koompi(res, url) {
 const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://x");
     if (url.pathname === "/api/auth/callback") return void koompi(res, url);
-    if (url.pathname === "/__gate/logout") { res.writeHead(302, { location: "/", "set-cookie": `${NAME}=; Path=/; Max-Age=0` }); return res.end(); }
+    if (url.pathname === "/__gate/logout") { res.writeHead(302, { location: "/", "set-cookie": `${NAME}=; Path=/; Secure; Max-Age=0` }); return res.end(); }
     if (url.pathname === "/__gate/password" && req.method === "POST" && PASSWORD) {
+        if (req.headers.origin && new URL(req.headers.origin).host !== req.headers.host) { res.writeHead(403); return res.end(); }
         let body = "";
         req.on("data", d => { body += d; if (body.length > 4096) req.destroy(); });
         req.on("end", () => same(sign(new URLSearchParams(body).get("p") || ""), sign(PASSWORD)) ? grant(res, "password") : setTimeout(() => loginPage(res, "Wrong password."), 800));
