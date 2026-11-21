@@ -295,5 +295,11 @@ ColumnLayout {
             title: "24-hour clock"
             Switch { checked: Settings.use24h; onToggled: Settings.use24h = !Settings.use24h }
         }
+        SRow {
+            icon: "monitoring"
+            title: "System use in the menu bar"
+            sub: "CPU, memory, swap and disk, in percent"
+            Switch { checked: Settings.barStats; onToggled: Settings.barStats = !Settings.barStats }
+        }
     }
 }

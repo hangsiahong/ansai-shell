@@ -217,6 +217,38 @@ PanelWindow {
             Layout.rightMargin: 4
         }
 
+        Hover {   // system use: CPU, RAM, swap, disk %; click for Control Center's bars
+            visible: Settings.barStats
+            Layout.preferredHeight: Theme.m3 ? 32 : 28
+            Layout.preferredWidth: stats.implicitWidth + 16
+            radius: height / 2
+            active: Shell.open === "control"
+            onClicked: Shell.toggle("control")
+            Row {
+                id: stats
+                anchors.centerIn: parent
+                spacing: 9
+                Repeater {
+                    model: ["CPU", "RAM", "SWP", "DSK"]
+                    Row {
+                        id: st
+                        required property string modelData
+                        readonly property real v: modelData === "CPU" ? SysStats.cpu : modelData === "RAM" ? SysStats.mem : modelData === "SWP" ? SysStats.swap : SysStats.disk
+                        visible: modelData !== "SWP" || SysStats.swapTotal > 0
+                        spacing: 4
+                        Icon { name: ({ CPU: "developer_board", RAM: "memory", SWP: "sync", DSK: "hard_drive" })[st.modelData]; size: 14; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+                        Txt {
+                            id: pc
+                            text: Math.round(st.v * 100) + "%"
+                            font.pixelSize: 12; font.weight: Theme.strong
+                            font.features: { "tnum": 1 }
+                            color: st.v > 0.9 ? Theme.danger : st.v > 0.75 ? Theme.warn : Theme.text2
+                        }
+                    }
+                }
+            }
+        }
+
         Hover {
             Layout.preferredHeight: Theme.m3 ? 32 : 28
             Layout.preferredWidth: status.implicitWidth + (Theme.m3 ? 24 : 20)

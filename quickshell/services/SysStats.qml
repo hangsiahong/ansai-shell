@@ -6,10 +6,10 @@ import Quickshell.Io
 import qs
 
 // CPU, memory, swap and disk use. Reads /proc every 2 s (no processes spawned), and only while
-// Control Center is open or the System desktop widget is on; disk (df) once a minute.
+// Control Center is open, or the menu bar figures or the System desktop widget are on; disk (df) once a minute.
 Singleton {
     id: root
-    readonly property bool active: Shell.open === "control" || Settings.widgets.includes("system")
+    readonly property bool active: Shell.open === "control" || Settings.barStats || Settings.widgets.includes("system")
     property real cpu: 0          // 0..1
     property real memUsed: 0      // bytes
     property real memTotal: 0

@@ -33,6 +33,7 @@ Singleton {
     property alias pinned: adapter.pinned
     property alias usage: adapter.usage
     property alias widgets: adapter.widgets
+    property alias barStats: adapter.barStats
     property alias widgetPos: adapter.widgetPos
     property alias padTab: adapter.padTab
     property alias dockMode: adapter.dockMode
@@ -70,6 +71,7 @@ Singleton {
             property string wallpaper: ""
             property string terminal: "ghostty"
             property bool use24h: false
+            property bool barStats: true   // CPU, RAM, swap, disk % in the menu bar
             property bool dnd: false
             property bool dndSchedule: false   // quiet every day from dndFrom to dndTo (minutes after midnight)
             property int dndFrom: 1320
