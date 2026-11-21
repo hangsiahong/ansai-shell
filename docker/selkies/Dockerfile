@@ -3,6 +3,9 @@
 #   docker build -f docker/selkies/Dockerfile -t ansai-web .     run: docker run -p 8080:3000 ansai-web
 ARG BASE=ansai-web-base:selkies-1
 FROM ${BASE}
+# ansai (the agent control room), latest upstream main: this layer rebuilds only when main moves.
+ADD --chown=abc:abc https://github.com/hangsiahong/ansai.git#main /opt/ansai
+RUN cd /opt/ansai && s6-setuidgid abc bun install --frozen-lockfile && chown -R abc:abc /opt/ansai
 COPY --chown=abc:abc . /opt/ansai-shell
 COPY docker/selkies/startwm.sh /defaults/startwm.sh
 ENV TITLE="ansai shell" TZ=Asia/Phnom_Penh QS_ICON_THEME=Papirus GSK_RENDERER=cairo \

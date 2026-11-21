@@ -7,3 +7,7 @@ RUN printf 'Server = %s/$repo/os/$arch\n' https://geo.mirror.pkgbuild.com https:
        papirus-icon-theme nautilus gnome-text-editor gnome-calculator loupe \
     && pacman -Scc --noconfirm && rm -rf /var/cache/pacman/pkg/*
 # Additions go in new layers below (never edit the ones above: that would download everything again).
+# Brave Origin (CachyOS package, pinned by checksum).
+ADD --checksum=sha256:f3c842a13659a221876801bc63dcdec5d5db6fcb0735dfd1ed76d98c254d393f https://mirror.cachyos.org/repo/x86_64/cachyos/brave-origin-bin-1%3A1.100.58-1-x86_64.pkg.tar.zst /tmp/brave-origin.pkg.tar.zst
+RUN pacman -U --noconfirm --needed /tmp/brave-origin.pkg.tar.zst && rm -rf /tmp/brave-origin.pkg.tar.zst /var/cache/pacman/pkg/*
+RUN pacman -S --noconfirm --needed bun tmux git && rm -rf /var/cache/pacman/pkg/*
