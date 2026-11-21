@@ -227,7 +227,7 @@ PanelWindow {
             Row {
                 id: stats
                 anchors.centerIn: parent
-                spacing: 9
+                spacing: 10
                 Repeater {
                     model: ["CPU", "RAM", "SWP", "DSK"]
                     Row {
@@ -235,14 +235,14 @@ PanelWindow {
                         required property string modelData
                         readonly property real v: modelData === "CPU" ? SysStats.cpu : modelData === "RAM" ? SysStats.mem : modelData === "SWP" ? SysStats.swap : SysStats.disk
                         visible: modelData !== "SWP" || SysStats.swapTotal > 0
-                        spacing: 4
-                        Icon { name: ({ CPU: "developer_board", RAM: "memory", SWP: "sync", DSK: "hard_drive" })[st.modelData]; size: 14; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+                        spacing: 3
+                        Icon { name: ({ CPU: "developer_board", RAM: "memory", SWP: "sync", DSK: "hard_drive" })[st.modelData]; size: 16; filled: true; color: Theme.text; anchors.verticalCenter: parent.verticalCenter }
                         Txt {
                             id: pc
                             text: Math.round(st.v * 100) + "%"
                             font.pixelSize: 12; font.weight: Theme.strong
                             font.features: { "tnum": 1 }
-                            color: st.v > 0.9 ? Theme.danger : st.v > 0.75 ? Theme.warn : Theme.text2
+                            color: st.v > 0.9 ? Theme.danger : Theme.text2
                         }
                     }
                 }
