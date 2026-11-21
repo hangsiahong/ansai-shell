@@ -27,5 +27,7 @@ if [ -L "$c" ]; then cp --remove-destination "$(readlink -f "$c")" "$c"; printf 
     [ -n "$w" ] || continue
     s=$(xdotool getdisplaygeometry | tr ' ' x); g=$(xdotool getwindowgeometry "$w" | sed -n 's/.*Geometry: //p')
     [ "$s" = "$g" ] || xdotool windowsize "$w" ${s%x*} ${s#*x}
+    # No X window manager: give niri's window the keyboard focus, or typed keys never reach it.
+    [ "$(xdotool getwindowfocus 2>/dev/null)" = "$w" ] || xdotool windowfocus "$w" 2>/dev/null
 done) &
 exec dbus-launch --exit-with-session sh -c 'gsettings set org.gnome.desktop.interface icon-theme Papirus; exec niri >/tmp/niri.log 2>&1'
