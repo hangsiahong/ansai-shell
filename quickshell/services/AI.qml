@@ -293,13 +293,17 @@ Tools from the user's connected services (${names}):
 - If it truly isn't available, say so in one line and give the closest numbers you did find.
 - Only say you did something if the tool succeeded. Actions that change things need the user's approval, which the app asks for.` : "") }];
         // Older images are dropped from the context: only the newest one is sent.
-        const prior = chat.filter(m => !m.error).map(m => ({ role: m.role, content: m.content }));
+        const prior = chat.filter(m => !m.error).map(m => ({ role: m.role, content: m.image ? `${m.content}\n\n(Attached image file: ${m.image})` : m.content }));
         chat = [...chat, user, { role: "assistant", content: "" }];
         save();
         busy = true;
         const i = chat.length - 1, g = gen;
         const edit = f => { if (g !== gen) return; const c = Array.from(chat); c[i] = Object.assign({}, c[i]); f(c[i]); chat = c; };
-        current = ask([...history, ...prior, user], d => edit(m => m.content += d), (full, err) => {
+        // Tokens are batched (flushT): replacing chat per token re-rendered the whole chat and froze the shell.
+        const p = { d: "", t: "", ts: 0, edit: edit };
+        pending = p;
+        current = ask([...history, ...prior, user], d => { p.d += d; flushT.start(); }, (full, err) => {
+            flush(p);
             edit(m => {
                 (m.tools ?? []).forEach((t, k) => { if (t.status === "wait" || t.status === "run") m.tools[k] = Object.assign({}, t, { status: "fail", preview: "Stopped" }); });
                 if (err) { m.content = m.content ? m.content + "\n\n" + err : err; m.error = !full && !(m.tools ?? []).length; }
@@ -312,13 +316,15 @@ Tools from the user's connected services (${names}):
         }, {
             mcp: mcpLive,
             tools: true,
-            onEvent: ev => edit(m => {
+            onEvent: ev => {
                 if (ev.t !== undefined) {   // reasoning: kept with the answer (not sent back to the model)
-                    m.thinkStart = m.thinkStart || Date.now();
-                    m.reasoning = (m.reasoning ?? "") + ev.t;
-                    m.thinkMs = Date.now() - m.thinkStart;
+                    p.ts = p.ts || Date.now();
+                    p.t += ev.t;
+                    flushT.start();
                     return;
                 }
+                flush(p);
+                edit(m => {
                 const tools = Array.from(m.tools ?? []);
                 const auto = ev.tool?.ask && Settings.aiAllowAll;
                 if (auto) current.write("y\n");
@@ -328,9 +334,25 @@ Tools from the user's connected services (${names}):
                     if (k >= 0) tools[k] = Object.assign({}, tools[k], { status: ev.tool_done.preview === "Declined" ? "declined" : ev.tool_done.ok ? "ok" : "fail", preview: ev.tool_done.preview });
                 }
                 m.tools = tools;
-            })
+                });
+            }
         });
     }
+    property var pending: null
+    function flush(p): void {
+        if (!p || (!p.d && !p.t)) return;
+        const d = p.d, t = p.t;
+        p.d = p.t = "";
+        p.edit(m => {
+            if (t) {
+                m.thinkStart = m.thinkStart || p.ts;
+                m.reasoning = (m.reasoning ?? "") + t;
+                m.thinkMs = Date.now() - m.thinkStart;
+            }
+            if (d) m.content += d;
+        });
+    }
+    Timer { id: flushT; interval: 70; onTriggered: root.flush(root.pending) }
     // Answer a tool that waits for approval (the newest assistant message's).
     // "Always allow": from now on every action runs without asking (Settings → AI turns it back off).
     function allowAll(id: string): void {
@@ -347,8 +369,12 @@ Tools from the user's connected services (${names}):
     function stop(): void { if (current) current.stop(); }
     function reset(): void { stop(); gen++; busy = false; current = null; chat = []; chatId = ""; chatTitle = ""; attachment = ""; }
     // Open the sidebar with something to ask about.
+    // Images from temporary places (clipboard history in /run) are copied to ai-images so chats can reuse them.
     function askAbout(image: string, text: string): void {
-        if (image) attachment = image;
+        if (image && !image.startsWith(dataDir)) {
+            keep.command = ["sh", "-c", 'd="$1/ai-images"; mkdir -p "$d"; f="$d/$(date +%s%N)-$(basename "$2")"; cp "$2" "$f" && echo "$f" || echo "$2"', "sh", dataDir, image];
+            keep.running = true;
+        } else if (image) attachment = image;
         if (text) draft = text;
         Shell.open = "ai";
     }
@@ -358,6 +384,10 @@ Tools from the user's connected services (${names}):
         shot.running = true;
     }
 
+    Process {
+        id: keep
+        stdout: StdioCollector { onStreamFinished: if (text.trim()) root.attachment = text.trim() }
+    }
     Process {
         id: shot
         command: ["sh", "-c", `d="\${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"; mkdir -p "$d"; f="$d/Screenshot $(date '+%Y-%m-%d %H-%M-%S').png"; ` +

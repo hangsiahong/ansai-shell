@@ -238,15 +238,15 @@ Sheet {
                     Layout.fillHeight: true
                     clip: true
                     spacing: 14
-                    model: AI.chat
+                    model: AI.chat.length   // a count, not the array: delegates survive each streamed update
                     boundsBehavior: Flickable.StopAtBounds
                     onCountChanged: Qt.callLater(positionViewAtEnd)
                     onContentHeightChanged: if (AI.busy) positionViewAtEnd()
 
                     delegate: Item {
                         id: msg
-                        required property var modelData
                         required property int index
+                        readonly property var modelData: AI.chat[index] ?? ({ role: "assistant", content: "" })
                         readonly property bool mine: modelData.role === "user"
                         readonly property bool last: index === AI.chat.length - 1
                         readonly property var tools: modelData.tools ?? []

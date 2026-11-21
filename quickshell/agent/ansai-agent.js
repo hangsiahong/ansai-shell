@@ -73791,7 +73791,9 @@ async function chat2(req, { model: model2, streamFn, e: e2 }) {
     if (!m2.image)
       return { role: "user", content: m2.content || "", timestamp: Date.now() };
     let data = (await readFile4(m2.image)).toString("base64");
-    return { role: "user", content: [{ type: "text", text: m2.content || "Describe this image." }, { type: "image", data, mimeType: IMG[extname(m2.image).toLowerCase()] || "image/png" }], timestamp: Date.now() };
+    return { role: "user", content: [{ type: "text", text: (m2.content || "Describe this image.") + `
+
+(Attached image file: ${m2.image})` }, { type: "image", data, mimeType: IMG[extname(m2.image).toLowerCase()] || "image/png" }], timestamp: Date.now() };
   }, msgs;
   try {
     msgs = await Promise.all(convo.map(toMsg));

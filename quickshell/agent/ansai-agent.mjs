@@ -644,7 +644,8 @@ async function chat(req, { model, streamFn, e }) {
         if (m.role === "assistant") return { role: "assistant", content: [{ type: "text", text: m.content || "" }], api: model.api, provider: model.provider, model: modelId, usage: zero, stopReason: "stop", timestamp: Date.now() };
         if (!m.image) return { role: "user", content: m.content || "", timestamp: Date.now() };
         const data = (await readFile(m.image)).toString("base64");
-        return { role: "user", content: [{ type: "text", text: m.content || "Describe this image." }, { type: "image", data, mimeType: IMG[extname(m.image).toLowerCase()] || "image/png" }], timestamp: Date.now() };
+        // The path lets tools (e.g. an upload tool) use the file itself, not just see it.
+        return { role: "user", content: [{ type: "text", text: (m.content || "Describe this image.") + `\n\n(Attached image file: ${m.image})` }, { type: "image", data, mimeType: IMG[extname(m.image).toLowerCase()] || "image/png" }], timestamp: Date.now() };
     };
     let msgs;
     try { msgs = await Promise.all(convo.map(toMsg)); } catch (err) { return out({ e: `Couldn't read the image: ${err.message}` }); }
