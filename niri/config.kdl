@@ -104,7 +104,8 @@ environment {
     XDG_CURRENT_DESKTOP "niri"
 }
 
-spawn-at-startup "qs" "-c" "ansai"
+// The shell, started again (on the lock screen) if it is ever killed; see scripts/run-shell.sh.
+spawn-at-startup "sh" "-c" "exec \"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/ansai/scripts/run-shell.sh\""
 // Idle dim/lock/screen-off timers live in the shell (Settings > Power); swayidle only locks before sleep.
 spawn-sh-at-startup "swayidle -w before-sleep 'qs -c ansai ipc call lock lock'"
 spawn-sh-at-startup "wl-paste --watch cliphist store"

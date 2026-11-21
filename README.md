@@ -134,6 +134,10 @@ qs -c ansai ipc call shell theme light
 qs -c ansai ipc call shell wallpaper ~/Pictures/wall.jpg
 ```
 
+If the shell is ever killed (for example when the laptop runs out of memory), `scripts/run-shell.sh` starts it
+again within a second, on the lock screen. It also writes the shell's memory use every 15 minutes, and each
+restart, to `~/.local/state/ansai-shell/memory.log`.
+
 ## AI
 
 Uses the [KOOMPI AI Gateway](https://ai.koompi.cloud) (OpenAI-compatible). Paste your `kpi_…` key in
