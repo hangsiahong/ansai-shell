@@ -15,6 +15,19 @@ Item {
     readonly property real x0: width - 28 - m
     readonly property real y0: Theme.barH + 28
     readonly property var player: Mpris.players.values.find(p => p.isPlaying) ?? Mpris.players.values[0] ?? null
+    // Small widgets fill a 2-wide grid under the clock, right column first, with no gaps for hidden ones.
+    // Ones that show up late (weather after its first fetch, music when something plays) come last so the rest stay put.
+    readonly property var shown: ({
+        calendar: Settings.widgets.includes("calendar"),
+        battery: Settings.widgets.includes("battery") && Battery.present,
+        weather: Settings.widgets.includes("weather") && Weather.enabled && Weather.current !== null,
+        media: Settings.widgets.includes("media") && root.player !== null
+    })
+    readonly property var packed: ["calendar", "battery", "weather", "media"].filter(w => shown[w])
+    function spot(w: string): point {
+        const i = Math.max(0, packed.indexOf(w));
+        return Qt.point(x0 + (i % 2 ? 0 : s + g), y0 + 116 + g + Math.floor(i / 2) * (s + g));
+    }
 
     DeskWidget {
         wid: "clock"
@@ -46,9 +59,9 @@ Item {
 
     DeskWidget {
         wid: "weather"
-        visible: Settings.widgets.includes("weather") && Weather.enabled && Weather.current !== null
+        visible: root.shown.weather
         width: root.s; height: root.s
-        home: Qt.point(root.x0, root.y0 + 116 + root.g)
+        home: root.spot("weather")
         readonly property var lk: Weather.current ? Weather.look(Weather.current.code, Weather.current.day) : ["cloud", ""]
         Column {
             anchors.fill: parent
@@ -71,7 +84,7 @@ Item {
         wid: "calendar"
         width: root.s; height: root.s
         pad: 12
-        home: Qt.point(root.x0 + root.s + root.g, root.y0 + 116 + root.g)
+        home: root.spot("calendar")
         readonly property date d: Time.now
         Column {
             anchors.fill: parent
@@ -112,9 +125,9 @@ Item {
 
     DeskWidget {
         wid: "battery"
-        visible: Settings.widgets.includes("battery") && Battery.present
+        visible: root.shown.battery
         width: root.s; height: root.s
-        home: Qt.point(root.x0, root.y0 + 116 + 2 * root.g + root.s)
+        home: root.spot("battery")
         Txt { text: "Battery"; font.pixelSize: 13; font.weight: Theme.strong }
         Canvas {
             id: ring
@@ -145,10 +158,10 @@ Item {
 
     DeskWidget {
         wid: "media"
-        visible: Settings.widgets.includes("media") && root.player !== null
+        visible: root.shown.media
         width: root.s; height: root.s
         pad: 12
-        home: Qt.point(root.x0 + root.s + root.g, root.y0 + 116 + 2 * root.g + root.s)
+        home: root.spot("media")
         Rectangle {
             id: art
             width: 64; height: 64; radius: 12
