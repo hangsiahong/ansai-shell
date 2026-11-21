@@ -262,7 +262,7 @@ Short bullets under 250 words, in the language the user wrote in. No preamble.`,
     property var schedRunning: ({}) // id → true while a "Run now" is out
     property bool schedRead: false
     function newSchedule() {
-        return { id: "", name: "", prompt: "", kind: "daily", time: "08:00", day: "Mon", cron: "", model: Settings.aiModel, account: Settings.aiAccount, act: false, on: true };
+        return { id: "", name: "", prompt: "", kind: "daily", time: "08:00", day: "Mon", cron: "", model: Settings.aiModel, account: Settings.aiAccount, act: true, on: true };
     }
     function saveSchedule(t): string {
         const id = t.id || Date.now().toString(36);

@@ -190,7 +190,7 @@ Item {
                         wrapMode: Text.Wrap
                         font.pixelSize: 12
                         color: Theme.muted
-                        text: root.t.act ? "Commands, file changes, messages and other actions run right away, with nobody watching."
+                        text: root.t.act ? "On: it works on its own. Commands, file changes, messages and other actions run right away."
                                          : "Off: it only looks things up. Actions are declined, and the result says what it would have done."
                     }
                 }
