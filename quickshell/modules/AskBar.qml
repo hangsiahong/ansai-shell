@@ -25,6 +25,19 @@ PanelWindow {
     property int from: -1   // index in AI.chat of the answer asked from here; -1: none to show
     readonly property var answer: from >= 0 ? AI.chat[from] ?? null : null
     readonly property bool waiting: (answer?.tools ?? []).some(t => t.status === "wait")
+    readonly property bool live: AI.busy && from === AI.chat.length - 1
+    readonly property var step: (answer?.tools ?? []).find(t => t.status === "run" || t.status === "wait") ?? null
+    readonly property string reasoning: (answer?.reasoning ?? "").trim()
+    // One line above the answer: what the agent is doing now, or afterwards how long it thought and how many steps.
+    readonly property string status: {
+        if (!answer) return "";
+        const n = (answer.tools ?? []).length;
+        if (live && step) return (step.title || step.name.replace(/_/g, " ")) + "…";
+        if (live && AI.thinking) return reasoning.split("\n").filter(l => l.trim()).pop() || "Thinking…";
+        if (live) return "";
+        return [reasoning ? "Thought for " + Math.max(1, Math.round((answer.thinkMs ?? 0) / 1000)) + " s" : "",
+                n ? n + (n > 1 ? " steps" : " step") : ""].filter(x => x).join(" · ");
+    }
     // Always there on an empty workspace; with windows open it waits at the edge for the pointer.
     readonly property var ws: Niri.workspaces.find(w => w.is_active && w.output === root.screen?.name) ?? null
     readonly property bool empty: !!ws && Niri.windowsOn(ws.id).length === 0
@@ -91,13 +104,48 @@ PanelWindow {
                 screenX: card.x + x
                 screenY: root.screen.height - root.height + card.y + y
                 width: parent.width
-                height: Math.min(300, txt.contentHeight + 24) + (actions.visible ? actions.height + 6 : 0)
+                // Status line only while nothing is written yet; no empty text line under it.
+                readonly property real textH: txt.text || !statusRow.visible ? Math.min(276, txt.contentHeight) : 0
+                height: (statusRow.visible ? statusRow.height + 10 + (textH ? 6 : 0) : 12) + textH + 12 + (actions.visible ? actions.height + 6 : 0)
                 radius: Theme.m3 ? 24 : 20
+
+                Item {
+                    id: statusRow
+                    visible: !!root.status
+                    anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12; topMargin: 10 }
+                    height: 20
+                    Icon {
+                        id: statusIcon
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: root.live && root.step ? (root.step.status === "wait" ? "front_hand" : "progress_activity") : "lightbulb"
+                        filled: !(root.live && root.step)
+                        size: 16
+                        color: root.live && root.step?.status === "wait" ? Theme.warn : root.live ? Theme.accent : Theme.muted
+                        RotationAnimation on rotation {
+                            running: root.live && root.step?.status === "run"; from: 0; to: 360; duration: 900; loops: Animation.Infinite
+                            onRunningChanged: if (!running) statusIcon.rotation = 0
+                        }
+                        SequentialAnimation on opacity {
+                            running: root.live && !root.step && AI.thinking; loops: Animation.Infinite
+                            onRunningChanged: if (!running) statusIcon.opacity = 1
+                            NumberAnimation { to: 0.35; duration: 650; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1; duration: 650; easing.type: Easing.InOutSine }
+                        }
+                    }
+                    Txt {
+                        anchors { left: statusIcon.right; leftMargin: 8; right: parent.right; verticalCenter: parent.verticalCenter }
+                        text: root.status
+                        elide: Text.ElideLeft
+                        font.pixelSize: 12
+                        font.italic: root.live && !root.step && AI.thinking
+                        color: Theme.text2
+                    }
+                }
 
                 Flickable {
                     id: flick
-                    anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
-                    height: Math.min(300, txt.contentHeight + 24) - 24
+                    anchors { left: parent.left; right: parent.right; top: statusRow.visible ? statusRow.bottom : parent.top; margins: 12; topMargin: statusRow.visible ? 6 : 12 }
+                    height: reply.textH
                     contentHeight: txt.contentHeight
                     clip: true
                     boundsBehavior: Flickable.StopAtBounds
@@ -115,7 +163,7 @@ PanelWindow {
                         selectedTextColor: Theme.accentInk
                         font.family: Theme.font
                         font.pixelSize: 14
-                        TypingDots { visible: !txt.text && !root.waiting && AI.busy; y: (txt.contentHeight - height) / 2; color: txt.color }
+                        TypingDots { visible: !txt.text && !root.status && AI.busy; y: (txt.contentHeight - height) / 2; color: txt.color }
                     }
                 }
                 Row {
