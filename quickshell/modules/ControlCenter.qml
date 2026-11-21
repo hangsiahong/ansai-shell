@@ -286,6 +286,14 @@ Sheet {
             }
         }
 
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: m3Sys.implicitHeight + 24
+            radius: 22
+            color: Theme.fill2
+            SysMeters { id: m3Sys; anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 16 } }
+        }
+
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
@@ -515,6 +523,12 @@ Sheet {
                     onClicked: modelData.run()
                 }
             }
+        }
+
+        MacModule {
+            Layout.fillWidth: true
+            implicitHeight: macSys.implicitHeight + 22
+            SysMeters { id: macSys; anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 12 } }
         }
 
         RowLayout {

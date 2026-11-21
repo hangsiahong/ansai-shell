@@ -167,7 +167,7 @@ ColumnLayout {
                 spacing: 8
                 Repeater {
                     model: [["clock", "schedule", "Clock"], ["weather", "partly_cloudy_day", "Weather"], ["calendar", "calendar_month", "Calendar"],
-                        ["battery", "battery_full", "Battery"], ["media", "music_note", "Now playing"]]
+                        ["battery", "battery_full", "Battery"], ["system", "memory", "System"], ["media", "music_note", "Now playing"]]
                     Hover {
                         id: wc
                         required property var modelData

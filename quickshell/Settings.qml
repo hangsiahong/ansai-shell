@@ -85,7 +85,7 @@ Singleton {
             property int idleLock: 300
             property int idleOff: 360
             property var usage: ({})
-            property list<string> widgets: ["clock", "weather", "battery", "calendar", "media"]   // desktop widgets shown, see modules/Widgets.qml
+            property list<string> widgets: ["clock", "weather", "battery", "calendar", "system", "media"]   // desktop widgets shown, see modules/Widgets.qml
             property var widgetPos: ({})   // id -> [x, y] as fractions of the screen; missing: default spot
             property string padTab: "frequent"   // Launchpad's category tab
             property string dockMode: "smart"   // "smart": hide when a window covers it | "auto": always hide | "always": never hide

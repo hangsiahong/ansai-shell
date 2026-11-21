@@ -6,7 +6,7 @@ import qs.components
 import qs.services
 
 // Desktop widgets on the wallpaper, under the windows (Background layer): clock, weather, battery,
-// calendar, now playing. Settings.widgets picks which; each is dragged anywhere (DeskWidget).
+// calendar, system use, now playing. Settings.widgets picks which; each is dragged anywhere (DeskWidget).
 Item {
     id: root
     readonly property int s: 164   // small widget side
@@ -21,9 +21,10 @@ Item {
         calendar: Settings.widgets.includes("calendar"),
         battery: Settings.widgets.includes("battery") && Battery.present,
         weather: Settings.widgets.includes("weather") && Weather.enabled && Weather.current !== null,
+        system: Settings.widgets.includes("system"),
         media: Settings.widgets.includes("media") && root.player !== null
     })
-    readonly property var packed: ["calendar", "battery", "weather", "media"].filter(w => shown[w])
+    readonly property var packed: ["calendar", "battery", "system", "weather", "media"].filter(w => shown[w])
     function spot(w: string): point {
         const i = Math.max(0, packed.indexOf(w));
         return Qt.point(x0 + (i % 2 ? 0 : s + g), y0 + 116 + g + Math.floor(i / 2) * (s + g));
@@ -153,6 +154,18 @@ Item {
                 Icon { anchors.horizontalCenter: parent.horizontalCenter; name: Battery.charging ? "bolt" : "laptop"; size: 18; filled: true; color: ring.c }
                 Txt { anchors.horizontalCenter: parent.horizontalCenter; text: Math.round(Battery.pct * 100) + "%"; font.pixelSize: 20; font.weight: Theme.strong }
             }
+        }
+    }
+
+    DeskWidget {
+        wid: "system"
+        width: root.s; height: root.s
+        home: root.spot("system")
+        Column {
+            anchors.fill: parent
+            spacing: 10
+            Txt { text: "System"; font.pixelSize: 13; font.weight: Theme.strong }
+            SysMeters { width: parent.width; columns: 1; rowSpacing: 7 }
         }
     }
 
