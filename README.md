@@ -75,7 +75,7 @@ service with the KOOMPI Cloud connector, or run `KCONSOLE_API_TOKEN=kp_... tools
 ## Install
 
 ```sh
-sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp python nodejs fd ripgrep wtype python-gobject at-spi2-core
+sudo pacman -S --needed niri xwayland-satellite quickshell brightnessctl playerctl swayidle cliphist fuzzel wlsunset grim slurp python nodejs fd ripgrep wtype python-gobject at-spi2-core ttf-material-symbols-variable
 ./install.sh
 ```
 

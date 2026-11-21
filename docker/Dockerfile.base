@@ -16,3 +16,5 @@ RUN pacman -Syu --noconfirm --needed \
 RUN useradd -m -s /bin/sh ansai
 # Additions go in new layers below (never edit the ones above: that would download everything again).
 RUN pacman -S --noconfirm --needed libxcursor libxi libxrandr libxkbcommon-x11 && rm -rf /var/cache/pacman/pkg/*
+RUN pacman -S --noconfirm --needed nautilus gnome-text-editor gnome-calculator loupe papirus-icon-theme && rm -rf /var/cache/pacman/pkg/*
+RUN pacman -S --noconfirm --needed ttf-material-symbols-variable && rm -rf /var/cache/pacman/pkg/*
